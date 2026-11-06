@@ -118,9 +118,9 @@ Antigravity App, IDE и CLI читают один файл `~/.gemini/config/mcp
   "mcpServers": {
     "google-workspace": {
       "command": "python",
-      "args": ["D:\\DEV\\yet-another-google-mcp\\server.py"],
+      "args": ["D:\\DEV\\workspace-operator\\server.py"],
       "env": {
-        "MCP_CONFIG_FILE": "D:\\DEV\\yet-another-google-mcp\\config.yaml",
+        "MCP_CONFIG_FILE": "D:\\DEV\\workspace-operator\\config.yaml",
         "MCP_AUTH_TOKEN": "MySecretToken_2026!",
         "MCP_TOOL_PROFILE": "read-write"
       },
@@ -145,9 +145,9 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
   "mcpServers": {
     "google-tools": {
       "command": "python",
-      "args": ["D:\\DEV\\yet-another-google-mcp\\server.py"],
+      "args": ["D:\\DEV\\workspace-operator\\server.py"],
       "env": {
-        "MCP_CONFIG_FILE": "D:\\DEV\\yet-another-google-mcp\\config.yaml",
+        "MCP_CONFIG_FILE": "D:\\DEV\\workspace-operator\\config.yaml",
         "MCP_AUTH_TOKEN": "MySecretToken_2026!"
       }
     }
