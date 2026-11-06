@@ -227,6 +227,12 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - По умолчанию `dry_run=true`.
 - `gmail_search_and_summarize(query, max_results?)`
   - Поиск и краткое резюме.
+- `gmail_get_thread(thread_id?, message_id?, include_body?)`
+  - Вся переписка с датами, отправителями, метками и вложениями.
+- `gmail_get_attachment(message_id, filename?, attachment_id?, save_to?, overwrite?)`
+  - Сохраняет вложение на диск; если вложение одно, селектор не нужен.
+- `gmail_reply(message_id, body_text, reply_all?, draft_mode?)`
+  - Ответ в тред с `In-Reply-To`/`References`; по умолчанию черновик.
 - `gmail_archive(message_id, confirm?)`
   - Требует `confirm=true`.
 - `gmail_label_apply(message_ids[], label_name, dry_run?, create_if_missing?)`

@@ -69,6 +69,9 @@ from .handlers import (
     workspace_search_handler,
     document_to_text,
     format_sheet_handler,
+    gmail_get_attachment_handler,
+    gmail_get_thread_handler,
+    gmail_reply_handler,
     drive_download_handler,
     drive_export_handler,
     drive_upload_handler,
@@ -986,6 +989,64 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+        types.Tool(
+            name="gmail_get_thread",
+            description=(
+                "Read a whole Gmail conversation: every message with date, sender, "
+                "labels and attachments. Pass thread_id or any message_id."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "thread_id": {"type": "string"},
+                    "message_id": {"type": "string"},
+                    "include_body": {"type": "boolean", "default": False},
+                },
+                "required": [],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="gmail_get_attachment",
+            description=(
+                "Save an attachment from a Gmail message to disk. Select it by "
+                "filename or attachment_id; with a single attachment both are optional."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "message_id": {"type": "string"},
+                    "filename": {"type": "string"},
+                    "attachment_id": {"type": "string"},
+                    "save_to": {
+                        "type": "string",
+                        "description": "File or directory path (default: ~/Downloads)",
+                    },
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["message_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="gmail_reply",
+            description=(
+                "Reply inside the original thread with correct In-Reply-To/References "
+                "headers. Creates a draft by default; set draft_mode=false to send."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "message_id": {"type": "string"},
+                    "body_text": {"type": "string"},
+                    "reply_all": {"type": "boolean", "default": False},
+                    "draft_mode": {"type": "boolean", "default": True},
+                },
+                "required": ["message_id", "body_text"],
+            },
+            annotations=_WRITE,
+        ),
+
         # ── Google Calendar ───────────────────────────────────────────────
         types.Tool(
             name="list_events",
@@ -1328,6 +1389,30 @@ async def run() -> None:
                 ),
                 "list_emails": lambda a: list_emails_handler(
                     config, logger, a.get("max_results", 10), a.get("query")
+                ),
+                "gmail_get_thread": lambda a: gmail_get_thread_handler(
+                    config,
+                    logger,
+                    a.get("thread_id"),
+                    a.get("message_id"),
+                    a.get("include_body", False),
+                ),
+                "gmail_get_attachment": lambda a: gmail_get_attachment_handler(
+                    config,
+                    logger,
+                    a.get("message_id"),
+                    a.get("attachment_id"),
+                    a.get("filename"),
+                    a.get("save_to"),
+                    a.get("overwrite", False),
+                ),
+                "gmail_reply": lambda a: gmail_reply_handler(
+                    config,
+                    logger,
+                    a.get("message_id"),
+                    a.get("body_text"),
+                    a.get("reply_all", False),
+                    a.get("draft_mode", True),
                 ),
                 "read_email": lambda a: read_email_handler(config, logger, a.get("message_id")),
                 "delete_email": lambda a: delete_email_handler(

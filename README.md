@@ -12,7 +12,7 @@ Google Drive, Sheets, Docs, Gmail, Calendar — and the parts of Workspace that 
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-56-informational)](#-all-tools)
+[![Tools](https://img.shields.io/badge/tools-59-informational)](#-all-tools)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -60,13 +60,13 @@ ranges, find & replace), and **one-query search across Drive, Gmail and Calendar
 | 📊 **Sheets** | Read/write ranges, formatting (bold, colours, number formats, widths, freeze), filter views, named ranges, find & replace, CSV export |
 | 📄 **Docs** | Read (tables included), create, append, fill templates, export to PDF |
 | 🖼 **Slides** | Create decks, add slides, replace placeholders, insert images |
-| 📧 **Gmail** | Draft, send, search, archive, labels, delete with confirmation |
+| 📧 **Gmail** | Threads, attachments, replies in-thread, drafts, search, archive, labels, delete with confirmation |
 | 📅 **Calendar** | List events, find free slots, create meetings with attendees |
 | ⚙️ **Apps Script** | Create, read, stage updates, execute with auto-backup, rollback |
 | 🔗 **Resources** | Attach live Drive / Gmail / Calendar / Sheets / Docs snapshots to context |
 | 💬 **Prompts** | One-click workflows: summarize inbox, analyze sheet, plan week, search Drive |
 
-**56 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
+**59 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
 `readOnlyHint` / `destructiveHint` so clients can warn before risky actions.
 
 ---
@@ -172,9 +172,9 @@ do without asking).
 
 | Profile | Tools | Use it when |
 |---|---:|---|
-| `full` | 56 | your own machine, full trust |
-| `read-write` | 49 | daily work — destructive tools hidden |
-| `read-only` | 19 | exploring, demos, shared machines, untrusted agents |
+| `full` | 59 | your own machine, full trust |
+| `read-write` | 52 | daily work — destructive tools hidden |
+| `read-only` | 21 | exploring, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-write"
@@ -315,7 +315,7 @@ a `Partial results` note.
 </details>
 
 <details>
-<summary>📧 Gmail (11)</summary>
+<summary>📧 Gmail (14)</summary>
 
 | Tool | Type | Description |
 |------|------|-------------|
@@ -330,6 +330,9 @@ a `Partial results` note.
 | `gmail_archive` | write | Archive a message (`confirm=true`) |
 | `delete_email` | destructive | Delete an email (`confirm=true`) |
 | `batch_delete_emails` | destructive | Delete multiple emails (`dry_run=true` by default) |
+| `gmail_get_thread` | read | Whole conversation: messages, labels, attachments |
+| `gmail_get_attachment` | read | Save an attachment to disk |
+| `gmail_reply` | write | Reply in-thread (`draft_mode=true` by default) |
 
 </details>
 
@@ -399,6 +402,7 @@ workspace_operator/
    ├─ slides.py            Slides: create, read, add, replace, images
    ├─ formatting.py        sheet_format request builder
    ├─ drive.py  sheets.py  docs.py
+   ├─ gmail_threads.py     gmail_get_thread / get_attachment / reply
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                     unit tests, no network needed
 antigravity/               ready-to-paste mcp_config.json
@@ -421,10 +425,10 @@ Design rules:
 python -m unittest discover -s tests -v
 ```
 
-86 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
+103 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
 v1.2 helpers. No credentials, network, or Google API access required.
 
-`tests/live_smoke.py` runs 30 end-to-end checks against a real account and
+`tests/live_smoke.py` runs 35 end-to-end checks against a real account and
 cleans up after itself (uploads, downloads and trashes a temp file; creates and trashes a deck).
 
 `tests/pptx_roundtrip.py` verifies the Office → Google conversion path:

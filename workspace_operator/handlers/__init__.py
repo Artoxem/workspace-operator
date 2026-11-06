@@ -60,6 +60,11 @@ from .sheets import (
     update_sheet_handler,
 )
 from .files import drive_download_handler, drive_export_handler, drive_upload_handler
+from .gmail_threads import (
+    gmail_get_attachment_handler,
+    gmail_get_thread_handler,
+    gmail_reply_handler,
+)
 from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
@@ -128,4 +133,7 @@ __all__ = [
     "slides_replace_text_handler",
     "slides_insert_image_handler",
     "format_sheet_handler",
+    "gmail_get_attachment_handler",
+    "gmail_get_thread_handler",
+    "gmail_reply_handler",
 ]

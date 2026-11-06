@@ -229,6 +229,12 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
   - Defaults to `dry_run=true`.
 - `gmail_search_and_summarize(query, max_results?)`
   - Search with a short summary.
+- `gmail_get_thread(thread_id?, message_id?, include_body?)`
+  - Whole conversation with dates, senders, labels and attachments.
+- `gmail_get_attachment(message_id, filename?, attachment_id?, save_to?, overwrite?)`
+  - Saves an attachment to disk; with a single attachment no selector is needed.
+- `gmail_reply(message_id, body_text, reply_all?, draft_mode?)`
+  - Replies inside the thread with `In-Reply-To`/`References`; drafts by default.
 - `gmail_archive(message_id, confirm?)`
   - Requires `confirm=true`.
 - `gmail_label_apply(message_ids[], label_name, dry_run?, create_if_missing?)`

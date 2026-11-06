@@ -70,6 +70,17 @@ def _trash(file_id: str) -> None:
     ).execute()
 
 
+def _delete_draft(draft_id: str) -> None:
+    """Cleanup helper: remove a draft created by the smoke test."""
+    from googleapiclient.discovery import build
+
+    from workspace_operator.auth import get_creds
+
+    config = yaml.safe_load((REPO / "config.yaml").read_text(encoding="utf-8"))
+    service = build("gmail", "v1", credentials=get_creds(_config_obj(config)))
+    service.users().drafts().delete(userId="me", id=draft_id).execute()
+
+
 def _config_obj(raw: dict):
     from workspace_operator.config import Config
 
@@ -109,7 +120,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 56, f"{len(names)} tools")
+    record("tools/list", len(names) == 59, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -180,6 +191,65 @@ async def full_checks(session: ClientSession) -> None:
             "&#" not in mail_text and "&amp;" not in mail_text,
             "clean text",
         )
+
+    if message_id:
+        thread = await session.call_tool(
+            "gmail_get_thread", {"message_id": message_id.group(1)}
+        )
+        thread_text = _text(thread)
+        record(
+            "call gmail_get_thread",
+            not thread.isError and "Thread:" in thread_text and "messages:" in thread_text,
+            thread_text.splitlines()[0] if thread_text else "empty",
+        )
+
+        reply = await session.call_tool(
+            "gmail_reply",
+            {
+                "message_id": message_id.group(1),
+                "body_text": "Automated smoke-test reply. Safe to ignore.",
+                "draft_mode": True,
+            },
+        )
+        reply_text = _text(reply)
+        record(
+            "call gmail_reply (draft)",
+            not reply.isError and "Draft reply created" in reply_text,
+            reply_text.splitlines()[0] if reply_text else "empty",
+        )
+        draft_id = re.search(r"Draft ID:\s*([A-Za-z0-9_-]+)", reply_text)
+        if draft_id:
+            try:
+                await asyncio.to_thread(_delete_draft, draft_id.group(1))
+            except Exception as exc:  # noqa: BLE001
+                record("cleanup reply draft", False, str(exc))
+
+    attachment_dir = Path(tempfile.mkdtemp(prefix="google-mcp-attachment-"))
+    with_attachment = await session.call_tool(
+        "list_emails", {"max_results": 3, "query": "has:attachment"}
+    )
+    with_attachment_text = _text(with_attachment)
+    attachment_message = re.search(r"ID:\s*([0-9a-f]{12,})", with_attachment_text)
+    if attachment_message:
+        attachment_target = attachment_dir / "smoke-attachment.bin"
+        attachment = await session.call_tool(
+            "gmail_get_attachment",
+            {
+                "message_id": attachment_message.group(1),
+                "save_to": str(attachment_target),
+                "overwrite": True,
+            },
+        )
+        attachment_text = _text(attachment)
+        record(
+            "call gmail_get_attachment",
+            not attachment.isError
+            and ("Saved" in attachment_text or "Available" in attachment_text),
+            attachment_text.splitlines()[0][:90] if attachment_text else "empty",
+        )
+    else:
+        record_skip("gmail_get_attachment", "no messages with attachments in this mailbox")
+    shutil.rmtree(attachment_dir, ignore_errors=True)
 
     recent = await session.read_resource("gdrive://recent")
     recent_text = recent.contents[0].text if recent.contents else ""
@@ -412,7 +482,7 @@ async def full_checks(session: ClientSession) -> None:
 async def read_only_checks(session: ClientSession) -> None:
     await session.initialize()
     tools = await session.list_tools()
-    record("read-only profile tools/list", len(tools.tools) == 19, f"{len(tools.tools)} tools")
+    record("read-only profile tools/list", len(tools.tools) == 21, f"{len(tools.tools)} tools")
 
     blocked = await session.call_tool(
         "send_email", {"to": "nobody@example.com", "subject": "x", "body_text": "x"}

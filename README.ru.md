@@ -11,7 +11,7 @@ Google Drive, Sheets, Docs, Slides, Gmail и Calendar — и закрывает 
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-56-informational)](#-все-инструменты)
+[![Tools](https://img.shields.io/badge/tools-59-informational)](#-все-инструменты)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -59,13 +59,13 @@ Google Drive, Sheets, Docs, Slides, Gmail и Calendar — и закрывает 
 | 📊 **Sheets** | Чтение и запись, форматирование (жирный, цвета, форматы чисел, ширины, закрепление), фильтры, именованные диапазоны, find & replace, экспорт CSV |
 | 📄 **Docs** | Чтение (включая таблицы), создание, дописывание, шаблоны, экспорт в PDF |
 | 🖼 **Slides** | Создание презентаций, слайды, замена плейсхолдеров, картинки |
-| 📧 **Gmail** | Черновики, отправка, поиск, архив, метки, удаление с подтверждением |
+| 📧 **Gmail** | Треды, вложения, ответы в тред, черновики, поиск, архив, метки, удаление с подтверждением |
 | 📅 **Calendar** | Список событий, свободные слоты, встречи с участниками |
 | ⚙️ **Apps Script** | Создание, чтение, стейджинг обновлений, запуск с бэкапом, откат |
 | 🔗 **Ресурсы** | Живые снимки Drive / Gmail / Calendar / Sheets / Docs прямо в контексте |
 | 💬 **Промпты** | Готовые сценарии: сводка почты, анализ таблицы, план недели, поиск файлов |
 
-**56 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта** — у каждого инструмента
+**59 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта** — у каждого инструмента
 есть аннотации `readOnlyHint` / `destructiveHint`, чтобы клиент предупреждал об опасных действиях.
 
 ---
@@ -170,9 +170,9 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Когда использовать |
 |---|---:|---|
-| `full` | 56 | своя машина, полное доверие |
-| `read-write` | 49 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 19 | разведка, демо, общие машины, недоверенные агенты |
+| `full` | 59 | своя машина, полное доверие |
+| `read-write` | 52 | ежедневная работа — деструктивные скрыты |
+| `read-only` | 21 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-write"
@@ -313,7 +313,7 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 </details>
 
 <details>
-<summary>📧 Gmail (11)</summary>
+<summary>📧 Gmail (14)</summary>
 
 | Инструмент | Тип | Описание |
 |------|------|-------------|
@@ -328,6 +328,9 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 | `gmail_archive` | write | Архивировать (`confirm=true`) |
 | `delete_email` | destructive | Удалить письмо (`confirm=true`) |
 | `batch_delete_emails` | destructive | Удалить несколько (`dry_run=true`) |
+| `gmail_get_thread` | read | Вся переписка: сообщения, метки, вложения |
+| `gmail_get_attachment` | read | Сохранить вложение на диск |
+| `gmail_reply` | write | Ответ в тред (`draft_mode=true` по умолчанию) |
 
 </details>
 
@@ -397,6 +400,7 @@ workspace_operator/
    ├─ slides.py            Slides: создание, чтение, слайды, картинки
    ├─ formatting.py        sheet_format: сборка запросов форматирования
    ├─ drive.py  sheets.py  docs.py
+   ├─ gmail_threads.py     gmail_get_thread / get_attachment / reply
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                     юнит-тесты без сети
 antigravity/               готовый mcp_config.json
@@ -418,10 +422,10 @@ skills/google-workspace/   Agent Skill: когда какой инструмен
 python -m unittest discover -s tests -v
 ```
 
-66 тестов: профили, разбор поиска, нормализация текста, таблицы Docs, работа с путями и
+103 теста: профили, разбор поиска, нормализация текста, таблицы Docs, работа с путями и
 хелперы v1.2. Без креденшелов и сети.
 
-`tests/live_smoke.py` — 30 сквозных проверок на реальном аккаунте с самоочисткой.
+`tests/live_smoke.py` — 35 сквозных проверок на реальном аккаунте с самоочисткой.
 
 `tests/pptx_roundtrip.py` проверяет конвертацию Office → Google:
 `drive_upload(convert_to="google-slides")` → `slides_replace_text` → `slides_get`.
