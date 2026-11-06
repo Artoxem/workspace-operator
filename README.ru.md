@@ -70,7 +70,7 @@ MCP-сервер, который даёт ИИ-агенту реальный к�
 ### 1 — Установка
 
 ```bash
-git clone https://github.com/artoxem-dev/yet-another-google-mcp.git
+git clone https://github.com/Artoxem/yet-another-google-mcp.git
 cd yet-another-google-mcp
 python -m venv .venv && .venv\Scripts\activate    # Windows
 pip install -r requirements.txt
