@@ -33,8 +33,8 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 59 | everything |
-| `read-write` | 52 | everything except `destructiveHint: true` |
+| `full` (default) | 63 | everything |
+| `read-write` | 55 | everything except `destructiveHint: true` |
 | `read-only` | 21 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
@@ -249,6 +249,19 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
   - Find free slots.
 - `calendar_create_meeting(summary, start_time, end_time, attendees?, description?, location?, confirm?)`
   - Requires `confirm=true`.
+
+- `calendar_update_event(event_id, calendar_id?, summary?, start_time?, end_time?, description?, location?, attendees?, send_updates?)`
+  - Patch semantics: only the fields you pass are changed. `send_updates`: `all|externalOnly|none`.
+- `calendar_delete_event(event_id, calendar_id?, confirm?, send_updates?)`
+  - Requires `confirm=true`.
+- `calendar_respond_to_invite(event_id, response, calendar_id?, confirm?, send_updates?)`
+  - `response`: `accepted|declined|tentative`; requires `confirm=true`.
+
+## Composite
+- `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`
+  - Reads a range, computes per-column statistics (sum/avg/min/max for numeric
+    columns, non-empty/unique for text) and creates a Google Doc with the summary
+    and a fixed-width data preview.
 
 ## Apps Script
 - `script_run_function(script_id, function_name, parameters?, dev_mode?)`

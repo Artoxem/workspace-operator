@@ -112,7 +112,12 @@ def create_event_handler(
         }
 
         event = service.events().insert(calendarId=calendar_id, body=event).execute()
-        return f"Event created: {event.get('htmlLink')}"
+        logger.info("Event created: %s", event.get("id"))
+        return (
+            f"Event created: {clean_text(event.get('summary')) or summary}\n"
+            f"ID: {event.get('id')}\n"
+            f"{event.get('htmlLink', '')}"
+        )
     except Exception as e:
         return f"Error creating event: {str(e)}"
 
@@ -252,7 +257,11 @@ def calendar_create_meeting_handler(
             .execute()
         )
         logger.info("Meeting created: %s", created.get("id"))
-        return f"✅ Meeting created: {created.get('htmlLink')}"
+        return (
+            f"✅ Meeting created: {clean_text(created.get('summary')) or summary}\n"
+            f"ID: {created.get('id')}\n"
+            f"{created.get('htmlLink', '')}"
+        )
     except Exception as e:
         logger.error("Error creating meeting: %s", str(e))
         return f"Error creating meeting: {str(e)}"

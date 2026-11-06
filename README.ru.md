@@ -5,11 +5,11 @@
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — один локальный
-MCP-сервер с 59 инструментами, многошаговыми записями и профилями на стороне сервера.
+MCP-сервер с 63 инструментами, многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-59-informational)](#-каталог-инструментов)
+[![Tools](https://img.shields.io/badge/tools-63-informational)](#-каталог-инструментов)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -25,7 +25,7 @@ Workspace Operator (ранее *yet-another-google-mcp*) работает на �
 стейджинг Apps Script, передача файлов в обе стороны, сборка презентаций,
 форматирование таблиц, ответы в тред и работа с вложениями.
 
-**59 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта**, у каждого инструмента
+**63 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта**, у каждого инструмента
 аннотации `readOnlyHint` / `destructiveHint`.
 
 ## Сравнение
@@ -57,7 +57,8 @@ Workspace Operator — для «измени рабочее пространст
 | 🖼 Slides | 5 | Создание презентаций, слайды, замена текста, картинки |
 | ⚙️ Apps Script | 7 | Стейджинг с бэкапами, откат, запуск функций |
 | 📧 Gmail | 14 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
-| 📅 Calendar | 4 | События, свободные слоты, встречи с участниками |
+| 📅 Calendar | 7 | События, слоты, встречи, изменение/удаление, ответ на приглашения |
+| 🧩 Составные | 1 | `report_from_sheet`: таблица → статистика → Google Doc |
 
 Плюс 3 ресурса, 3 шаблона ресурсов и 4 промпта — см. [каталог](#-каталог-инструментов).
 
@@ -163,8 +164,8 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 59 | своя машина, полное доверие |
-| `read-write` | 52 | ежедневная работа — деструктивные скрыты |
+| `full` | 63 | своя машина, полное доверие |
+| `read-write` | 55 | ежедневная работа — деструктивные скрыты |
 | `read-only` | 21 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
@@ -299,7 +300,16 @@ denied_tools: ["send_email", "share_file"]
 </details>
 
 <details>
-<summary>📅 Calendar (4)</summary>
+<summary>🧩 Составные (1)</summary>
+
+| Инструмент | Тип | Описание |
+|---|---|---|
+| `report_from_sheet` | write | Прочитать диапазон, посчитать статистику по колонкам и создать отчёт в Google Doc |
+
+</details>
+
+<details>
+<summary>📅 Calendar (7)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
@@ -307,6 +317,9 @@ denied_tools: ["send_email", "share_file"]
 | `calendar_find_free_slots` | read | Свободные слоты в окне |
 | `create_event` | write | Создать событие |
 | `calendar_create_meeting` | write | Встреча с участниками (`confirm=true`) |
+| `calendar_update_event` | write | Изменить любое поле; меняется только переданное |
+| `calendar_delete_event` | destructive | Удалить событие (`confirm=true`) |
+| `calendar_respond_to_invite` | write | Принять / отклонить / под вопросом (`confirm=true`) |
 
 </details>
 
@@ -349,7 +362,7 @@ denied_tools: ["send_email", "share_file"]
 ## Как устроено
 
 ```
-server.py                    MCP-сервер: 59 инструментов, ресурсы, промпты, профили
+server.py                    MCP-сервер: 63 инструмента, ресурсы, промпты, профили
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny
 ├─ config.py                 конфиг + переменные окружения
@@ -363,6 +376,8 @@ workspace_operator/
    ├─ formatting.py          сборка запросов sheet_format
    ├─ gmail_threads.py       треды, вложения, ответы в тред
    ├─ slides.py              презентации
+   ├─ calendar_writes.py     обновление / удаление / ответы на приглашения
+   ├─ report.py              report_from_sheet: статистика + документ
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       юнит-, живые и round-trip проверки
@@ -380,8 +395,8 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 115 юнит-тестов, без сети
-python tests/live_smoke.py                  # 35 проверок на реальном аккаунте
+python -m unittest discover -s tests -v     # 142 юнит-теста, без сети
+python tests/live_smoke.py                  # 40 проверок на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
 
@@ -416,8 +431,8 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 - [x] Файлы, Slides, запуск Apps Script
 - [x] Форматирование Sheets
 - [x] Треды, вложения и ответы в Gmail
-- [ ] Calendar: обновление, удаление, ответ на приглашения
-- [ ] Составные инструменты: `report_from_sheet`
+- [x] Calendar: обновление, удаление, ответ на приглашения
+- [x] Составные инструменты: `report_from_sheet`
 - [ ] Опциональный HTTP-транспорт (stateless, MCP 2026-07-28)
 
 ## Ответственность

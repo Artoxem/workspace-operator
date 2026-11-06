@@ -23,8 +23,8 @@ anything outside the profile with an explicit error.
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 59 | your own machine, full trust |
-| `read-write` | 52 | daily work — destructive tools hidden |
+| `full` | 63 | your own machine, full trust |
+| `read-write` | 55 | daily work — destructive tools hidden |
 | `read-only` | 21 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml

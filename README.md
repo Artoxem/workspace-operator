@@ -9,7 +9,7 @@ with 59 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-59-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-63-informational)](#-tool-catalog)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -25,7 +25,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**59 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
+**63 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 ## How it compares
@@ -57,7 +57,8 @@ Operator is for "change the workspace and be able to roll it back".
 | 🖼 Slides | 5 | Create decks, add slides, replace text, insert images |
 | ⚙️ Apps Script | 7 | Staged updates with backups, rollback, run functions |
 | 📧 Gmail | 14 | Threads, attachments, replies, drafts, labels, batch delete |
-| 📅 Calendar | 4 | Events, free slots, meetings with attendees |
+| 📅 Calendar | 7 | Events, free slots, meetings, update/delete, invite responses |
+| 🧩 Composite | 1 | `report_from_sheet`: sheet → statistics → Google Doc |
 
 Plus 3 resources, 3 resource templates and 4 prompts — see the
 [tool catalog](#-tool-catalog).
@@ -164,8 +165,8 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 59 | your own machine, full trust |
-| `read-write` | 52 | daily work — destructive tools hidden |
+| `full` | 63 | your own machine, full trust |
+| `read-write` | 55 | daily work — destructive tools hidden |
 | `read-only` | 21 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
@@ -300,7 +301,16 @@ A blocked call returns a clear explanation instead of failing silently.
 </details>
 
 <details>
-<summary>📅 Calendar (4)</summary>
+<summary>🧩 Composite (1)</summary>
+
+| Tool | Type | Description |
+|---|---|---|
+| `report_from_sheet` | write | Read a range, compute column statistics and create a Google Doc report |
+
+</details>
+
+<details>
+<summary>📅 Calendar (7)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -308,6 +318,9 @@ A blocked call returns a clear explanation instead of failing silently.
 | `calendar_find_free_slots` | read | Free slots in a window |
 | `create_event` | write | Create an event |
 | `calendar_create_meeting` | write | Meeting with attendees (`confirm=true`) |
+| `calendar_update_event` | write | Change any field; only what you pass is modified |
+| `calendar_delete_event` | destructive | Delete an event (`confirm=true`) |
+| `calendar_respond_to_invite` | write | Accept / decline / tentative (`confirm=true`) |
 
 </details>
 
@@ -350,7 +363,7 @@ A blocked call returns a clear explanation instead of failing silently.
 ## How it works
 
 ```
-server.py                    MCP server: 59 tool definitions, resources, prompts, profiles
+server.py                    MCP server: 63 tool definitions, resources, prompts, profiles
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny lists
 ├─ config.py                 config file + environment overrides
@@ -364,6 +377,8 @@ workspace_operator/
    ├─ formatting.py          sheet_format request builders
    ├─ gmail_threads.py       threads, attachments, in-thread replies
    ├─ slides.py              presentations
+   ├─ calendar_writes.py     update / delete / invite responses
+   ├─ report.py              report_from_sheet: stats + document
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       unit, live and round-trip checks
@@ -381,8 +396,8 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 115 unit tests, no network
-python tests/live_smoke.py                  # 35 checks against a real account
+python -m unittest discover -s tests -v     # 142 unit tests, no network
+python tests/live_smoke.py                  # 40 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 
@@ -417,8 +432,8 @@ code in sync (tool counts, profile numbers, links, examples).
 - [x] Files, Slides, Apps Script execution
 - [x] Sheet formatting
 - [x] Gmail threads, attachments, replies
-- [ ] Calendar update/delete/respond
-- [ ] Composite tools: `report_from_sheet`
+- [x] Calendar update/delete/respond
+- [x] Composite tools: `report_from_sheet`
 - [ ] Optional HTTP transport (stateless, MCP 2026-07-28)
 
 ## Responsibility

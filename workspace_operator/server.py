@@ -72,6 +72,10 @@ from .handlers import (
     gmail_get_attachment_handler,
     gmail_get_thread_handler,
     gmail_reply_handler,
+    calendar_delete_event_handler,
+    calendar_respond_to_invite_handler,
+    calendar_update_event_handler,
+    report_from_sheet_handler,
     drive_download_handler,
     drive_export_handler,
     drive_upload_handler,
@@ -826,6 +830,100 @@ def _tools() -> List[types.Tool]:
             annotations=_DESTRUCTIVE,
         ),
 
+        types.Tool(
+            name="calendar_update_event",
+            description=(
+                "Update an existing event. Only the fields you pass are changed; "
+                "send_updates controls attendee notifications."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "event_id": {"type": "string"},
+                    "calendar_id": {"type": "string", "default": "primary"},
+                    "summary": {"type": "string"},
+                    "start_time": {"type": "string", "description": "ISO datetime"},
+                    "end_time": {"type": "string", "description": "ISO datetime"},
+                    "description": {"type": "string"},
+                    "location": {"type": "string"},
+                    "attendees": {"type": "array", "items": {"type": "string"}},
+                    "send_updates": {
+                        "type": "string",
+                        "enum": ["all", "externalOnly", "none"],
+                        "default": "none",
+                    },
+                },
+                "required": ["event_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="calendar_delete_event",
+            description="Delete an event. Requires confirm=true.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "event_id": {"type": "string"},
+                    "calendar_id": {"type": "string", "default": "primary"},
+                    "confirm": {"type": "boolean", "default": False},
+                    "send_updates": {
+                        "type": "string",
+                        "enum": ["all", "externalOnly", "none"],
+                        "default": "none",
+                    },
+                },
+                "required": ["event_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="calendar_respond_to_invite",
+            description=(
+                "Answer an invitation: accepted, declined or tentative. "
+                "Requires confirm=true."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "event_id": {"type": "string"},
+                    "response": {
+                        "type": "string",
+                        "enum": ["accepted", "declined", "tentative"],
+                    },
+                    "calendar_id": {"type": "string", "default": "primary"},
+                    "confirm": {"type": "boolean", "default": False},
+                    "send_updates": {
+                        "type": "string",
+                        "enum": ["all", "externalOnly", "none"],
+                        "default": "all",
+                    },
+                },
+                "required": ["event_id", "response"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="report_from_sheet",
+            description=(
+                "Composite: read a sheet range, compute column statistics and "
+                "create a Google Doc report with the summary and a data preview."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {
+                        "type": "string",
+                        "description": "A1 range or sheet name (default: first sheet)",
+                    },
+                    "doc_title": {"type": "string"},
+                    "max_rows": {"type": "integer", "default": 25},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_WRITE,
+        ),
+
         # ── Gmail ─────────────────────────────────────────────────────────
         types.Tool(
             name="get_gmail_profile",
@@ -1389,6 +1487,44 @@ async def run() -> None:
                 ),
                 "list_emails": lambda a: list_emails_handler(
                     config, logger, a.get("max_results", 10), a.get("query")
+                ),
+                "calendar_update_event": lambda a: calendar_update_event_handler(
+                    config,
+                    logger,
+                    a.get("event_id"),
+                    a.get("calendar_id", "primary"),
+                    a.get("summary"),
+                    a.get("start_time"),
+                    a.get("end_time"),
+                    a.get("description"),
+                    a.get("location"),
+                    a.get("attendees"),
+                    a.get("send_updates", "none"),
+                ),
+                "calendar_delete_event": lambda a: calendar_delete_event_handler(
+                    config,
+                    logger,
+                    a.get("event_id"),
+                    a.get("calendar_id", "primary"),
+                    a.get("confirm", False),
+                    a.get("send_updates", "none"),
+                ),
+                "calendar_respond_to_invite": lambda a: calendar_respond_to_invite_handler(
+                    config,
+                    logger,
+                    a.get("event_id"),
+                    a.get("response"),
+                    a.get("calendar_id", "primary"),
+                    a.get("confirm", False),
+                    a.get("send_updates", "all"),
+                ),
+                "report_from_sheet": lambda a: report_from_sheet_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("doc_title"),
+                    a.get("max_rows", 25),
                 ),
                 "gmail_get_thread": lambda a: gmail_get_thread_handler(
                     config,

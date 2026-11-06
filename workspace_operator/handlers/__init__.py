@@ -9,6 +9,12 @@ from .apps_script import (
     create_script_project_handler,
     script_run_function_handler,
 )
+from .calendar_writes import (
+    calendar_delete_event_handler,
+    calendar_respond_to_invite_handler,
+    calendar_update_event_handler,
+)
+from .report import report_from_sheet_handler
 from .calendar import (
     calendar_create_meeting_handler,
     calendar_find_free_slots_handler,
@@ -136,4 +142,8 @@ __all__ = [
     "gmail_get_attachment_handler",
     "gmail_get_thread_handler",
     "gmail_reply_handler",
+    "calendar_update_event_handler",
+    "calendar_delete_event_handler",
+    "calendar_respond_to_invite_handler",
+    "report_from_sheet_handler",
 ]

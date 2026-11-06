@@ -10,6 +10,7 @@ Exit code 0 means every check passed.
 """
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 import os
 import re
 import shutil
@@ -120,7 +121,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 59, f"{len(names)} tools")
+    record("tools/list", len(names) == 63, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -441,6 +442,85 @@ async def full_checks(session: ClientSession) -> None:
             await asyncio.to_thread(_trash, spreadsheet_id)
         except Exception as exc:  # noqa: BLE001
             record("cleanup spreadsheet", False, str(exc))
+
+    report_sheet = await session.call_tool(
+        "create_spreadsheet", {"title": "Workspace Operator report smoke"}
+    )
+    report_match = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(report_sheet))
+    if report_match:
+        report_sheet_id = report_match.group(1)
+        await session.call_tool(
+            "update_sheet",
+            {
+                "spreadsheet_id": report_sheet_id,
+                "range_name": "A1:B3",
+                "values": [["Model", "Price"], ["Grande", "4882,50"], ["Lusso", "7602,63"]],
+            },
+        )
+        report = await session.call_tool(
+            "report_from_sheet",
+            {"spreadsheet_id": report_sheet_id, "doc_title": "Workspace Operator report smoke"},
+        )
+        report_text = _text(report)
+        record(
+            "call report_from_sheet",
+            not report.isError and "Report created" in report_text,
+            report_text.splitlines()[0] if report_text else "empty",
+        )
+        doc_match = re.search(r"Document ID:\s*([A-Za-z0-9_-]{10,})", report_text)
+        for artifact in (doc_match.group(1) if doc_match else None, report_sheet_id):
+            if artifact:
+                try:
+                    await asyncio.to_thread(_trash, artifact)
+                except Exception as exc:  # noqa: BLE001
+                    record("cleanup report artifacts", False, str(exc))
+
+    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+        hour=9, minute=0, second=0, microsecond=0
+    )
+    start_iso = tomorrow.isoformat()
+    end_iso = (tomorrow + timedelta(minutes=30)).isoformat()
+    created_event = await session.call_tool(
+        "create_event",
+        {"summary": "Workspace Operator smoke event", "start_time": start_iso, "end_time": end_iso},
+    )
+    event_match = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(created_event))
+    record(
+        "call create_event",
+        not created_event.isError and event_match is not None,
+        _text(created_event).splitlines()[0] if _text(created_event) else "empty",
+    )
+
+    if event_match:
+        event_id = event_match.group(1)
+        updated = await session.call_tool(
+            "calendar_update_event",
+            {"event_id": event_id, "summary": "Workspace Operator smoke event (updated)"},
+        )
+        record(
+            "call calendar_update_event",
+            not updated.isError and "Event updated" in _text(updated),
+            _text(updated).splitlines()[0] if _text(updated) else "empty",
+        )
+
+        responded = await session.call_tool(
+            "calendar_respond_to_invite",
+            {"event_id": event_id, "response": "accepted", "confirm": True},
+        )
+        record(
+            "calendar_respond_to_invite on own event",
+            responded.isError and "not on the guest list" in _text(responded),
+            _text(responded).splitlines()[0][:80] if _text(responded) else "empty",
+        )
+
+        deleted = await session.call_tool(
+            "calendar_delete_event", {"event_id": event_id, "confirm": True}
+        )
+        record(
+            "call calendar_delete_event",
+            not deleted.isError and "deleted" in _text(deleted),
+            _text(deleted).splitlines()[0] if _text(deleted) else "empty",
+        )
 
     script_run = await session.call_tool(
         "script_run_function", {"script_id": "no-such-script", "function_name": "doWork"}

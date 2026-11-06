@@ -33,8 +33,8 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 59 | всё |
-| `read-write` | 52 | всё, кроме `destructiveHint: true` |
+| `full` (по умолчанию) | 63 | всё |
+| `read-write` | 55 | всё, кроме `destructiveHint: true` |
 | `read-only` | 21 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
@@ -247,6 +247,18 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - Найти свободные слоты.
 - `calendar_create_meeting(summary, start_time, end_time, attendees?, description?, location?, confirm?)`
   - Требует `confirm=true`.
+
+- `calendar_update_event(event_id, calendar_id?, summary?, start_time?, end_time?, description?, location?, attendees?, send_updates?)`
+  - Патч: меняются только переданные поля. `send_updates`: `all|externalOnly|none`.
+- `calendar_delete_event(event_id, calendar_id?, confirm?, send_updates?)`
+  - Требует `confirm=true`.
+- `calendar_respond_to_invite(event_id, response, calendar_id?, confirm?, send_updates?)`
+  - `response`: `accepted|declined|tentative`; требует `confirm=true`.
+
+## Составные
+- `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`
+  - Читает диапазон, считает статистику по колонкам (sum/avg/min/max для чисел,
+    непустые/уникальные для текста) и создаёт Google Doc со сводкой и превью данных.
 
 ## Apps Script
 - `script_run_function(script_id, function_name, parameters?, dev_mode?)`
