@@ -22,6 +22,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
@@ -30,11 +32,19 @@ dependencies = [
     "google-auth-oauthlib>=1.2.0",
     "mcp>=1.0.0,<2",
     "PyYAML>=6.0",
+    "uvicorn>=0.30",
+    "starlette>=0.40",
 ]
 
+[project.scripts]
+workspace-operator = "workspace_operator.cli:main"
+
 [project.urls]
+Homepage = "https://github.com/Artoxem/workspace-operator"
 Repository = "https://github.com/Artoxem/workspace-operator"
 Documentation = "https://github.com/Artoxem/workspace-operator#readme"
+Changelog = "https://github.com/Artoxem/workspace-operator/tree/master/docs"
+Issues = "https://github.com/Artoxem/workspace-operator/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

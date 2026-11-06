@@ -34,3 +34,8 @@ Thumbs.db
 .idea/
 .vscode/
 .cursor/
+
+## Build artefacts
+dist/
+build/
+*.egg-info/
