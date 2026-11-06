@@ -30,7 +30,7 @@ def send_email_handler(
     """Send email with draft mode by default for safety."""
     try:
         if not validate_email(to):
-            return f"❌ Invalid email format: {to}"
+            return f"Error: Invalid email format: {to}"
 
         creds = get_creds(config)
         service = build("gmail", "v1", credentials=creds)
@@ -63,7 +63,7 @@ def send_email_handler(
 
     except Exception as e:
         logger.error("Error sending email to %s: %s", to, str(e))
-        return f"❌ Error sending email: {str(e)}"
+        return f"Error sending email: {str(e)}"
 
 
 def send_draft_handler(config: Config, logger: logging.Logger, draft_id: str) -> str:
@@ -84,7 +84,7 @@ def send_draft_handler(config: Config, logger: logging.Logger, draft_id: str) ->
 
     except Exception as e:
         logger.error("Error sending draft %s: %s", draft_id, str(e))
-        return f"❌ Error sending draft: {str(e)}"
+        return f"Error sending draft: {str(e)}"
 
 
 def get_gmail_profile_handler(config: Config, logger: logging.Logger) -> str:
@@ -98,7 +98,7 @@ def get_gmail_profile_handler(config: Config, logger: logging.Logger) -> str:
         return f"✅ Authenticated Gmail address: {email_address}"
     except Exception as e:
         logger.error("Error getting Gmail profile: %s", str(e))
-        return f"❌ Error getting Gmail profile: {str(e)}"
+        return f"Error getting Gmail profile: {str(e)}"
 
 
 def create_draft_handler(
@@ -216,7 +216,7 @@ def delete_email_handler(
 
     except Exception as e:
         logger.error("Error deleting email %s: %s", message_id, str(e))
-        return f"❌ Error deleting email: {str(e)}"
+        return f"Error deleting email: {str(e)}"
 
 
 def batch_delete_emails_handler(
@@ -259,7 +259,7 @@ def batch_delete_emails_handler(
 
     except Exception as e:
         logger.error("Error batch deleting emails: %s", str(e))
-        return f"❌ Error batch deleting emails: {str(e)}"
+        return f"Error: batch deleting emails: {str(e)}"
 
 
 def gmail_search_and_summarize_handler(
@@ -271,7 +271,7 @@ def gmail_search_and_summarize_handler(
         service = build("gmail", "v1", credentials=creds)
 
         if not query:
-            return "❌ Query is required."
+            return "Error: Query is required."
 
         results = (
             service.users()
@@ -312,7 +312,7 @@ def gmail_search_and_summarize_handler(
         return output
     except Exception as e:
         logger.error("Error searching Gmail: %s", str(e))
-        return f"❌ Error searching Gmail: {str(e)}"
+        return f"Error searching Gmail: {str(e)}"
 
 
 def gmail_archive_handler(
@@ -338,7 +338,7 @@ def gmail_archive_handler(
         return f"✅ Message archived: {message_id}"
     except Exception as e:
         logger.error("Error archiving message: %s", str(e))
-        return f"❌ Error archiving message: {str(e)}"
+        return f"Error archiving message: {str(e)}"
 
 
 def _get_or_create_label_id(service, label_name: str, create_if_missing: bool = True):
@@ -375,15 +375,15 @@ def gmail_label_apply_handler(
     """Apply a label to messages with dry-run preview."""
     try:
         if not message_ids:
-            return "❌ message_ids is required."
+            return "Error: message_ids is required."
         if not label_name:
-            return "❌ label_name is required."
+            return "Error: label_name is required."
 
         creds = get_creds(config)
         service = build("gmail", "v1", credentials=creds)
         label_id = _get_or_create_label_id(service, label_name, create_if_missing)
         if not label_id:
-            return f"❌ Label not found: {label_name}"
+            return f"Error: Label not found: {label_name}"
 
         if dry_run:
             preview_ids = message_ids[:10]
@@ -406,4 +406,4 @@ def gmail_label_apply_handler(
         return f"✅ Label '{label_name}' applied to {len(message_ids)} message(s)."
     except Exception as e:
         logger.error("Error applying label: %s", str(e))
-        return f"❌ Error applying label: {str(e)}"
+        return f"Error applying label: {str(e)}"

@@ -111,7 +111,7 @@ def prepare_script_update_handler(
 
     except Exception as e:
         logger.error("Error preparing script update: %s", str(e))
-        return f"❌ Error preparing update: {str(e)}"
+        return f"Error preparing update: {str(e)}"
 
 
 def execute_operation_handler(config: Config, logger: logging.Logger, operation_id: str) -> str:
@@ -120,7 +120,7 @@ def execute_operation_handler(config: Config, logger: logging.Logger, operation_
         cleanup_expired_operations()
 
         if operation_id not in pending_operations:
-            return f"❌ Operation {operation_id} not found or expired"
+            return f"Error: Operation {operation_id} not found or expired"
 
         op = pending_operations[operation_id]
 
@@ -161,11 +161,11 @@ def execute_operation_handler(config: Config, logger: logging.Logger, operation_
                 f"backup_path='{backup_path}')"
             )
 
-        return f"❌ Unknown operation type: {op['type']}"
+        return f"Error: Unknown operation type: {op['type']}"
 
     except Exception as e:
         logger.error("Error executing operation %s: %s", operation_id, str(e))
-        return f"❌ Error executing operation: {str(e)}"
+        return f"Error executing operation: {str(e)}"
 
 
 def cancel_operation_handler(config: Config, logger: logging.Logger, operation_id: str) -> str:
@@ -177,7 +177,7 @@ def cancel_operation_handler(config: Config, logger: logging.Logger, operation_i
         logger.info("Operation cancelled: %s", operation_id)
         return f"✅ Operation {operation_id} cancelled"
 
-    return f"❌ Operation {operation_id} not found"
+    return f"Error: Operation {operation_id} not found"
 
 
 def restore_script_backup_handler(
@@ -189,7 +189,7 @@ def restore_script_backup_handler(
         import json
 
         if not os.path.exists(backup_path):
-            return f"❌ Backup file not found: {backup_path}"
+            return f"Error: Backup file not found: {backup_path}"
 
         with open(backup_path, "r", encoding="utf-8") as f:
             backup_data = json.load(f)
@@ -204,11 +204,11 @@ def restore_script_backup_handler(
             filename = os.path.basename(backup_path)
             parts = filename.split("_")
             if len(parts) < 3:
-                return "❌ Invalid backup: missing script_id in data and filename"
+                return "Error: Invalid backup: missing script_id in data and filename"
             script_id = parts[2]
             files = backup_data
         else:
-            return "❌ Invalid backup format"
+            return "Error: Invalid backup format"
 
         creds = get_creds(config)
         service = build("script", "v1", credentials=creds)
@@ -221,4 +221,4 @@ def restore_script_backup_handler(
 
     except Exception as e:
         logger.error("Error restoring backup: %s", str(e))
-        return f"❌ Error restoring backup: {str(e)}"
+        return f"Error restoring backup: {str(e)}"

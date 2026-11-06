@@ -122,7 +122,7 @@ def share_file_handler(
 
         if type in ["user", "group"] and email_address:
             if not validate_email(email_address):
-                return f"❌ Invalid email format: {email_address}"
+                return f"Error: Invalid email format: {email_address}"
 
         permission = {"type": type, "role": role}
         if email_address:
@@ -150,7 +150,7 @@ def share_file_handler(
 
     except Exception as e:
         logger.error("Error sharing file %s: %s", file_id, str(e))
-        return f"❌ Error sharing file: {str(e)}"
+        return f"Error sharing file: {str(e)}"
 
 
 def drive_search_advanced_handler(
@@ -162,7 +162,7 @@ def drive_search_advanced_handler(
         service = build("drive", "v3", credentials=creds)
 
         if not query:
-            return "❌ Query is required."
+            return "Error: Query is required."
 
         results = service.files().list(
             q=query,

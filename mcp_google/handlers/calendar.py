@@ -110,7 +110,7 @@ def calendar_find_free_slots_handler(
         start_dt = to_dt(start_time)
         end_dt = to_dt(end_time)
         if not start_dt or not end_dt:
-            return "❌ Invalid start_time or end_time."
+            return "Error: Invalid start_time or end_time."
 
         busy = []
         for event in events:
@@ -153,7 +153,7 @@ def calendar_find_free_slots_handler(
         return output
     except Exception as e:
         logger.error("Error finding free slots: %s", str(e))
-        return f"❌ Error finding free slots: {str(e)}"
+        return f"Error finding free slots: {str(e)}"
 
 
 def calendar_create_meeting_handler(
@@ -200,4 +200,4 @@ def calendar_create_meeting_handler(
         return f"✅ Meeting created: {created.get('htmlLink')}"
     except Exception as e:
         logger.error("Error creating meeting: %s", str(e))
-        return f"❌ Error creating meeting: {str(e)}"
+        return f"Error creating meeting: {str(e)}"

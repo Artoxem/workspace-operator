@@ -853,23 +853,25 @@ async def run() -> None:
     @server.call_tool()
     async def handle_call_tool(
         name: str, arguments: dict | None
-    ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+    ) -> types.CallToolResult:
         if not arguments:
             arguments = {}
 
         if name not in exposed_names:
             logger.warning("Blocked tool call outside profile: %s", name)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=(
-                        f"Tool '{name}' is disabled by the active tool profile "
-                        f"({profile.name}). Adjust tool_profile, allowed_tools or "
-                        "denied_tools in config.yaml to enable it."
-                    ),
-                    isError=True,
-                )
-            ]
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=(
+                            f"Tool '{name}' is disabled by the active tool profile "
+                            f"({profile.name}). Adjust tool_profile, allowed_tools or "
+                            "denied_tools in config.yaml to enable it."
+                        ),
+                    )
+                ],
+                isError=True,
+            )
 
         try:
             require_token_configured(config.mcp_auth_token)
@@ -1069,22 +1071,33 @@ async def run() -> None:
             result = await asyncio.to_thread(handlers[name], arguments)
 
             if isinstance(result, BinaryResult):
-                return [
-                    types.EmbeddedResource(
-                        type="resource",
-                        resource=types.BlobResourceContents(
-                            uri=result.uri,
-                            mimeType=result.mime_type,
-                            blob=base64.b64encode(result.data).decode(),
-                        ),
-                    )
-                ]
+                return types.CallToolResult(
+                    content=[
+                        types.EmbeddedResource(
+                            type="resource",
+                            resource=types.BlobResourceContents(
+                                uri=result.uri,
+                                mimeType=result.mime_type,
+                                blob=base64.b64encode(result.data).decode(),
+                            ),
+                        )
+                    ]
+                )
 
-            return [types.TextContent(type="text", text=str(result))]
+            text = str(result)
+            # Handlers report recoverable failures as "Error ..." strings; turn
+            # those into a protocol-level isError so clients can react to them.
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=text)],
+                isError=text.lstrip().startswith("Error"),
+            )
 
         except Exception as e:
             logger.exception("Tool call error [%s]: %s", name, e)
-            return [types.TextContent(type="text", text=f"Error: {str(e)}", isError=True)]
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=f"Error: {str(e)}")],
+                isError=True,
+            )
 
     # ------------------------------------------------------------------
     # Resources

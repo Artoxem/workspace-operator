@@ -74,7 +74,7 @@ def doc_fill_template_handler(
     """Fill a Google Doc template by replacing placeholders."""
     try:
         if not replacements:
-            return "❌ replacements map is required."
+            return "Error: replacements map is required."
 
         # Two-step safety: confirm before writing
         if not confirm:
@@ -108,7 +108,7 @@ def doc_fill_template_handler(
         return f"✅ Document updated: {len(replacements)} placeholders replaced."
     except Exception as e:
         logger.error("Error filling template %s: %s", document_id, str(e))
-        return f"❌ Error filling template: {str(e)}"
+        return f"Error filling template: {str(e)}"
 
 
 def doc_export_pdf_handler(
@@ -132,4 +132,4 @@ def doc_export_pdf_handler(
         )
     except Exception as e:
         logger.error("Error exporting PDF %s: %s", document_id, str(e))
-        return f"❌ Error exporting PDF: {str(e)}"
+        return f"Error exporting PDF: {str(e)}"

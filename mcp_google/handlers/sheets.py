@@ -193,7 +193,7 @@ def clear_range_handler(
 
     except Exception as e:
         logger.error("Error clearing range %s: %s", range_name, str(e))
-        return f"❌ Error clearing range: {str(e)}"
+        return f"Error clearing range: {str(e)}"
 
 
 def sheet_create_filter_view_handler(
@@ -256,7 +256,7 @@ def sheet_create_filter_view_handler(
         return f"✅ Filter view created: {title}"
     except Exception as e:
         logger.error("Error creating filter view: %s", str(e))
-        return f"❌ Error creating filter view: {str(e)}"
+        return f"Error creating filter view: {str(e)}"
 
 
 def sheet_export_csv_handler(
@@ -292,7 +292,7 @@ def sheet_export_csv_handler(
         return "CSV Export:\n" + "\n".join(csv_lines)
     except Exception as e:
         logger.error("Error exporting CSV: %s", str(e))
-        return f"❌ Error exporting CSV: {str(e)}"
+        return f"Error exporting CSV: {str(e)}"
 
 
 def sheet_find_replace_handler(
@@ -308,7 +308,7 @@ def sheet_find_replace_handler(
     """Find/replace in a range with dry-run preview."""
     try:
         if not find_text:
-            return "❌ find_text is required."
+            return "Error: find_text is required."
 
         creds = get_creds(config)
         service = build("sheets", "v4", credentials=creds)
@@ -367,7 +367,7 @@ def sheet_find_replace_handler(
         return f"✅ Replaced {len(matches)} occurrence(s)."
     except Exception as e:
         logger.error("Error in find/replace: %s", str(e))
-        return f"❌ Error in find/replace: {str(e)}"
+        return f"Error: in find/replace: {str(e)}"
 
 
 def _replace_ci(text: str, find_text: str, replace_text: str) -> str:
@@ -417,7 +417,7 @@ def sheet_create_named_range_handler(
         return f"✅ Named range created: {name}"
     except Exception as e:
         logger.error("Error creating named range: %s", str(e))
-        return f"❌ Error creating named range: {str(e)}"
+        return f"Error creating named range: {str(e)}"
 
 
 def get_spreadsheet_meta_handler(

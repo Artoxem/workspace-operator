@@ -50,6 +50,18 @@ Plus `allowed_tools` / `denied_tools` lists and the `MCP_TOOL_PROFILE`,
 22 unit tests (`python -m unittest discover -s tests -v`) covering profile filtering
 and search parsing/formatting. No credentials or network required.
 
+`tests/live_smoke.py` — an opt-in end-to-end check against a real Google account:
+17 assertions over the MCP handshake, tool/resource/prompt listing, real Drive,
+Gmail and Docs calls, binary PDF export, profile enforcement and error propagation.
+Read-only: it never writes to the account.
+
+### 🐛 Protocol correctness
+
+Tool failures are now reported with `isError: true` at the protocol level
+(previously the flag was attached to a `TextContent` field that does not exist,
+so clients saw plain text and could not distinguish a failure from a result).
+All handler error messages are normalised to a single `Error ...` form.
+
 ## Breaking changes
 
 - **Python 3.10+** is now required (the code already used 3.9+/3.10 syntax; the
