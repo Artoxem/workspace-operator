@@ -227,11 +227,18 @@ python -m workspace_operator serve --http --port 8765
 ### Docker
 
 ```bash
-docker compose up --build
+docker pull ghcr.io/artoxem/workspace-operator:latest
+
+docker run --rm -p 127.0.0.1:8765:8765 \
+  -v "$HOME/.google:/home/app/.google" \
+  -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
+  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
+  ghcr.io/artoxem/workspace-operator:latest
 ```
 
-The compose file publishes `127.0.0.1:8765` only and mounts your OAuth files
-read-only.
+The image runs as an unprivileged user (uid 10001), publishes only to loopback and
+mounts the Google credentials read-write, because the server refreshes the token in
+place. `docker compose up --build` builds the same image locally.
 
 ## Tool catalog
 

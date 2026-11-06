@@ -51,6 +51,20 @@ python -m twine upload dist/*        # username: __token__, password: the token
 
 Use a project-scoped token, and delete it after the release.
 
+## Docker image
+
+`.github/workflows/docker-publish.yml` builds and pushes
+`ghcr.io/artoxem/workspace-operator` on every `v*` tag push (and on manual
+dispatch):
+
+- tags: `X.Y.Z`, `X.Y`, `latest`, plus the commit sha;
+- platforms: `linux/amd64`, `linux/arm64`;
+- authentication: the built-in `GITHUB_TOKEN` — no secrets required.
+
+A new package starts **private** even in a public repository. To let anyone pull
+it: GitHub → your profile → **Packages** → `workspace-operator` → *Package settings*
+→ **Change visibility** → Public.
+
 ## After the first publication
 
 1. Verify from a clean environment:

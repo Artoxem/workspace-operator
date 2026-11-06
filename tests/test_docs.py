@@ -65,6 +65,29 @@ class ToolCatalogTests(unittest.TestCase):
         self.assertIn(f"tools-{TOTAL}-informational", read("README.md"))
 
 
+class DockerTests(unittest.TestCase):
+    def test_docker_workflow_and_config(self):
+        workflow = yaml.safe_load(read(".github/workflows/docker-publish.yml"))
+        text = read(".github/workflows/docker-publish.yml")
+        self.assertIn("ghcr.io/${{ github.repository }}", text)
+        self.assertIn("packages: write", text)
+
+        config = yaml.safe_load(read("config.docker.yaml"))
+        self.assertTrue(str(config["token_file"]).startswith("/home/app/"))
+        self.assertTrue(str(config["log_file"]).startswith("/home/app/data"))
+        self.assertIn("presentations", " ".join(config["scopes"]))
+
+    def test_dockerfile_is_safe(self):
+        text = read("Dockerfile")
+        self.assertIn("USER app", text)
+        self.assertIn("HEALTHCHECK", text)
+        self.assertIn("EXPOSE 8765", text)
+
+    def test_readme_documents_ghcr(self):
+        for rel in ("README.md", "README.ru.md"):
+            self.assertIn("ghcr.io/artoxem/workspace-operator", read(rel))
+
+
 class PromptCatalogTests(unittest.TestCase):
     def test_readme_lists_every_prompt(self):
         from workspace_operator.server import _prompts

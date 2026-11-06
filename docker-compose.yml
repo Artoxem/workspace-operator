@@ -1,7 +1,7 @@
 services:
   workspace-operator:
+    image: ghcr.io/artoxem/workspace-operator:latest
     build: .
-    image: workspace-operator:latest
     # Published to the host loopback only: the container is not reachable from
     # the network unless you change this mapping on purpose.
     ports:
@@ -10,10 +10,11 @@ services:
       MCP_CONFIG_FILE: /app/config.yaml
       # Required. Generate a long random value and keep it out of git.
       MCP_AUTH_TOKEN: "${MCP_AUTH_TOKEN:?set MCP_AUTH_TOKEN first}"
-      MCP_AUDIT_LOG: /data/audit.jsonl
+      MCP_AUDIT_LOG: /home/app/data/audit.jsonl
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
-      # OAuth client secrets and token, read-only.
-      - "${GOOGLE_DIR:-${HOME}/.google}:/root/.google:ro"
-      - ./data:/data
+      - ./config.docker.yaml:/app/config.yaml:ro
+      # OAuth client secrets and token. Read-write: the server refreshes the token
+      # and writes it back after it expires.
+      - "${GOOGLE_DIR:-${HOME}/.google}:/home/app/.google"
+      - ./data:/home/app/data
     restart: unless-stopped

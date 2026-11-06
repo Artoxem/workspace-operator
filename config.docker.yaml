@@ -1,0 +1,24 @@
+# Configuration for the container image.
+#
+# Paths are container paths, not host paths. Mount your Google credentials to
+# /home/app/.google (read-write: the server refreshes the token and writes it back).
+
+client_secrets_file: "/home/app/.google/oauth.keys.json"
+token_file: "/home/app/.google/token.json"
+backup_dir: "/home/app/data/backups"
+log_file: "/home/app/data/mcp_operations.log"
+
+# Override at runtime with -e MCP_AUTH_TOKEN=... (required by the HTTP transport).
+mcp_auth_token: "change_me"
+
+tool_profile: "read-write"
+
+scopes:
+  - "https://www.googleapis.com/auth/spreadsheets"
+  - "https://www.googleapis.com/auth/drive"
+  - "https://www.googleapis.com/auth/documents"
+  - "https://www.googleapis.com/auth/presentations"
+  - "https://www.googleapis.com/auth/gmail.modify"
+  - "https://www.googleapis.com/auth/calendar"
+  - "https://www.googleapis.com/auth/script.projects"
+  - "https://www.googleapis.com/auth/script.deployments"

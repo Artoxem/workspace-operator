@@ -226,10 +226,18 @@ python -m workspace_operator serve --http --port 8765
 ### Docker
 
 ```bash
-docker compose up --build
+docker pull ghcr.io/artoxem/workspace-operator:latest
+
+docker run --rm -p 127.0.0.1:8765:8765 \
+  -v "$HOME/.google:/home/app/.google" \
+  -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
+  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
+  ghcr.io/artoxem/workspace-operator:latest
 ```
 
-Compose публикует только `127.0.0.1:8765` и монтирует OAuth-файлы только для чтения.
+Образ работает под непривилегированным пользователем (uid 10001), публикует порт только
+на loopback и монтирует Google-креденшелы на запись — сервер обновляет токен на месте.
+`docker compose up --build` собирает тот же образ локально.
 
 ## Каталог инструментов
 
