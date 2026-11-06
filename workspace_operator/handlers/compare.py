@@ -1,7 +1,7 @@
 """Composite tool: diff two tables by a key column.
 
-Useful for reconciliation of any two sheets — price lists, catalogues, dealer
-lists, exports before/after a change. Sources are two ranges, possibly in
+Useful for reconciliation of any two sheets — price lists, catalogues, inventories,
+exports before and after a change. Sources are two ranges, possibly in
 different spreadsheets; the diff is a pure function over plain rows.
 """
 

@@ -9,7 +9,7 @@ MCP-сервер с 63 инструментами, многошаговыми з
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-66-informational)](#-каталог-инструментов)
+[![Tools](https://img.shields.io/badge/tools-67-informational)](#-каталог-инструментов)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -25,8 +25,11 @@ Workspace Operator (ранее *yet-another-google-mcp*) работает на �
 стейджинг Apps Script, передача файлов в обе стороны, сборка презентаций,
 форматирование таблиц, ответы в тред и работа с вложениями.
 
-**66 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта**, у каждого инструмента
+**67 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта**, у каждого инструмента
 аннотации `readOnlyHint` / `destructiveHint`.
+
+Ничто здесь не привязано к конкретному аккаунту, таблице или документу: каждый
+инструмент принимает идентификаторы и диапазоны, а примеры используют синтетические данные.
 
 ## Сравнение
 
@@ -58,7 +61,7 @@ Workspace Operator — для «измени рабочее пространст
 | ⚙️ Apps Script | 7 | Стейджинг с бэкапами, откат, запуск функций |
 | 📧 Gmail | 14 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
 | 📅 Calendar | 7 | События, слоты, встречи, изменение/удаление, ответ на приглашения |
-| 🧩 Составные | 4 | отчёт из таблицы, дайджест, сравнение таблиц, клон шаблона |
+| 🧩 Составные | 5 | отчёт, дайджест, сравнение, клон шаблона, таблица → колода |
 
 Плюс 3 ресурса, 3 шаблона ресурсов и 4 промпта — см. [каталог](#-каталог-инструментов).
 
@@ -164,8 +167,8 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 66 | своя машина, полное доверие |
-| `read-write` | 58 | ежедневная работа — деструктивные скрыты |
+| `full` | 67 | своя машина, полное доверие |
+| `read-write` | 59 | ежедневная работа — деструктивные скрыты |
 | `read-only` | 21 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
@@ -342,7 +345,7 @@ Compose публикует только `127.0.0.1:8765` и монтирует O
 </details>
 
 <details>
-<summary>🧩 Составные (4)</summary>
+<summary>🧩 Составные (5)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
@@ -350,6 +353,7 @@ Compose публикует только `127.0.0.1:8765` и монтирует O
 | `digest` | write | Последние N часов по Gmail, Calendar и Drive → текст или Doc |
 | `compare_tables` | write | Сравнение по ключевой колонке; `output=doc` собирает нативные таблицы |
 | `clone_and_fill` | write | Копия любого файла Drive с заменой плейсхолдеров |
+| `sheet_to_slides` | write | Диапазон → колода: титул + слайд на группу строк |
 
 </details>
 
@@ -428,6 +432,7 @@ workspace_operator/
    ├─ digest.py              дайджест по почте, календарю и Drive
    ├─ compare.py             сравнение таблиц по ключевой колонке
    ├─ template.py            клон файла с заменой плейсхолдеров
+   ├─ deck.py                таблица → презентация
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       юнит-, живые и round-trip проверки
@@ -445,8 +450,8 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 220 юнит-тестов, без сети
-python tests/live_smoke.py                  # 47 проверок на реальном аккаунте
+python -m unittest discover -s tests -v     # 234 юнит-теста, без сети
+python tests/live_smoke.py                  # 49 проверок на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
 

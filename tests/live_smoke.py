@@ -121,7 +121,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 66, f"{len(names)} tools")
+    record("tools/list", len(names) == 67, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -454,7 +454,7 @@ async def full_checks(session: ClientSession) -> None:
             {
                 "spreadsheet_id": report_sheet_id,
                 "range_name": "A1:B3",
-                "values": [["Model", "Price"], ["Grande", "4882,50"], ["Lusso", "7602,63"]],
+                "values": [["Item", "Cost"], ["Widget A", "4882,50"], ["Widget B", "7602,63"]],
             },
         )
         report = await session.call_tool(
@@ -659,6 +659,46 @@ async def full_checks(session: ClientSession) -> None:
                     await asyncio.to_thread(_trash, artifact)
                 except Exception as exc:  # noqa: BLE001
                     record("cleanup template artifacts", False, str(exc))
+
+    deck_sheet = await session.call_tool("create_spreadsheet", {"title": "deck smoke"})
+    deck_sheet_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(deck_sheet))
+    if deck_sheet_id:
+        await session.call_tool(
+            "update_sheet",
+            {
+                "spreadsheet_id": deck_sheet_id.group(1),
+                "range_name": "A1:B4",
+                "values": [["Item", "Cost"], ["A", "10"], ["B", "20"], ["C", "30"]],
+            },
+        )
+        deck = await session.call_tool(
+            "sheet_to_slides",
+            {"spreadsheet_id": deck_sheet_id.group(1), "title": "Deck smoke", "rows_per_slide": 2},
+        )
+        deck_text = _text(deck)
+        deck_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", deck_text)
+        record(
+            "call sheet_to_slides",
+            not deck.isError and deck_id is not None,
+            deck_text.splitlines()[0] if deck_text else "empty",
+        )
+        if deck_id:
+            summary = await session.call_tool(
+                "slides_get", {"presentation_id": deck_id.group(1)}
+            )
+            record(
+                "deck has title + grouped slides",
+                "Slides: 3" in _text(summary),
+                _text(summary).splitlines()[1] if len(_text(summary).splitlines()) > 1 else "empty",
+            )
+            try:
+                await asyncio.to_thread(_trash, deck_id.group(1))
+            except Exception as exc:  # noqa: BLE001
+                record("cleanup deck", False, str(exc))
+        try:
+            await asyncio.to_thread(_trash, deck_sheet_id.group(1))
+        except Exception as exc:  # noqa: BLE001
+            record("cleanup deck sheet", False, str(exc))
 
     script_run = await session.call_tool(
         "script_run_function", {"script_id": "no-such-script", "function_name": "doWork"}

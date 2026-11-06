@@ -11,9 +11,9 @@ from workspace_operator.handlers.report import (
 
 ROWS = [
     ["Model", "Price", "Qty"],
-    ["Grande", "4 882,50", "2"],
-    ["Lusso", "7 602,63", "1"],
-    ["Sono", "n/a", "5"],
+    ["Widget A", "4 882,50", "2"],
+    ["Widget B", "7 602,63", "1"],
+    ["Widget C", "n/a", "5"],
 ]
 
 

@@ -18,6 +18,7 @@ from .report import report_from_sheet_handler
 from .digest import digest_handler
 from .compare import compare_tables_handler
 from .template import clone_and_fill_handler
+from .deck import sheet_to_slides_handler
 from .calendar import (
     calendar_create_meeting_handler,
     calendar_find_free_slots_handler,
@@ -152,4 +153,5 @@ __all__ = [
     "digest_handler",
     "compare_tables_handler",
     "clone_and_fill_handler",
+    "sheet_to_slides_handler",
 ]

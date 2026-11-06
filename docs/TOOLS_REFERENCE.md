@@ -33,8 +33,8 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 66 | everything |
-| `read-write` | 58 | everything except `destructiveHint: true` |
+| `full` (default) | 67 | everything |
+| `read-write` | 59 | everything except `destructiveHint: true` |
 | `read-only` | 21 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
@@ -270,6 +270,9 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
     `output=doc` writes them as native tables.
 - `clone_and_fill(file_id, replacements?, name?, folder_id?)`
   - Copies any Drive file and replaces placeholders in the copy (Docs, Slides, Sheets).
+- `sheet_to_slides(spreadsheet_id, range?, title?, rows_per_slide?, header?)`
+  - Reads a range and builds a presentation: title slide plus one slide per
+    group of rows, each row rendered as «Header: value · Header2: value2».
 
 ## Apps Script
 - `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`

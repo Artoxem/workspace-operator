@@ -81,6 +81,7 @@ from .handlers import (
     digest_handler,
     compare_tables_handler,
     clone_and_fill_handler,
+    sheet_to_slides_handler,
     drive_download_handler,
     drive_export_handler,
     drive_upload_handler,
@@ -996,6 +997,26 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
 
+        types.Tool(
+            name="sheet_to_slides",
+            description=(
+                "Composite: read a sheet range and build a presentation — a title "
+                "slide plus one bullet slide per group of rows."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string", "description": "A1 range or sheet name"},
+                    "title": {"type": "string"},
+                    "rows_per_slide": {"type": "integer", "default": 8},
+                    "header": {"type": "boolean", "default": True},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_WRITE,
+        ),
+
         # ── Gmail ─────────────────────────────────────────────────────────
         types.Tool(
             name="get_gmail_profile",
@@ -1657,6 +1678,15 @@ def create_server(config: Config, logger) -> Server:
                     a.get("replacements") or {},
                     a.get("name"),
                     a.get("folder_id"),
+                ),
+                "sheet_to_slides": lambda a: sheet_to_slides_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("title"),
+                    a.get("rows_per_slide", 8),
+                    a.get("header", True),
                 ),
                 "gmail_get_thread": lambda a: gmail_get_thread_handler(
                     config,

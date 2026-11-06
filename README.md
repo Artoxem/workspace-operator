@@ -9,7 +9,7 @@ with 59 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-66-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-67-informational)](#-tool-catalog)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -25,8 +25,11 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**66 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
+**67 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
+
+Nothing here is tied to a specific account, spreadsheet or document: every tool
+takes identifiers and ranges, and all examples use synthetic data.
 
 ## How it compares
 
@@ -58,7 +61,7 @@ Operator is for "change the workspace and be able to roll it back".
 | ⚙️ Apps Script | 7 | Staged updates with backups, rollback, run functions |
 | 📧 Gmail | 14 | Threads, attachments, replies, drafts, labels, batch delete |
 | 📅 Calendar | 7 | Events, free slots, meetings, update/delete, invite responses |
-| 🧩 Composite | 4 | report from sheet, cross-source digest, table diff, template clone |
+| 🧩 Composite | 5 | report from sheet, digest, table diff, template clone, table → deck |
 
 Plus 3 resources, 3 resource templates and 4 prompts — see the
 [tool catalog](#-tool-catalog).
@@ -165,8 +168,8 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 66 | your own machine, full trust |
-| `read-write` | 58 | daily work — destructive tools hidden |
+| `full` | 67 | your own machine, full trust |
+| `read-write` | 59 | daily work — destructive tools hidden |
 | `read-only` | 21 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
@@ -344,7 +347,7 @@ read-only.
 </details>
 
 <details>
-<summary>🧩 Composite (4)</summary>
+<summary>🧩 Composite (5)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -352,6 +355,7 @@ read-only.
 | `digest` | write | Last N hours across Gmail, Calendar and Drive → text or Doc |
 | `compare_tables` | write | Diff two ranges by a key column; `output=doc` builds native tables |
 | `clone_and_fill` | write | Copy any Drive file and replace placeholders in the copy |
+| `sheet_to_slides` | write | Read a range → deck: title slide + one slide per row group |
 
 </details>
 
@@ -430,6 +434,7 @@ workspace_operator/
    ├─ digest.py              digest across mail, calendar and drive
    ├─ compare.py             table diff by key column
    ├─ template.py            clone a file and fill placeholders
+   ├─ deck.py                table → presentation
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       unit, live and round-trip checks
@@ -447,8 +452,8 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 220 unit tests, no network
-python tests/live_smoke.py                  # 47 checks against a real account
+python -m unittest discover -s tests -v     # 234 unit tests, no network
+python tests/live_smoke.py                  # 49 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 

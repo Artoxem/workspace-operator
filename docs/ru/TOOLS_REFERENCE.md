@@ -33,8 +33,8 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 66 | всё |
-| `read-write` | 58 | всё, кроме `destructiveHint: true` |
+| `full` (по умолчанию) | 67 | всё |
+| `read-write` | 59 | всё, кроме `destructiveHint: true` |
 | `read-only` | 21 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
@@ -268,6 +268,9 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
     изменённые; `output=doc` собирает нативные таблицы.
 - `clone_and_fill(file_id, replacements?, name?, folder_id?)`
   - Копирует любой файл Drive и заменяет плейсхолдеры в копии (Docs, Slides, Sheets).
+- `sheet_to_slides(spreadsheet_id, range?, title?, rows_per_slide?, header?)`
+  - Читает диапазон и собирает презентацию: титульный слайд плюс слайд на каждую
+    группу строк, строка рендерится как «Заголовок: значение · …».
 
 ## Apps Script
 - `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`

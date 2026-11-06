@@ -115,6 +115,30 @@ class LegacyNameTests(unittest.TestCase):
         self.assertEqual(offenders, [])
 
 
+class UniversalityTests(unittest.TestCase):
+    """Nothing in the project may assume one account's data."""
+
+    CONTEXT_TERMS = ("Domani", "globaldomani", "дилер", "dealer", "Grande", "Lusso", "Sono")
+
+    def test_no_context_specific_terms(self):
+        offenders = []
+        for path in ROOT.rglob("*"):
+            if not path.is_file() or ".git" in path.parts or "__pycache__" in path.parts:
+                continue
+            rel = path.relative_to(ROOT).as_posix()
+            if rel.startswith(HISTORICAL) or rel == "tests/test_docs.py":
+                continue
+            if path.suffix not in {".py", ".md", ".json", ".yaml", ".toml"}:
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            lowered = text.lower()
+            for term in self.CONTEXT_TERMS:
+                needle = term.lower()
+                if needle in lowered:
+                    offenders.append(f"{rel}: {term}")
+        self.assertEqual(offenders, [], f"context-specific references: {offenders}")
+
+
 class LinkTests(unittest.TestCase):
     def test_relative_links_resolve(self):
         broken = []
