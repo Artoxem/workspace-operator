@@ -1,16 +1,16 @@
 ---
 name: google-workspace-automation
-description: Use the Google Workspace MCP server for Drive, Docs, Sheets, Gmail, Calendar and Apps Script work. Search before reading, read before writing, and stage every Apps Script change.
+description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Slides, Gmail, Calendar and Apps Script work. Search before reading, read before writing, and stage every destructive change.
 license: MIT
 metadata:
   server: workspace-operator
-  version: "1.1.0"
+  version: "1.5.0"
 ---
 
 # Google Workspace automation
 
-You have an MCP server with 46 tools over Google Drive, Docs, Sheets, Gmail,
-Calendar and Apps Script. Follow this order; it keeps context small and
+You have an MCP server with 59 tools over Google Drive, Docs, Sheets, Slides,
+Gmail, Calendar and Apps Script. Follow this order; it keeps context small and
 operations reversible.
 
 ## 1. Search before you dig
@@ -18,16 +18,17 @@ operations reversible.
 Start with `workspace_search` for any "find everything about X" request:
 
 ```json
-{"query": "Q3 budget", "sources": "drive,gmail", "limit": 10}
+{"query": "Q3 budget", "sources": "drive,gmail,calendar", "limit": 10}
 ```
 
-It returns a merged, date-sorted list with IDs and links. Only fall back to
-per-service tools when you need a specific capability:
+It returns a merged, date-sorted list with IDs and links. Fall back to per-service
+tools only for a specific capability:
 
 | Need | Tool |
 |---|---|
 | Drive query syntax (`name contains`, `mimeType =`) | `find_files`, `drive_search_advanced` |
-| Gmail search operators (`from:`, `has:attachment`) | `list_emails`, `gmail_search_and_summarize` |
+| Gmail operators (`from:`, `has:attachment`, `is:unread`) | `list_emails`, `gmail_search_and_summarize` |
+| A whole conversation | `gmail_get_thread` |
 | Calendar free/busy | `calendar_find_free_slots` |
 
 ## 2. Read before you write
@@ -37,22 +38,38 @@ Never guess an ID, sheet name or placeholder.
 | Task | Read first |
 |---|---|
 | Edit a spreadsheet | `get_spreadsheet_meta` → `read_sheet` |
+| Format a spreadsheet | `get_spreadsheet_meta` (sheet name and size) |
 | Fill a document template | `read_doc` |
-| Reply to mail | `read_email` |
+| Fill a presentation | `slides_get` |
+| Reply to mail | `read_email` or `gmail_get_thread` |
 | Change a calendar | `list_events` |
 
-## 3. Writes are staged or confirmed
+## 3. Writes are staged, confirmed or drafted
 
-* `send_email` defaults to `draft_mode=true` — it creates a draft, it does not
-  send. Set `draft_mode=false` only when the user explicitly asks to send.
+* `send_email` and `gmail_reply` default to `draft_mode=true` — they create drafts,
+  they do not send. Set `draft_mode=false` only when the user explicitly asks.
 * `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` default to
-  `dry_run=true`. Show the dry-run summary, get approval, then re-run with
-  `dry_run=false`.
+  `dry_run=true`. Show the dry-run summary, get approval, then re-run.
 * `delete_email`, `gmail_archive`, `clear_range`, `drive_revoke_public`,
-  `calendar_create_meeting`, `doc_fill_template` need `confirm=true`.
+  `calendar_create_meeting`, `doc_fill_template`, `slides_replace_text` need
+  `confirm=true`.
 * `share_file` refuses `type=anyone` unless `allow_public=true`.
+* `drive_download`, `drive_export`, `gmail_get_attachment` never overwrite without
+  `overwrite=true`.
 
-## 4. Apps Script: prepare → inspect → execute
+## 4. Files and presentations
+
+* Bringing a local file in: `drive_upload` (add `convert_to` for
+  `google-docs|google-sheets|google-slides` — this is how a .docx/.xlsx/.pptx
+  becomes a native file).
+* Taking a file out: `drive_download` for binaries, `drive_export` for Google Docs,
+  Sheets and Slides (pdf/docx/xlsx/pptx/csv…).
+* Building a deck: `slides_create` → `slides_add_slide` → `slides_replace_text`
+  (preview first) → `slides_insert_image`.
+* Making a sheet readable: `sheet_format` — bold, colours, number formats, column
+  widths, frozen rows.
+
+## 5. Apps Script: prepare → inspect → execute
 
 Never rewrite a script in one step.
 
@@ -63,13 +80,16 @@ Never rewrite a script in one step.
 5. If something breaks: `restore_script_backup`, or `cancel_operation` for a
    staged-but-not-executed change.
 
-## 5. Respect the profile
+`script_run_function` runs an existing deployment; treat it as running code, not as
+a read.
 
-The server may run with `read-only` or `read-write` tool profiles. If a tool
-returns "disabled by the active tool profile", do not try to work around it —
-tell the user which profile is active and what would need to change.
+## 6. Respect the profile
 
-## 6. Answer shape
+The server may run with `read-only` or `read-write` tool profiles. If a tool returns
+"disabled by the active tool profile", do not work around it — tell the user which
+profile is active and what would need to change.
 
-When reporting results, lead with the answer, then the evidence: title, ID,
-timestamp, link. For batches, give counts and the one or two items that matter.
+## 7. Answer shape
+
+Lead with the answer, then the evidence: title, ID, timestamp, link. For batches,
+give counts and the one or two items that matter.

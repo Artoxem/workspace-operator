@@ -2,17 +2,14 @@
 
 # Workspace Operator
 
-**Deep automation for Google Workspace**
+**Deep automation for Google Workspace through the Model Context Protocol**
 
-**Apps Script staging with rollback · document templates · cross-product search · local file transfer · Slides · tool profiles**
-
-A [Model Context Protocol](https://modelcontextprotocol.io) server (formerly *yet-another-google-mcp*)
-that gives AI agents real control over
-Google Drive, Sheets, Docs, Gmail, Calendar — and the parts of Workspace that the official servers leave out.
+Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
+with 59 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-59-informational)](#-all-tools)
+[![Tools](https://img.shields.io/badge/tools-59-informational)](#-tool-catalog)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -22,75 +19,71 @@ Google Drive, Sheets, Docs, Gmail, Calendar — and the parts of Workspace that 
 
 ---
 
-## Why another Google MCP server?
+Workspace Operator (formerly *yet-another-google-mcp*) runs on your machine, talks to
+Google over your own OAuth client, and gives an AI agent the operations that turn
+"read my inbox" into "do the work and let me undo it": staged Apps Script updates,
+file transfer in both directions, presentation assembly, sheet formatting, threaded
+replies and attachments.
 
-In 2026 Google ships its own Workspace MCP servers: nine remote endpoints behind OAuth, plus an
-open-source local extension. They are good at search, reading and composing — and that is exactly
-where they stop.
+**59 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
+with `readOnlyHint` / `destructiveHint`.
 
-This server picks up the rest of the job: **the lifecycle of Apps Script projects**, **document
-template filling**, **batch operations with dry-runs**, **deep Sheets work** (filter views, named
-ranges, find & replace), and **one-query search across Drive, Gmail and Calendar**.
+## How it compares
 
-| | Google Workspace MCP (remote) | Official local extension | **This server** |
-|---|---|---|---|
-| Transport | Streamable HTTP, Google-hosted | stdio | **stdio, local** |
-| Availability | Developer Preview | public | **public, MIT** |
-| Apps Script | — | — | **create · read · stage · execute · cancel · restore** |
-| Document templates | — | — | **`doc_fill_template`** |
-| Batch operations | — | — | **batch delete, batch labels, dry-runs** |
-| Sheets depth | read ranges | partial | **filter views, named ranges, find & replace, CSV** |
-| Presentations | — | — | **create, add slides, fill text, insert images** |
-| Cross-product search | `search_corpus` | — | **`workspace_search`** |
-| Server-side tool profiles | IAM / admin allow-list | — | **read-only / read-write / full + allow-deny** |
-| Your data path | Google MCP endpoint | local | **local, your own OAuth client** |
+| | Google Workspace MCP (remote) | **Workspace Operator** |
+|---|---|---|
+| Transport | Streamable HTTP, Google-hosted | **stdio, local** |
+| Availability | Developer Preview | **public, MIT** |
+| Data path | Google MCP endpoint | **your machine, your OAuth client** |
+| Apps Script | — | **create · read · stage · execute · cancel · restore · run function** |
+| Local files | — | **upload, download, export to pdf/docx/xlsx/pptx** |
+| Slides | — | **create, add slides, fill text, insert images** |
+| Sheets formatting | — | **bold, colours, number formats, widths, freeze** |
+| Gmail threads | single messages | **threads, attachments, in-thread replies** |
+| Server-side tool profiles | IAM / admin allow-list | **read-only / read-write / full + allow-deny** |
 
-> Official servers are the right default for "ask my inbox a question".
-> This one is for "change my workspace and be able to undo it".
+Official servers are the right default for "ask my mail a question". Workspace
+Operator is for "change the workspace and be able to roll it back".
 
----
+## What you get
 
-## ✨ What it can do
+| Group | Tools | Highlights |
+|---|---:|---|
+| 🔎 Cross-search | 1 | One query over Drive, Gmail and Calendar, merged by date |
+| 📁 Drive | 8 | Search, move, copy, share, permissions, revoke public access |
+| 💾 Drive files | 3 | Upload/download/export, conversion to native Google formats |
+| 📊 Sheets | 12 | Read/write, formatting, filter views, named ranges, CSV |
+| 📄 Docs | 5 | Read (tables included), append, templates, PDF export |
+| 🖼 Slides | 5 | Create decks, add slides, replace text, insert images |
+| ⚙️ Apps Script | 7 | Staged updates with backups, rollback, run functions |
+| 📧 Gmail | 14 | Threads, attachments, replies, drafts, labels, batch delete |
+| 📅 Calendar | 4 | Events, free slots, meetings with attendees |
 
-| Service | Capabilities |
-|---------|-------------|
-| 🔎 **Cross-search** | One query over Drive + Gmail + Calendar, merged and date-sorted |
-| 📁 **Drive** | Search, copy, move, share, permissions, revoke public access |
-| 💾 **Files** | Upload local files, download binaries, export Docs/Sheets/Slides to pdf/docx/xlsx/pptx |
-| 📊 **Sheets** | Read/write ranges, formatting (bold, colours, number formats, widths, freeze), filter views, named ranges, find & replace, CSV export |
-| 📄 **Docs** | Read (tables included), create, append, fill templates, export to PDF |
-| 🖼 **Slides** | Create decks, add slides, replace placeholders, insert images |
-| 📧 **Gmail** | Threads, attachments, replies in-thread, drafts, search, archive, labels, delete with confirmation |
-| 📅 **Calendar** | List events, find free slots, create meetings with attendees |
-| ⚙️ **Apps Script** | Create, read, stage updates, execute with auto-backup, rollback |
-| 🔗 **Resources** | Attach live Drive / Gmail / Calendar / Sheets / Docs snapshots to context |
-| 💬 **Prompts** | One-click workflows: summarize inbox, analyze sheet, plan week, search Drive |
+Plus 3 resources, 3 resource templates and 4 prompts — see the
+[tool catalog](#-tool-catalog).
 
-**59 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
-`readOnlyHint` / `destructiveHint` so clients can warn before risky actions.
-
----
-
-## 🚀 Quick start
+## Quick start
 
 ### 1 — Install
 
 ```bash
 git clone https://github.com/Artoxem/workspace-operator.git
-cd yet-another-google-mcp
+cd workspace-operator
 python -m venv .venv && .venv\Scripts\activate    # Windows
 pip install -r requirements.txt
 ```
 
+Python 3.10 or newer. The package is not on PyPI yet — install from source.
+
 ### 2 — Google OAuth
 
-Create an OAuth 2.0 Client ID (Desktop app) in [Google Cloud Console](https://console.cloud.google.com/),
-enable the Drive / Docs / Sheets / Gmail / Calendar / Apps Script APIs, download the JSON.
+1. Create an OAuth 2.0 Client ID (type: **Desktop app**) in
+   [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable these APIs: **Drive, Docs, Sheets, Slides, Gmail, Calendar, Apps Script**.
+3. Download the client JSON — the server will read it on first run.
 
-Enable the Drive, Docs, Sheets, Slides, Gmail, Calendar and Apps Script APIs. Upgrading from
-1.1? Re-run OAuth once — v1.2 adds the Slides scope.
-
-> Step-by-step: [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md) · [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md)
+> Step by step: [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md) · [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md)
+> Upgrading? Slides needs the `.../auth/presentations` scope — re-run the OAuth flow once.
 
 ### 3 — Configure
 
@@ -106,20 +99,21 @@ mcp_auth_token: "MySecretToken_2026!"
 tool_profile: "read-write"      # full | read-write | read-only
 ```
 
-`mcp_auth_token` is a local activation key, not network security: the server refuses to start
-handling tools unless it is set. See [docs/SECURITY.md](docs/SECURITY.md).
+`mcp_auth_token` is a local activation key, not network security: the server refuses
+to handle tools until it is set. Every key can be overridden by an environment
+variable — see [docs/SECURITY.md](docs/SECURITY.md).
 
 ### 4 — Connect a client
 
 <details open>
-<summary><strong>Google Antigravity</strong> — recommended</summary>
+<summary><strong>Google Antigravity</strong> — App, IDE and CLI share one config</summary>
 
-Antigravity App, IDE and CLI share `~/.gemini/config/mcp_config.json`:
+`~/.gemini/config/mcp_config.json` (global) or `<workspace>/.agents/mcp_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "google-workspace": {
+    "workspace-operator": {
       "command": "python",
       "args": ["D:\\DEV\\workspace-operator\\server.py"],
       "env": {
@@ -135,18 +129,18 @@ Antigravity App, IDE and CLI share `~/.gemini/config/mcp_config.json`:
 ```
 
 Ready-made file: [antigravity/mcp_config.example.json](antigravity/mcp_config.example.json) ·
-guide: [antigravity/README.md](antigravity/README.md) ·
-optional Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md)
+walkthrough: [antigravity/README.md](antigravity/README.md) ·
+Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md)
 
 </details>
 
 <details>
-<summary><strong>Claude Desktop / Cursor / VS Code / Windsurf</strong></summary>
+<summary><strong>Claude Desktop, Cursor, VS Code, Windsurf</strong></summary>
 
 ```json
 {
   "mcpServers": {
-    "google-tools": {
+    "workspace-operator": {
       "command": "python",
       "args": ["D:\\DEV\\workspace-operator\\server.py"],
       "env": {
@@ -158,23 +152,21 @@ optional Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace
 }
 ```
 
-Per-client paths and troubleshooting: [docs/IDE_SETUP.md](docs/IDE_SETUP.md).
+Per-client paths: [docs/IDE_SETUP.md](docs/IDE_SETUP.md) · [docs/ru/IDE_SETUP.md](docs/ru/IDE_SETUP.md).
 
 </details>
 
----
+## Tool profiles
 
-## 🛡 Tool profiles
+A profile is a server-side allow-list: tools outside it are neither listed nor
+callable. It complements OAuth scopes (what Google allows) and client permissions
+(what the agent may do without asking).
 
-A profile is a server-side allow-list: tools outside it are neither listed nor callable.
-It complements OAuth scopes (what Google allows) and client permissions (what the agent may
-do without asking).
-
-| Profile | Tools | Use it when |
+| Profile | Tools | Use it for |
 |---|---:|---|
 | `full` | 59 | your own machine, full trust |
 | `read-write` | 52 | daily work — destructive tools hidden |
-| `read-only` | 21 | exploring, demos, shared machines, untrusted agents |
+| `read-only` | 21 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-write"
@@ -183,61 +175,17 @@ allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
 denied_tools: ["send_email", "share_file"]
 ```
 
-Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS="a,b"`, `MCP_DENIED_TOOLS="x,y"`.
-Blocked calls return a clear error instead of failing silently.
+Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
+A blocked call returns a clear explanation instead of failing silently.
 
----
-
-## 🔎 `workspace_search`
-
-The local answer to `search_corpus` — one query, three products, one ranked list:
-
-```json
-{"query": "Q3 budget", "sources": "drive,gmail,calendar", "limit": 10}
-```
-
-```
-Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1)]
-
-1. [drive] Budget 2026 — spreadsheet
-   2026-03-02 10:11 UTC | type: spreadsheet | id: 1a2b3c
-   https://docs.google.com/spreadsheets/d/1a2b3c
-2. [gmail] Q3 budget approval
-   2026-02-27 09:14 UTC | from: cfo@corp.io | id: 18f4d2
-   Please approve the Q3 budget by Friday.
-```
-
-Partial failures are reported, not fatal: if Gmail errors, you still get Drive hits plus
-a `Partial results` note.
-
----
-
-## 🧯 Safety by default
-
-| Guard | Tools |
-|-------|-------|
-| `confirm=true` required | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template` |
-| `dry_run=true` by default | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
-| Auto dry-run for large ranges | `clear_range` |
-| Draft mode by default | `send_email` (never sends unless `draft_mode=false`) |
-| Public sharing blocked | `share_file` blocks `type=anyone` unless `allow_public=true` |
-| Staged Apps Script changes | `prepare_script_update` → `execute_operation` (auto-backup) |
-| Tool annotations | every tool carries `readOnlyHint` / `destructiveHint` |
-| Server-side profile | `read-only` / `read-write` / `full` + allow/deny lists |
-
-> ⚠️ The agent can reach everything your OAuth token can. Use read-only scopes and the
-> `read-only` profile for sensitive accounts. Details: [docs/SECURITY.md](docs/SECURITY.md).
-
----
-
-## 📦 All tools
+## Tool catalog
 
 <details>
 <summary>🔎 Cross-search (1)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
-| `workspace_search` | read | One query across Drive, Gmail and Calendar, merged and date-sorted |
+|---|---|---|
+| `workspace_search` | read | One query across Drive, Gmail and Calendar, date-sorted, partial failures reported |
 
 </details>
 
@@ -245,12 +193,12 @@ a `Partial results` note.
 <summary>📁 Drive (8)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
+|---|---|---|
 | `find_files` | read | Search by name or Drive query |
-| `drive_search_advanced` | read | Full Drive query syntax with result limit |
-| `drive_list_permissions` | read | List file permissions |
+| `drive_search_advanced` | read | Full Drive query syntax with a limit |
+| `drive_list_permissions` | read | List permissions of a file |
 | `create_folder` | write | Create a folder |
-| `move_file` | write | Move a file to a folder |
+| `move_file` | write | Move a file into a folder |
 | `drive_copy_file` | write | Copy a file |
 | `share_file` | write | Share with user/group/domain/anyone |
 | `drive_revoke_public` | destructive | Revoke public access (`confirm=true`) |
@@ -261,9 +209,9 @@ a `Partial results` note.
 <summary>💾 Drive files (3)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
+|---|---|---|
 | `drive_upload` | write | Upload a local file; `convert_to` turns docx/xlsx/pptx into native Google files |
-| `drive_download` | read | Download a binary Drive file to disk |
+| `drive_download` | read | Download a binary file to disk |
 | `drive_export` | read | Export a Doc/Sheet/Slide to pdf, docx, xlsx, pptx, csv… |
 
 </details>
@@ -272,19 +220,19 @@ a `Partial results` note.
 <summary>📊 Sheets (12)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
+|---|---|---|
 | `read_sheet` | read | Read a cell range |
-| `get_spreadsheet_meta` | read | Spreadsheet metadata |
-| `sheet_export_csv` | read | Export range to CSV |
+| `get_spreadsheet_meta` | read | Sheet names and IDs |
+| `sheet_export_csv` | read | Export a range as CSV |
 | `append_row` | write | Append a row |
 | `update_sheet` | write | Write rows to a range |
-| `create_spreadsheet` | write | Create a new spreadsheet |
-| `add_sheet` | write | Add a new tab/sheet |
+| `create_spreadsheet` | write | Create a spreadsheet |
+| `add_sheet` | write | Add a tab |
 | `sheet_create_filter_view` | write | Create a filter view |
 | `sheet_create_named_range` | write | Create a named range |
 | `sheet_find_replace` | write | Find & replace (`dry_run=true` by default) |
+| `sheet_format` | write | Bold, colours, number formats, widths, row heights, frozen panes |
 | `clear_range` | destructive | Clear a range (auto dry-run for large ranges) |
-| `sheet_format` | write | Bold, colours, number format, widths, freeze — one call |
 
 </details>
 
@@ -292,12 +240,12 @@ a `Partial results` note.
 <summary>📄 Docs (5)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
-| `read_doc` | read | Read document text |
-| `doc_export_pdf` | read | Export document as binary PDF |
-| `create_doc` | write | Create a new document |
+|---|---|---|
+| `read_doc` | read | Read text and tables |
+| `doc_export_pdf` | read | Export as binary PDF |
+| `create_doc` | write | Create a document |
 | `append_to_doc` | write | Append text |
-| `doc_fill_template` | destructive | Fill template placeholders (`confirm=true`) |
+| `doc_fill_template` | destructive | Fill placeholders (`confirm=true`) |
 
 </details>
 
@@ -305,7 +253,7 @@ a `Partial results` note.
 <summary>🖼 Slides (5)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
+|---|---|---|
 | `slides_create` | write | Create a presentation |
 | `slides_get` | read | Slide count, IDs and text per slide |
 | `slides_add_slide` | write | Add a slide with a predefined layout |
@@ -315,24 +263,39 @@ a `Partial results` note.
 </details>
 
 <details>
+<summary>⚙️ Apps Script (7)</summary>
+
+| Tool | Type | Description |
+|---|---|---|
+| `get_script_content` | read | Read project files |
+| `create_script_project` | write | Create a project |
+| `prepare_script_update` | write | Stage an update, returns `operation_id` |
+| `execute_operation` | write | Apply a staged update (auto-backup first) |
+| `cancel_operation` | write | Cancel a staged update |
+| `restore_script_backup` | write | Restore from a backup |
+| `script_run_function` | destructive | Run a function from an API-executable deployment |
+
+</details>
+
+<details>
 <summary>📧 Gmail (14)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
-| `get_gmail_profile` | read | Get authenticated email address |
-| `list_emails` | read | List emails with date, sender and subject |
+|---|---|---|
+| `get_gmail_profile` | read | Authenticated address |
+| `list_emails` | read | List with date, sender and subject |
 | `read_email` | read | Headers, labels, attachments and decoded body |
-| `gmail_search_and_summarize` | read | Search and return a brief summary |
+| `gmail_search_and_summarize` | read | Search with a compact summary |
+| `gmail_get_thread` | read | Whole conversation |
+| `gmail_get_attachment` | read | Save an attachment to disk |
 | `create_draft` | write | Create a draft |
 | `send_email` | write | Send or draft (`draft_mode=true` by default) |
 | `send_draft` | write | Send an existing draft |
-| `gmail_label_apply` | write | Apply a label (`dry_run=true` by default) |
-| `gmail_archive` | write | Archive a message (`confirm=true`) |
-| `delete_email` | destructive | Delete an email (`confirm=true`) |
-| `batch_delete_emails` | destructive | Delete multiple emails (`dry_run=true` by default) |
-| `gmail_get_thread` | read | Whole conversation: messages, labels, attachments |
-| `gmail_get_attachment` | read | Save an attachment to disk |
 | `gmail_reply` | write | Reply in-thread (`draft_mode=true` by default) |
+| `gmail_label_apply` | write | Apply a label (`dry_run=true` by default) |
+| `gmail_archive` | write | Archive (`confirm=true`) |
+| `delete_email` | destructive | Delete (`confirm=true`) |
+| `batch_delete_emails` | destructive | Delete many (`dry_run=true` by default) |
 
 </details>
 
@@ -340,149 +303,133 @@ a `Partial results` note.
 <summary>📅 Calendar (4)</summary>
 
 | Tool | Type | Description |
-|------|------|-------------|
-| `list_events` | read | List upcoming events |
-| `calendar_find_free_slots` | read | Find free time slots |
+|---|---|---|
+| `list_events` | read | Upcoming events with times and locations |
+| `calendar_find_free_slots` | read | Free slots in a window |
 | `create_event` | write | Create an event |
-| `calendar_create_meeting` | write | Create meeting with attendees (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>⚙️ Apps Script (6)</summary>
-
-| Tool | Type | Description |
-|------|------|-------------|
-| `get_script_content` | read | Read project files |
-| `create_script_project` | write | Create a new project |
-| `prepare_script_update` | write | Stage an update, get `operation_id` |
-| `execute_operation` | write | Execute a staged update (auto-backup) |
-| `cancel_operation` | write | Cancel a pending staged update |
-| `restore_script_backup` | write | Restore from auto-backup |
-| `script_run_function` | destructive | Run a function from an API-executable deployment |
+| `calendar_create_meeting` | write | Meeting with attendees (`confirm=true`) |
 
 </details>
 
 ### Resources
 
-| URI | What it attaches |
+| URI | Attaches |
 |---|---|
 | `gdrive://recent` | 20 most recently modified Drive files |
 | `gmail://inbox` | Recent unread inbox messages |
 | `gcalendar://upcoming` | Events for the next 7 days |
 | `gdrive://file/{file_id}` | Metadata for one file |
 | `gsheets://{spreadsheet_id}/{range}` | A sheet range as a table |
-| `gdocs://{document_id}` | Full text of a document |
+| `gdocs://{document_id}` | Full document text, tables included |
 
 ### Prompts
 
 | Prompt | What it does |
-|--------|-------------|
-| `summarize_inbox` | Fetch recent Gmail messages → ready for AI summary |
-| `analyze_spreadsheet` | Read a sheet range → ready for analysis |
+|---|---|
+| `summarize_inbox` | Fetch recent mail → ready for a summary |
+| `analyze_spreadsheet` | Read a range → ready for analysis |
 | `plan_week` | Load calendar events → ready for planning |
-| `search_drive` | Search Drive → ready for organisation advice |
+| `search_drive` | Search files → ready for organisation advice |
 
----
+## Safety by default
 
-## 🏗 How it works
+| Guard | Applies to |
+|---|---|
+| `confirm=true` required | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text` |
+| `dry_run=true` by default | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
+| Draft mode by default | `send_email`, `gmail_reply` |
+| Public sharing blocked | `share_file` refuses `type=anyone` without `allow_public=true` |
+| No silent overwrite | `drive_download`, `drive_export`, `gmail_get_attachment` |
+| Staged Apps Script | `prepare_script_update` → `execute_operation` (backup first) |
+| Tool annotations | every tool carries `readOnlyHint` / `destructiveHint` |
+| Server-side profiles | `read-only` / `read-write` / `full` + allow/deny lists |
+
+> ⚠️ An agent can reach everything your OAuth token can. Use read-only scopes and the
+> `read-only` profile for sensitive accounts — [docs/SECURITY.md](docs/SECURITY.md).
+
+## How it works
 
 ```
-server.py                  MCP server: 56 tool definitions, resources, prompts, tool profiles
+server.py                    MCP server: 59 tool definitions, resources, prompts, profiles
 workspace_operator/
-├─ profiles.py             read-only / read-write / full + allow-deny lists
-├─ text.py                 entity/whitespace normalisation, timestamps, error hints
-├─ config.py               config file + env overrides
-├─ auth.py                 OAuth 2.0 credentials, token cache
-├─ operations.py           staged operation store (Apps Script)
-├─ security.py             token checks, email validation
+├─ profiles.py               read-only / read-write / full + allow-deny lists
+├─ config.py                 config file + environment overrides
+├─ auth.py                   OAuth 2.0 credentials and token cache
+├─ text.py                   entity/whitespace normalisation, timestamps, error hints
+├─ operations.py             staged-operation store for Apps Script
+├─ security.py               token and email checks
 └─ handlers/
-   ├─ search.py            workspace_search — Drive + Gmail + Calendar
-   ├─ files.py             drive_upload / drive_download / drive_export
-   ├─ slides.py            Slides: create, read, add, replace, images
-   ├─ formatting.py        sheet_format request builder
+   ├─ search.py              workspace_search — Drive + Gmail + Calendar
+   ├─ files.py               drive_upload / drive_download / drive_export
+   ├─ formatting.py          sheet_format request builders
+   ├─ gmail_threads.py       threads, attachments, in-thread replies
+   ├─ slides.py              presentations
    ├─ drive.py  sheets.py  docs.py
-   ├─ gmail_threads.py     gmail_get_thread / get_attachment / reply
    ├─ gmail.py  calendar.py  apps_script.py
-tests/                     unit tests, no network needed
-antigravity/               ready-to-paste mcp_config.json
-skills/google-workspace/   Agent Skill: when to use which tool
+tests/                       unit, live and round-trip checks
+antigravity/                 ready-to-paste mcp_config.json
+skills/google-workspace/     Agent Skill: when to use which tool
 ```
 
 Design rules:
 
-* **Every handler returns a string** — no exceptions escape to the transport.
-* **Writes are staged or confirmed** — dry-runs, `confirm=true`, draft mode.
-* **Apps Script is a two-phase commit** — prepare returns an `operation_id`,
-  execute applies it, a backup is written first.
-* **Search before read, read before write** — encoded in the Agent Skill.
+* every handler returns a string — exceptions never reach the transport;
+* writes are staged, confirmed or drafted, never silent;
+* Apps Script is a two-phase commit with an automatic backup;
+* server-side profiles keep the exposed surface small.
 
----
-
-## 🧪 Development
+## Testing
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -v     # 115 unit tests, no network
+python tests/live_smoke.py                  # 35 checks against a real account
+python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 
-103 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
-v1.2 helpers. No credentials, network, or Google API access required.
+The live suite is self-cleaning: it uploads and trashes a temp file, creates and
+trashes a presentation and a spreadsheet, drafts and deletes a reply, downloads an
+attachment and removes it. `tests/test_docs.py` keeps this README, the docs and the
+code in sync (tool counts, profile numbers, links, examples).
 
-`tests/live_smoke.py` runs 35 end-to-end checks against a real account and
-cleans up after itself (uploads, downloads and trashes a temp file; creates and trashes a deck).
-
-`tests/pptx_roundtrip.py` verifies the Office → Google conversion path:
-`drive_upload(convert_to="google-slides")` → `slides_replace_text` → `slides_get`.
-Pass a `.pptx` that contains `{{NAME}}`, or run it with an interpreter that has
-`python-pptx` installed.
-
----
-
-## 📚 Documentation
+## Documentation
 
 ### 🇬🇧 English
 | Document | Description |
-|----------|-------------|
+|---|---|
 | [AUTH_SETUP.md](docs/AUTH_SETUP.md) | Google OAuth setup, step by step |
 | [TOOLS_REFERENCE.md](docs/TOOLS_REFERENCE.md) | Every tool, resource and prompt |
 | [SECURITY.md](docs/SECURITY.md) | Scopes, profiles, safety model |
 | [IDE_SETUP.md](docs/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
 | [LEARN.md](LEARN.md) | How this server was built |
+| [docs/](docs/) | Release notes and specs for every version |
 
 ### 🇷🇺 На русском
 | Документ | Описание |
-|----------|----------|
-| [AUTH_SETUP.md](docs/ru/AUTH_SETUP.md) | Пошаговая настройка Google OAuth |
+|---|---|
+| [AUTH_SETUP.md](docs/ru/AUTH_SETUP.md) | Пошаговая настройка OAuth |
 | [TOOLS_REFERENCE.md](docs/ru/TOOLS_REFERENCE.md) | Справочник инструментов |
 | [SECURITY.md](docs/ru/SECURITY.md) | Скоупы, профили, модель безопасности |
 | [IDE_SETUP.md](docs/ru/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
 
----
+## Roadmap
 
-## 🗺 Roadmap
+- [x] Cross-product search, tool profiles
+- [x] Files, Slides, Apps Script execution
+- [x] Sheet formatting
+- [x] Gmail threads, attachments, replies
+- [ ] Calendar update/delete/respond
+- [ ] Composite tools: `report_from_sheet`
+- [ ] Optional HTTP transport (stateless, MCP 2026-07-28)
 
-- [x] `workspace_search` — cross-product search
-- [x] Tool profiles (`read-only` / `read-write` / `full`)
-- [x] Antigravity config + Agent Skill
-- [x] `drive_upload` / `drive_download` / `drive_export`
-- [x] Slides: create, add slides, replace text, insert images
-- [x] `script_run_function` for API-executable deployments
-- [ ] Docs: replace-text and formatting operations
-- [ ] `workspace_search` filters by type and date range
-- [ ] Optional HTTP transport for team deployments (stateless, MCP 2026-07-28)
-
----
-
-## ⚠️ Responsibility notice
+## Responsibility
 
 You are responsible for what the agent does with your account. Read
-[docs/SECURITY.md](docs/SECURITY.md), start with `read-only`, and keep backups on.
+[docs/SECURITY.md](docs/SECURITY.md), start with `read-only`, keep backups on.
 
 ---
 
 <div align="center">
 
-Built with ❤️ on the [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) ·
-MIT licensed
+MIT licensed · built on the [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 
 </div>

@@ -58,11 +58,15 @@ Configuring the consent screen is **required** before you can create OAuth crede
    | Google Drive API   | Drive operations         |
    | Google Sheets API  | Spreadsheets             |
    | Google Docs API    | Documents                |
+   | Google Slides API  | Presentations            |
    | Gmail API          | Email                    |
    | Google Calendar API| Calendar events          |
    | Google Apps Script API | Apps Script projects |
 
 3. For each API: open it and click **Enable**
+
+> The server requests the `presentations` scope for Slides. If you authorized before
+> v1.2, delete `token.json` and run the server again to grant it.
 
 ---
 

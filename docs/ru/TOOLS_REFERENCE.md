@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 46 | всё |
-| `read-write` | 41 | всё, кроме `destructiveHint: true` |
-| `read-only` | 16 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 59 | всё |
+| `read-write` | 52 | всё, кроме `destructiveHint: true` |
+| `read-only` | 21 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 

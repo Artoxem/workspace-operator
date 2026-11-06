@@ -58,11 +58,15 @@
    | Google Drive API         | Операции с Drive     |
    | Google Sheets API        | Таблицы              |
    | Google Docs API          | Документы            |
+   | Google Slides API        | Презентации          |
    | Gmail API                | Почта                |
    | Google Calendar API      | События календаря    |
    | Google Apps Script API   | Проекты Apps Script  |
 
 3. Для каждого API: откройте его и нажмите **Enable**
+
+> Сервер запрашивает скоуп `presentations` для Slides. Если вы авторизовались до
+> версии 1.2, удалите `token.json` и запустите сервер снова.
 
 ---
 

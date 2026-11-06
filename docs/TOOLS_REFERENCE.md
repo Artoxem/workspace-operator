@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 46 | everything |
-| `read-write` | 41 | everything except `destructiveHint: true` |
-| `read-only` | 16 | only `readOnlyHint: true` |
+| `full` (default) | 59 | everything |
+| `read-write` | 52 | everything except `destructiveHint: true` |
+| `read-only` | 21 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 

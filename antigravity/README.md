@@ -17,9 +17,9 @@ Google Antigravity (App, IDE and CLI) reads MCP servers from one shared file:
 
    | `MCP_TOOL_PROFILE` | What the agent sees |
    |---|---|
-   | `read-only` | 16 read tools — safe for exploration |
-   | `read-write` | 41 tools, destructive ones hidden |
-   | `full` | all 46 tools |
+   | `read-only` | 21 read tools — safe for exploration |
+   | `read-write` | 52 tools, destructive ones hidden |
+   | `full` | all 59 tools |
 
 4. Restart the server: **Customizations → Installed → MCP servers → Refresh**
    (App/IDE) or `/mcp` (CLI).
@@ -40,6 +40,6 @@ context window.
 
 ## Installing the Agent Skill (optional)
 
-`skills/workspace-operator/SKILL.md` teaches the agent *when* to reach for which
+`skills/google-workspace/SKILL.md` teaches the agent *when* to reach for which
 tool (search first, then read, then write). Copy the folder into your skills
 directory or install it from Antigravity: **Customizations → Skills**.

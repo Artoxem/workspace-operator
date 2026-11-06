@@ -47,8 +47,8 @@ IDE запускает сервер как подпроцесс. Использ�
 - Для удалённых серверов поддерживается только Streamable HTTP; этот сервер — stdio.
 - Права по умолчанию — режим **Ask**; политики выглядят как `mcp(workspace-operator/workspace_search)`.
 
-Готовый файл: [`antigravity/mcp_config.example.json`](../antigravity/mcp_config.example.json),
-пошаговая инструкция: [`antigravity/README.md`](../antigravity/README.md).
+Готовый файл: [`antigravity/mcp_config.example.json`](../../antigravity/mcp_config.example.json),
+пошаговая инструкция: [`antigravity/README.md`](../../antigravity/README.md).
 
 ## Cursor
 Файлы конфигурации:
