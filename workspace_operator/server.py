@@ -15,7 +15,7 @@ from mcp.server.lowlevel.helper_types import ReadResourceContents
 import mcp.types as types
 
 from . import __version__
-from .config import load_config
+from .config import Config, load_config
 from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
 from .security import require_token_configured
@@ -1305,10 +1305,8 @@ def _tools() -> List[types.Tool]:
     ]
 
 
-async def run() -> None:
-    config = load_config()
-    logger = setup_logging(config.log_file, level=config.log_level)
-
+def create_server(config: Config, logger) -> Server:
+    """Build a fully configured MCP server (transport independent)."""
     try:
         profile = resolve_profile(
             config.tool_profile, config.allowed_tools, config.denied_tools
@@ -2325,9 +2323,13 @@ async def run() -> None:
         else:
             raise ValueError(f"Unknown prompt: {name}")
 
-    # ------------------------------------------------------------------
-    # Start server
-    # ------------------------------------------------------------------
+    return server
+
+
+async def run() -> None:
+    config = load_config()
+    logger = setup_logging(config.log_file, level=config.log_level)
+    server = create_server(config, logger)
 
     async with stdio_server() as (read, write):
         await server.run(

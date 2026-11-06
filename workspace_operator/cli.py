@@ -241,11 +241,26 @@ def cmd_version(_: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_serve(_: argparse.Namespace) -> int:
-    from .server import run
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .server import create_server, run
 
-    asyncio.run(run())
-    return 0
+    if not args.http:
+        asyncio.run(run())
+        return 0
+
+    from .http_transport import HttpOptions, serve_http
+    from .logging import setup_logging
+
+    config = load_config()
+    logger = setup_logging(config.log_file, level=config.log_level)
+    server = create_server(config, logger)
+    options = HttpOptions(
+        host=args.host,
+        port=args.port,
+        allow_network=args.allow_network,
+        insecure=args.insecure,
+    )
+    return serve_http(server, config, logger, options, __version__)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -269,7 +284,22 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.set_defaults(func=cmd_doctor)
 
     subparsers.add_parser("version", help="print the version").set_defaults(func=cmd_version)
-    subparsers.add_parser("serve", help="start the stdio MCP server").set_defaults(func=cmd_serve)
+
+    serve = subparsers.add_parser("serve", help="start the MCP server (stdio or HTTP)")
+    serve.add_argument("--http", action="store_true", help="serve over Streamable HTTP")
+    serve.add_argument("--host", default="127.0.0.1", help="bind address (default: 127.0.0.1)")
+    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="required to bind a non-loopback address",
+    )
+    serve.add_argument(
+        "--insecure",
+        action="store_true",
+        help="acknowledge there is no TLS in front of a network-exposed bind",
+    )
+    serve.set_defaults(func=cmd_serve)
 
     return parser
 

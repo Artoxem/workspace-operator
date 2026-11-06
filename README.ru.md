@@ -196,6 +196,30 @@ python -m workspace_operator serve      # stdio-сервер (то же, что 
 В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
 данные, пока каждая запись превращается в явное превью.
 
+### HTTP-транспорт (сначала localhost)
+
+```bash
+python -m workspace_operator serve --http --port 8765
+```
+
+* по умолчанию слушает `127.0.0.1` — из сети недоступен;
+* каждый запрос требует `Authorization: Bearer <mcp_auth_token>`; дополнительные
+  токены клиентов задаются в `http_tokens` в `config.yaml`, а аудит-лог пишет имя
+  токена в поле `client`;
+* включена защита от DNS-rebinding: проходят только ожидаемые `Host`, браузерные
+  `Origin` отклоняются;
+* `GET /healthz` не требует токена и отдаёт только версию и транспорт;
+* привязка к не-loopback адресу требует **одновременно** `--allow-network` и
+  `--insecure`, поэтому выход в сеть всегда осознанный.
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+Compose публикует только `127.0.0.1:8765` и монтирует OAuth-файлы только для чтения.
+
 ## Каталог инструментов
 
 <details>
@@ -421,7 +445,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 190 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 206 юнит-тестов, без сети
 python tests/live_smoke.py                  # 45 проверок на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
@@ -459,7 +483,7 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 - [x] Треды, вложения и ответы в Gmail
 - [x] Calendar: обновление, удаление, ответ на приглашения
 - [x] Составные: `report_from_sheet`, `digest`, `compare_tables`, `clone_and_fill`
-- [ ] Опциональный HTTP-транспорт (stateless, MCP 2026-07-28)
+- [x] Опциональный HTTP-транспорт (Streamable HTTP, stateless, localhost-first)
 
 ## Ответственность
 

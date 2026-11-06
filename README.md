@@ -197,6 +197,31 @@ python -m workspace_operator serve      # stdio server (same as python server.py
 In dry-run the read-only tools still work, so an agent can explore data while every
 write is turned into an explicit preview.
 
+### HTTP transport (localhost first)
+
+```bash
+python -m workspace_operator serve --http --port 8765
+```
+
+* binds `127.0.0.1` by default — not reachable from the network;
+* every request needs `Authorization: Bearer <mcp_auth_token>`; extra per-client
+  tokens can be listed under `http_tokens` in `config.yaml`, and the audit log
+  records the token name as `client`;
+* DNS-rebinding protection is on: only expected `Host` headers pass, browser
+  origins are denied unless explicitly allowed;
+* `GET /healthz` is unauthenticated and returns only version and transport info;
+* binding a non-loopback address requires **both** `--allow-network` and
+  `--insecure`, so network exposure is always deliberate.
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+The compose file publishes `127.0.0.1:8765` only and mounts your OAuth files
+read-only.
+
 ## Tool catalog
 
 <details>
@@ -422,7 +447,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 190 unit tests, no network
+python -m unittest discover -s tests -v     # 206 unit tests, no network
 python tests/live_smoke.py                  # 45 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
@@ -460,7 +485,7 @@ code in sync (tool counts, profile numbers, links, examples).
 - [x] Gmail threads, attachments, replies
 - [x] Calendar update/delete/respond
 - [x] Composite tools: `report_from_sheet`, `digest`, `compare_tables`, `clone_and_fill`
-- [ ] Optional HTTP transport (stateless, MCP 2026-07-28)
+- [x] Optional HTTP transport (Streamable HTTP, stateless, localhost-first)
 
 ## Responsibility
 

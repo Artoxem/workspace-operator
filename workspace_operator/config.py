@@ -33,6 +33,7 @@ class Config:
     dry_run: bool = False
     audit_log: Optional[str] = None
     retry_attempts: int = 3
+    http_tokens: Optional[Dict[str, str]] = None
 
 
 def _default_path(*parts: str) -> str:
@@ -112,6 +113,10 @@ def load_config() -> Config:
     if denied_tools is not None:
         denied_tools = [str(item) for item in denied_tools]
 
+    http_tokens = file_config.get("http_tokens")
+    if http_tokens is not None:
+        http_tokens = {str(name): str(token) for name, token in dict(http_tokens).items()}
+
     dry_run = parse_bool(
         os.environ.get("MCP_DRY_RUN", file_config.get("dry_run", False))
     )
@@ -141,4 +146,5 @@ def load_config() -> Config:
         dry_run=dry_run,
         audit_log=audit_log,
         retry_attempts=retry_attempts,
+        http_tokens=http_tokens,
     )

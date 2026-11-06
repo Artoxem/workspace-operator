@@ -159,3 +159,19 @@ For questions about specific scopes, see [Google's OAuth 2.0 Scopes documentatio
   echoed back. Never overwrite without `overwrite=true`.
 - `drive_upload` reads any local file the process can read (100 MB cap); treat the
   server process as having the file access of its user.
+
+## HTTP transport (v1.9)
+
+- Default bind is `127.0.0.1`. A non-loopback bind requires `--allow-network`
+  **and** `--insecure`; the second flag acknowledges there is no TLS.
+- Every request must present `Authorization: Bearer <token>`; comparison is
+  constant-time. Tokens come from `http_tokens` (name → token) or fall back to
+  `mcp_auth_token` as `default`.
+- DNS-rebinding protection rejects unexpected `Host` headers and every browser
+  `Origin` that was not explicitly allowed.
+- `GET /healthz` is public by design and exposes no data.
+- The audit log records the token name as `client`, so a shared deployment can be
+  traced back to a specific token.
+- Network exposure means everyone shares one Google identity. For real multi-user
+  use: TLS proxy in front, a dedicated service account, minimal scopes and a
+  distinct token per client.

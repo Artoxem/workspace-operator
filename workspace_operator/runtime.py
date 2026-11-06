@@ -15,11 +15,15 @@ Everything here is pure Python and unit-tested.
 import json
 import logging
 import time
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Optional, TypeVar
 
 T = TypeVar("T")
+
+# Set by the HTTP transport so audit entries know who called.
+current_client: ContextVar[str] = ContextVar("current_client", default="stdio")
 
 TRANSIENT_STATUS = {429, 500, 502, 503, 504}
 DEFAULT_ATTEMPTS = 3
@@ -100,6 +104,7 @@ class AuditLog:
             "profile": profile,
             "status": status,
             "duration_ms": duration_ms,
+            "client": current_client.get(),
             "arguments": sorted(argument_names),
         }
         if error:

@@ -149,6 +149,21 @@ class ConfigExampleTests(unittest.TestCase):
                 self.assertIn("MCP_DRY_RUN", text)
                 self.assertIn("MCP_AUDIT_LOG", text)
 
+    def test_packaging_files_exist(self):
+        for rel in ("Dockerfile", "docker-compose.yml", ".dockerignore"):
+            with self.subTest(file=rel):
+                self.assertTrue((ROOT / rel).exists(), rel)
+        requirements = read("requirements.txt")
+        self.assertIn("uvicorn", requirements)
+        self.assertIn("starlette", requirements)
+
+    def test_readme_documents_http(self):
+        for rel in ("README.md", "README.ru.md"):
+            text = read(rel)
+            with self.subTest(file=rel):
+                self.assertIn("--http", text)
+                self.assertIn("--allow-network", text)
+
     def test_config_example_scopes(self):
         data = yaml.safe_load(read("config.example.yaml"))
         self.assertIn("tool_profile", data)
