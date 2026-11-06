@@ -419,7 +419,7 @@ python -m unittest discover -s tests -v
 66 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
 v1.2 helpers. No credentials, network, or Google API access required.
 
-`tests/live_smoke.py` runs 23 read-only end-to-end checks against a real account and
+`tests/live_smoke.py` runs 30 end-to-end checks against a real account and
 cleans up after itself (uploads, downloads and trashes a temp file; creates and trashes a deck).
 
 ---

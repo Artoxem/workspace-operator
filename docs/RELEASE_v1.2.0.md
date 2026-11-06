@@ -50,7 +50,7 @@ preview and occurrence counts, and images positioned in pixels.
 ## Tests
 
 - 66 unit tests (`python -m unittest discover -s tests -v`).
-- `tests/live_smoke.py` — 23 end-to-end checks, self-cleaning: uploads a temp
+- `tests/live_smoke.py` — 30 end-to-end checks, self-cleaning: uploads a temp
   file, downloads it back and compares bytes, creates a deck, exports it to PDF,
   trashes both artifacts.
 

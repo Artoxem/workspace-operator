@@ -291,6 +291,36 @@ async def full_checks(session: ClientSession) -> None:
             "preview only",
         )
 
+        applied = await session.call_tool(
+            "slides_replace_text",
+            {"presentation_id": pid, "replacements": {"X": "Y"}, "confirm": True},
+        )
+        record(
+            "slides_replace_text confirm=true",
+            not applied.isError and "occurrence" in _text(applied),
+            _text(applied).splitlines()[0] if _text(applied) else "empty",
+        )
+
+        added_slide = re.search(r"ID:\s*([A-Za-z0-9_-]{6,})", _text(added))
+        if added_slide:
+            image = await session.call_tool(
+                "slides_insert_image",
+                {
+                    "presentation_id": pid,
+                    "slide_id": added_slide.group(1),
+                    "image_url": "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png",
+                    "width": 240,
+                    "height": 80,
+                    "left": 40,
+                    "top": 40,
+                },
+            )
+            record(
+                "call slides_insert_image",
+                not image.isError and "Image inserted" in _text(image),
+                _text(image).splitlines()[0] if _text(image) else "empty",
+            )
+
         pdf_target = workspace / "smoke-export.pdf"
         exported = await session.call_tool(
             "drive_export",
