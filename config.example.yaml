@@ -17,6 +17,19 @@ mcp_auth_token: "change_me"
 # Can also be set via the GOOGLE_LOG_LEVEL environment variable
 log_level: "INFO"
 
+# Tool profile — which MCP tools this deployment exposes at all.
+#   full       — every tool (default, backwards compatible)
+#   read-write — everything except destructive tools (delete, clear, revoke)
+#   read-only  — only read tools (search, read, list, export)
+# Can also be set via MCP_TOOL_PROFILE.
+tool_profile: "full"
+
+# Optional explicit allow/deny lists applied on top of the profile.
+# Deny always wins over allow. Use MCP tool names from docs/TOOLS_REFERENCE.md.
+# Env overrides: MCP_ALLOWED_TOOLS="a,b,c" / MCP_DENIED_TOOLS="x,y"
+# allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
+# denied_tools: ["send_email", "share_file", "batch_delete_emails"]
+
 # OAuth scopes define what data the server can access
 # Default: Full access to all services (good for testing)
 # For production: Review docs/SECURITY.md for minimal/read-only options

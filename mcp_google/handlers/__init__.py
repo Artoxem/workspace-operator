@@ -57,6 +57,7 @@ from .sheets import (
     sheet_find_replace_handler,
     update_sheet_handler,
 )
+from .search import workspace_search_handler
 
 __all__ = [
     "find_files_handler",
@@ -104,4 +105,5 @@ __all__ = [
     "drive_list_permissions_handler",
     "drive_revoke_public_handler",
     "drive_copy_file_handler",
+    "workspace_search_handler",
 ]

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "google-workspace": {
+      "command": "python",
+      "args": ["D:\\DEV\\yet-another-google-mcp\\server.py"],
+      "env": {
+        "MCP_CONFIG_FILE": "D:\\DEV\\yet-another-google-mcp\\config.yaml",
+        "MCP_AUTH_TOKEN": "replace_with_your_token",
+        "MCP_TOOL_PROFILE": "read-write"
+      },
+      "timeoutSeconds": 300,
+      "tools": {
+        "workspace_search": { "eager": true },
+        "read_sheet": { "eager": true },
+        "send_email": { "eager": true }
+      }
+    }
+  }
+}

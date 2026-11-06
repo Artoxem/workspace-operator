@@ -25,6 +25,28 @@
 
 Совместимые MCP-клиенты (например, Cursor) используют эти подсказки для предупреждения пользователей перед деструктивными операциями.
 
+## Профили инструментов
+
+`tool_profile` в `config.yaml` определяет, какие инструменты вообще существуют в этом
+развёртывании. Инструменты вне профиля не показываются в `tools/list` и не могут быть
+вызваны — сервер вернёт явную ошибку «disabled by the active tool profile».
+
+| Профиль | Инструментов | Что доступно |
+|---|---:|---|
+| `full` (по умолчанию) | 46 | всё |
+| `read-write` | 41 | всё, кроме `destructiveHint: true` |
+| `read-only` | 16 | только `readOnlyHint: true` |
+
+`allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
+
+```yaml
+tool_profile: "read-write"
+allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
+denied_tools: ["send_email", "share_file"]
+```
+
+Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
+
 ## Примеры использования
 
 ### Базовые операции
@@ -78,6 +100,27 @@ Tool: clear_range
 Результат: DRY RUN: Large range detected (26,000 cells)
 Would clear range: Лист1!A1:Z1000
 To proceed: clear_range(..., confirm=True)
+```
+
+## Кросс-поиск
+- `workspace_search(query, sources?, limit?, calendar_days_back?, calendar_days_ahead?)`
+  - Один запрос по Drive, Gmail и Calendar; результаты объединяются и сортируются по дате.
+  - `sources`: список через запятую — `drive`, `gmail`, `calendar`. По умолчанию `drive,gmail`.
+  - `limit`: лимит на источник, 1–25 (по умолчанию 10).
+  - Окно календаря по умолчанию: 30 дней назад, 180 дней вперёд.
+  - Частичные сбои не фатальны: остальные результаты всё равно возвращаются.
+
+Пример:
+
+```
+Инструмент: workspace_search
+Аргументы: {"query": "бюджет Q3", "sources": "drive,gmail,calendar", "limit": 10}
+Результат:
+Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calendar (1)]
+
+1. [drive] Бюджет 2026 — spreadsheet
+   2026-03-02 10:11 UTC | type: spreadsheet | id: 1a2b3c
+   https://docs.google.com/spreadsheets/d/1a2b3c
 ```
 
 ## Drive

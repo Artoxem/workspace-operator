@@ -17,6 +17,38 @@ Replace placeholders:
 - `your_token_here` — your `MCP_AUTH_TOKEN` value
 - If environment variables are already set in your OS, you can omit the `env` block
 
+## Google Antigravity (App, IDE, CLI)
+All three surfaces read the same file: `~/.gemini/config/mcp_config.json`
+(global) or `<workspace>/.agents/mcp_config.json` (per project).
+
+```
+{
+  "mcpServers": {
+    "google-workspace": {
+      "command": "python",
+      "args": ["<PROJECT_PATH>\\\\server.py"],
+      "env": {
+        "MCP_AUTH_TOKEN": "your_token_here",
+        "MCP_CONFIG_FILE": "<PROJECT_PATH>\\\\config.yaml",
+        "MCP_TOOL_PROFILE": "read-write"
+      },
+      "timeoutSeconds": 300,
+      "tools": { "workspace_search": { "eager": true } }
+    }
+  }
+}
+```
+
+Notes specific to Antigravity:
+
+- `timeoutSeconds` default is 180 s per tool call; Apps Script operations need more.
+- Tools are lazy-loaded by default — mark two or three daily drivers as `"eager": true`.
+- Only Streamable HTTP is supported for remote servers; this server is stdio.
+- Permissions default to **Ask**; policies look like `mcp(google-workspace/workspace_search)`.
+
+Ready-made file: [`antigravity/mcp_config.example.json`](../antigravity/mcp_config.example.json),
+walkthrough: [`antigravity/README.md`](../antigravity/README.md).
+
 ## Cursor
 Config file locations:
 - Project: `.cursor/mcp.json`

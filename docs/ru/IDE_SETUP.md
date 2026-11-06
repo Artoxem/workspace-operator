@@ -18,6 +18,38 @@ IDE запускает сервер как подпроцесс. Использ�
 - `your_token_here` — значение вашего `MCP_AUTH_TOKEN`
 - Если переменные среды уже заданы в ОС, блок `env` можно опустить
 
+## Google Antigravity (App, IDE, CLI)
+Все три поверхности читают один файл: `~/.gemini/config/mcp_config.json`
+(глобально) или `<workspace>/.agents/mcp_config.json` (для проекта).
+
+```
+{
+  "mcpServers": {
+    "google-workspace": {
+      "command": "python",
+      "args": ["<PROJECT_PATH>\\\\server.py"],
+      "env": {
+        "MCP_AUTH_TOKEN": "your_token_here",
+        "MCP_CONFIG_FILE": "<PROJECT_PATH>\\\\config.yaml",
+        "MCP_TOOL_PROFILE": "read-write"
+      },
+      "timeoutSeconds": 300,
+      "tools": { "workspace_search": { "eager": true } }
+    }
+  }
+}
+```
+
+Особенности Antigravity:
+
+- `timeoutSeconds` по умолчанию 180 с на вызов инструмента; операциям Apps Script нужно больше.
+- Инструменты по умолчанию загружаются лениво — отметьте 2–3 самых частых как `"eager": true`.
+- Для удалённых серверов поддерживается только Streamable HTTP; этот сервер — stdio.
+- Права по умолчанию — режим **Ask**; политики выглядят как `mcp(google-workspace/workspace_search)`.
+
+Готовый файл: [`antigravity/mcp_config.example.json`](../antigravity/mcp_config.example.json),
+пошаговая инструкция: [`antigravity/README.md`](../antigravity/README.md).
+
 ## Cursor
 Файлы конфигурации:
 - Проектный: `.cursor/mcp.json`

@@ -24,10 +24,21 @@ class Config:
     mcp_auth_token: Optional[str]
     scopes: List[str]
     log_level: int = _logging.INFO
+    tool_profile: str = "full"
+    allowed_tools: Optional[List[str]] = None
+    denied_tools: Optional[List[str]] = None
 
 
 def _default_path(*parts: str) -> str:
     return os.path.join(os.path.expanduser("~"), *parts)
+
+
+def _env_list(name: str) -> Optional[List[str]]:
+    """Read a comma-separated list from an environment variable."""
+    raw = os.environ.get(name)
+    if not raw:
+        return None
+    return [item.strip() for item in raw.split(",") if item.strip()]
 
 
 def _load_config_file(path: str) -> Dict[str, Any]:
@@ -83,6 +94,18 @@ def load_config() -> Config:
     )
     log_level = getattr(_logging, log_level_str.upper(), _logging.INFO)
 
+    tool_profile = os.environ.get(
+        "MCP_TOOL_PROFILE", str(file_config.get("tool_profile", "full"))
+    )
+
+    allowed_tools = _env_list("MCP_ALLOWED_TOOLS") or file_config.get("allowed_tools")
+    if allowed_tools is not None:
+        allowed_tools = [str(item) for item in allowed_tools]
+
+    denied_tools = _env_list("MCP_DENIED_TOOLS") or file_config.get("denied_tools")
+    if denied_tools is not None:
+        denied_tools = [str(item) for item in denied_tools]
+
     return Config(
         client_secrets_file=client_secrets_file,
         token_file=token_file,
@@ -91,4 +114,7 @@ def load_config() -> Config:
         mcp_auth_token=mcp_auth_token,
         scopes=scopes,
         log_level=log_level,
+        tool_profile=tool_profile,
+        allowed_tools=allowed_tools,
+        denied_tools=denied_tools,
     )

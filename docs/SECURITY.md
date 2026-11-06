@@ -15,6 +15,32 @@ The server includes safeguards to reduce accidental destructive actions.
 ## Public access
 - `share_file` blocks `type=anyone` unless `allow_public=true`.
 
+## Tool profiles (server-side allow-list)
+
+A profile removes tools before the agent ever sees them. It is enforced in two
+places: `tools/list` returns only the exposed tools, and `tools/call` rejects
+anything outside the profile with an explicit error.
+
+| Profile | Tools | Use it for |
+|---|---:|---|
+| `full` | 46 | your own machine, full trust |
+| `read-write` | 41 | daily work — destructive tools hidden |
+| `read-only` | 16 | exploration, demos, shared machines, untrusted agents |
+
+```yaml
+tool_profile: "read-only"
+# Optional explicit lists, applied on top. Deny beats allow.
+allowed_tools: ["workspace_search", "find_files", "read_sheet"]
+denied_tools: ["gmail_search_and_summarize"]
+```
+
+Env overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS="a,b"`, `MCP_DENIED_TOOLS="x,y"`.
+
+Profiles are a **defense-in-depth layer, not a security boundary you can rely on
+alone**: the OAuth token still carries whatever scopes you granted. The strongest
+combination is read-only scopes **and** the `read-only` profile — then neither the
+token nor the server can write.
+
 ## MCP_AUTH_TOKEN
 All tool calls require `MCP_AUTH_TOKEN` to be configured (environment variable or
 `mcp_auth_token` in `config.yaml`). This is a **server-side configuration check**

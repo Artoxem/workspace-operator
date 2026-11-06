@@ -25,6 +25,28 @@ Every tool is annotated with safety hints:
 
 Compatible MCP clients (e.g. Cursor) use these hints to warn users before destructive actions.
 
+## Tool profiles
+
+`tool_profile` in `config.yaml` decides which tools exist for this deployment.
+Tools outside the profile are not listed by `tools/list` and cannot be called —
+the server answers with an explicit "disabled by the active tool profile" error.
+
+| Profile | Tools | What is exposed |
+|---|---:|---|
+| `full` (default) | 46 | everything |
+| `read-write` | 41 | everything except `destructiveHint: true` |
+| `read-only` | 16 | only `readOnlyHint: true` |
+
+`allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
+
+```yaml
+tool_profile: "read-write"
+allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
+denied_tools: ["send_email", "share_file"]
+```
+
+Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
+
 ## Usage examples
 
 ### Basic operations
@@ -78,6 +100,27 @@ Arguments: {"spreadsheet_id": "1a2b...", "range_name": "Sheet1!A1:Z1000"}
 Result: DRY RUN: Large range detected (26,000 cells)
 Would clear range: Sheet1!A1:Z1000
 To proceed: clear_range(..., confirm=True)
+```
+
+## Cross-product search
+- `workspace_search(query, sources?, limit?, calendar_days_back?, calendar_days_ahead?)`
+  - One query across Drive, Gmail and Calendar, merged and sorted by date.
+  - `sources`: comma-separated list of `drive`, `gmail`, `calendar`. Default: `drive,gmail`.
+  - `limit`: per-source limit, 1–25 (default 10).
+  - Calendar window defaults: 30 days back, 180 days ahead.
+  - Partial failures are reported inline; the rest of the results are still returned.
+
+Example:
+
+```
+Tool: workspace_search
+Arguments: {"query": "Q3 budget", "sources": "drive,gmail,calendar", "limit": 10}
+Result:
+Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1)]
+
+1. [drive] Budget 2026 — spreadsheet
+   2026-03-02 10:11 UTC | type: spreadsheet | id: 1a2b3c
+   https://docs.google.com/spreadsheets/d/1a2b3c
 ```
 
 ## Drive

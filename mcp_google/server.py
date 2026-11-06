@@ -15,6 +15,7 @@ import mcp.types as types
 
 from .config import load_config
 from .logging import setup_logging
+from .profiles import ProfileError, resolve_profile
 from .security import require_token_configured
 from .operations import BinaryResult
 from .handlers import (
@@ -63,6 +64,7 @@ from .handlers import (
     sheet_export_csv_handler,
     sheet_find_replace_handler,
     update_sheet_handler,
+    workspace_search_handler,
 )
 
 # ---------------------------------------------------------------------------
@@ -76,6 +78,48 @@ _DESTRUCTIVE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=True)
 def _tools() -> List[types.Tool]:
     """Return the full list of tool definitions with annotations."""
     return [
+        # ── Cross-product search ──────────────────────────────────────────
+        types.Tool(
+            name="workspace_search",
+            description=(
+                "Search Google Drive, Gmail and Calendar with one query and get a "
+                "merged, date-sorted result list. Use it for 'find everything about X' "
+                "questions before falling back to per-service tools."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Free-text query, e.g. 'Q3 budget'",
+                    },
+                    "sources": {
+                        "type": "string",
+                        "default": "drive,gmail",
+                        "description": (
+                            "Comma-separated sources to search: drive, gmail, calendar"
+                        ),
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Maximum results per source (1-25)",
+                    },
+                    "calendar_days_back": {
+                        "type": "integer",
+                        "default": 30,
+                        "description": "Calendar only: how far back to search",
+                    },
+                    "calendar_days_ahead": {
+                        "type": "integer",
+                        "default": 180,
+                        "description": "Calendar only: how far ahead to search",
+                    },
+                },
+                "required": ["query"],
+            },
+            annotations=_READ_ONLY,
+        ),
         # ── Google Drive ──────────────────────────────────────────────────
         types.Tool(
             name="find_files",
@@ -780,7 +824,23 @@ async def run() -> None:
     config = load_config()
     logger = setup_logging(config.log_file, level=config.log_level)
 
+    try:
+        profile = resolve_profile(
+            config.tool_profile, config.allowed_tools, config.denied_tools
+        )
+    except ProfileError as exc:
+        raise SystemExit(f"Configuration error: {exc}") from exc
+
     server = Server("My Google Tools")
+    all_tools = _tools()
+    exposed_tools = profile.filter(all_tools)
+    exposed_names = frozenset(tool.name for tool in exposed_tools)
+    logger.info(
+        "Starting with tool %s — %d of %d tools exposed",
+        profile.describe(),
+        len(exposed_tools),
+        len(all_tools),
+    )
 
     # ------------------------------------------------------------------
     # Tools
@@ -788,7 +848,7 @@ async def run() -> None:
 
     @server.list_tools()
     async def handle_list_tools() -> List[types.Tool]:
-        return _tools()
+        return exposed_tools
 
     @server.call_tool()
     async def handle_call_tool(
@@ -797,10 +857,33 @@ async def run() -> None:
         if not arguments:
             arguments = {}
 
+        if name not in exposed_names:
+            logger.warning("Blocked tool call outside profile: %s", name)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        f"Tool '{name}' is disabled by the active tool profile "
+                        f"({profile.name}). Adjust tool_profile, allowed_tools or "
+                        "denied_tools in config.yaml to enable it."
+                    ),
+                    isError=True,
+                )
+            ]
+
         try:
             require_token_configured(config.mcp_auth_token)
 
             handlers = {
+                "workspace_search": lambda a: workspace_search_handler(
+                    config,
+                    logger,
+                    a.get("query"),
+                    a.get("sources"),
+                    a.get("limit", 10),
+                    a.get("calendar_days_back", 30),
+                    a.get("calendar_days_ahead", 180),
+                ),
                 "find_files": lambda a: find_files_handler(config, logger, a.get("query")),
                 "read_sheet": lambda a: read_sheet_handler(
                     config, logger, a.get("spreadsheet_id"), a.get("range_name")
