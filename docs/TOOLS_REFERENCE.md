@@ -187,9 +187,10 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
 - `create_draft(to, subject, body_text)`
   - Create a draft.
 - `list_emails(max_results?, query?)`
-  - List emails.
+  - List emails with date, sender and subject (plus a cleaned snippet).
 - `read_email(message_id)`
-  - Read an email (snippet).
+  - Read a message: From / To / Date / Subject / status / labels / attachments,
+    plus the decoded body (text/plain preferred, HTML converted, 2 500 characters max).
 - `delete_email(message_id, confirm?)`
   - Requires `confirm=true`.
 - `batch_delete_emails(message_ids[], dry_run?)`

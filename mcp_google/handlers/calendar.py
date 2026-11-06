@@ -7,6 +7,58 @@ from googleapiclient.discovery import build
 from ..auth import get_creds
 from ..config import Config
 from ..security import validate_email
+from ..text import clean_text
+
+
+def _parse_event_time(value: dict) -> tuple[datetime | None, str, bool]:
+    """Return (datetime, label, all_day) for a Google Calendar start/end."""
+    if value.get("date"):
+        try:
+            parsed = datetime.fromisoformat(value["date"])
+        except ValueError:
+            return None, value["date"], True
+        return parsed, parsed.strftime("%Y-%m-%d"), True
+
+    stamp = value.get("dateTime")
+    if not stamp:
+        return None, "unknown time", False
+
+    try:
+        parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None, stamp, False
+    return parsed, parsed.strftime("%Y-%m-%d %H:%M"), False
+
+
+def _offset(parsed: datetime) -> str:
+    raw = parsed.strftime("%z")
+    return f"{raw[:3]}:{raw[3:]}" if raw else "UTC"
+
+
+def _format_event_line(event: dict) -> str:
+    start_dt, start_label, start_all_day = _parse_event_time(event.get("start") or {})
+    end_dt, end_label, end_all_day = _parse_event_time(event.get("end") or {})
+
+    if start_all_day and end_all_day:
+        if start_label and end_label and start_label != end_label:
+            when = f"{start_label} → {end_label} (all day)"
+        else:
+            when = f"{start_label} (all day)"
+    elif start_dt and end_dt and start_dt.date() == end_dt.date():
+        when = f"{start_label}–{end_dt.strftime('%H:%M')} ({_offset(start_dt)})"
+    elif start_dt and end_dt:
+        when = (
+            f"{start_label} ({_offset(start_dt)}) → "
+            f"{end_label} ({_offset(end_dt)})"
+        )
+    else:
+        when = f"{start_label} → {end_label}"
+
+    parts = [f"- {when}", clean_text(event.get("summary"), single_line=True) or "(no title)"]
+    if event.get("location"):
+        parts.append(clean_text(event["location"], single_line=True))
+    parts.append(f"ID: {event.get('id')}")
+    return " | ".join(parts)
 
 
 def list_events_handler(
@@ -32,16 +84,9 @@ def list_events_handler(
         if not events:
             return "No upcoming events found."
 
-        output = "Upcoming events:\n"
-        for event in events:
-            start = event.get("start").get(
-                "dateTime", event.get("start").get("date")
-            )
-            output += (
-                f"- {start} : {event.get('summary')} (ID: {event.get('id')})\n"
-            )
-
-        return output
+        lines = ["Upcoming events:"]
+        lines.extend(_format_event_line(event) for event in events)
+        return "\n".join(lines)
     except Exception as e:
         return f"Error listing events: {str(e)}"
 
@@ -145,7 +190,17 @@ def calendar_find_free_slots_handler(
 
         output = f"Free slots (duration {duration_minutes} min):\n"
         for s_dt, e_dt in slots[:max_results]:
-            output += f"- {s_dt.isoformat()} to {e_dt.isoformat()}\n"
+            if s_dt.date() == e_dt.date():
+                label = (
+                    f"{s_dt.strftime('%Y-%m-%d %H:%M')}–"
+                    f"{e_dt.strftime('%H:%M')} ({_offset(s_dt)})"
+                )
+            else:
+                label = (
+                    f"{s_dt.strftime('%Y-%m-%d %H:%M')} ({_offset(s_dt)}) → "
+                    f"{e_dt.strftime('%Y-%m-%d %H:%M')} ({_offset(e_dt)})"
+                )
+            output += f"- {label}\n"
 
         logger.info(
             "Free slots found: %s between %s and %s", len(slots), start_time, end_time

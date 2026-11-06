@@ -119,6 +119,31 @@ async def full_checks(session: ClientSession) -> None:
         files_text.splitlines()[0] if files_text else "empty",
     )
 
+    mails = await session.call_tool("list_emails", {"max_results": 1})
+    mails_text = _text(mails)
+    record(
+        "call list_emails",
+        not mails.isError and "Messages (" in mails_text,
+        mails_text.splitlines()[1] if len(mails_text.splitlines()) > 1 else "empty",
+    )
+
+    message_id = re.search(r"ID:\s*([0-9a-f]{12,})", mails_text)
+    if message_id:
+        mail = await session.call_tool("read_email", {"message_id": message_id.group(1)})
+        mail_text = _text(mail)
+        record(
+            "call read_email (headers + body)",
+            not mail.isError
+            and all(marker in mail_text for marker in ("From:", "To:", "Date:", "Subject:"))
+            and len(mail_text) > 300,
+            f"{len(mail_text)} chars",
+        )
+        record(
+            "read_email has no HTML entities",
+            "&#" not in mail_text and "&amp;" not in mail_text,
+            "clean text",
+        )
+
     recent = await session.read_resource("gdrive://recent")
     recent_text = recent.contents[0].text if recent.contents else ""
     record(

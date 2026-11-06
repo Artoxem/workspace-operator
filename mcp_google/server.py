@@ -18,6 +18,7 @@ from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
 from .security import require_token_configured
 from .operations import BinaryResult
+from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .handlers import (
     add_sheet_handler,
     append_row_handler,
@@ -65,6 +66,7 @@ from .handlers import (
     sheet_find_replace_handler,
     update_sheet_handler,
     workspace_search_handler,
+    document_to_text,
 )
 
 # ---------------------------------------------------------------------------
@@ -1086,16 +1088,22 @@ async def run() -> None:
 
             text = str(result)
             # Handlers report recoverable failures as "Error ..." strings; turn
-            # those into a protocol-level isError so clients can react to them.
+            # those into a protocol-level isError so clients can react to them,
+            # and strip googleapiclient's raw <HttpError ...> dumps.
+            is_error = text.lstrip().startswith("Error")
+            if is_error:
+                text = humanize_http_error(text)
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=text)],
-                isError=text.lstrip().startswith("Error"),
+                isError=is_error,
             )
 
         except Exception as e:
             logger.exception("Tool call error [%s]: %s", name, e)
             return types.CallToolResult(
-                content=[types.TextContent(type="text", text=f"Error: {str(e)}")],
+                content=[
+                    types.TextContent(type="text", text=f"Error: {humanize_http_error(e)}")
+                ],
                 isError=True,
             )
 
@@ -1177,7 +1185,7 @@ async def run() -> None:
                     owner = owners[0].get("emailAddress", "?") if owners else "?"
                     lines.append(
                         f"- {f['name']} (ID: {f['id']}) [{f.get('mimeType', '?')}] "
-                        f"modified={f.get('modifiedTime', '')} owner={owner}"
+                        f"modified={format_timestamp(f.get('modifiedTime'))} owner={owner}"
                     )
                 return "\n".join(lines)
 
@@ -1203,8 +1211,9 @@ async def run() -> None:
                         for h in full.get("payload", {}).get("headers", [])
                     }
                     lines.append(
-                        f"- [{msg['id']}] {hdrs.get('Date', '')} | "
-                        f"{hdrs.get('From', '')} | {hdrs.get('Subject', '(no subject)')}"
+                        f"- [{msg['id']}] {parse_email_date(hdrs.get('Date'))} | "
+                        f"{clean_text(hdrs.get('From'))} | "
+                        f"{clean_text(hdrs.get('Subject')) or '(no subject)'}"
                     )
                 return "\n".join(lines)
 
@@ -1252,8 +1261,8 @@ async def run() -> None:
                     f"ID: {f.get('id')}\n"
                     f"Type: {f.get('mimeType')}\n"
                     f"Size: {size_bytes:,} bytes\n"
-                    f"Created: {f.get('createdTime')}\n"
-                    f"Modified: {f.get('modifiedTime')}\n"
+                    f"Created: {format_timestamp(f.get('createdTime'))}\n"
+                    f"Modified: {format_timestamp(f.get('modifiedTime'))}\n"
                     f"Owner: {owner}\n"
                     f"Link: {f.get('webViewLink', 'N/A')}"
                 )
@@ -1287,13 +1296,10 @@ async def run() -> None:
                 creds = get_creds(config)
                 svc = build("docs", "v1", credentials=creds)
                 doc = svc.documents().get(documentId=document_id).execute()
-                content = doc.get("body", {}).get("content", [])
-                text_parts = []
-                for value in content:
-                    if "paragraph" in value:
-                        for elem in value["paragraph"].get("elements", []):
-                            text_parts.append(elem.get("textRun", {}).get("content", ""))
-                return f"Document: {doc.get('title')}\n\n{''.join(text_parts)}"
+                return (
+                    f"Document: {doc.get('title')}\n\n"
+                    f"{document_to_text(doc) or '(the document has no readable text)'}"
+                )
 
             else:
                 raise ValueError(f"Unknown resource URI scheme: {uri_str}")
@@ -1415,12 +1421,12 @@ async def run() -> None:
                         h["name"]: h["value"]
                         for h in full.get("payload", {}).get("headers", [])
                     }
-                    snippet = full.get("snippet", "")[:120]
+                    snippet = clean_text(full.get("snippet", ""), limit=140)
                     lines.append(
                         f"\n---\nID: {msg['id']}\n"
-                        f"Date: {hdrs.get('Date', '')}\n"
-                        f"From: {hdrs.get('From', '')}\n"
-                        f"Subject: {hdrs.get('Subject', '(no subject)')}\n"
+                        f"Date: {parse_email_date(hdrs.get('Date'))}\n"
+                        f"From: {clean_text(hdrs.get('From'), single_line=True)}\n"
+                        f"Subject: {clean_text(hdrs.get('Subject'), single_line=True) or '(no subject)'}\n"
                         f"Preview: {snippet}"
                     )
                 return "\n".join(lines)
@@ -1573,7 +1579,7 @@ async def run() -> None:
                     lines.append(
                         f"- {f.get('name')}\n"
                         f"  ID: {f.get('id')} | Type: {f.get('mimeType', '?')}\n"
-                        f"  Modified: {f.get('modifiedTime', '')} | Owner: {owner}\n"
+                        f"  Modified: {format_timestamp(f.get('modifiedTime'))} | Owner: {owner}\n"
                         f"  Link: {f.get('webViewLink', 'N/A')}"
                     )
                 return "\n".join(lines)

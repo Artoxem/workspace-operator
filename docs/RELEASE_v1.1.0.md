@@ -47,11 +47,11 @@ Plus `allowed_tools` / `denied_tools` lists and the `MCP_TOOL_PROFILE`,
 
 ### 🧪 Tests
 
-22 unit tests (`python -m unittest discover -s tests -v`) covering profile filtering
-and search parsing/formatting. No credentials or network required.
+43 unit tests (`python -m unittest discover -s tests -v`) covering profiles,
+search parsing, text hygiene and Docs table rendering. No credentials or network required.
 
 `tests/live_smoke.py` — an opt-in end-to-end check against a real Google account:
-17 assertions over the MCP handshake, tool/resource/prompt listing, real Drive,
+20 assertions over the MCP handshake, tool/resource/prompt listing, real Drive,
 Gmail and Docs calls, binary PDF export, profile enforcement and error propagation.
 Read-only: it never writes to the account.
 
@@ -61,6 +61,24 @@ Tool failures are now reported with `isError: true` at the protocol level
 (previously the flag was attached to a `TextContent` field that does not exist,
 so clients saw plain text and could not distinguish a failure from a result).
 All handler error messages are normalised to a single `Error ...` form.
+
+### 🧹 Tool output quality
+
+A live pass over every read tool surfaced a set of formatting defects; all are fixed:
+
+| Problem | Before | After |
+|---|---|---|
+| `read_email` returned no date, recipient, body or attachments | `From` / `Subject` / `Snippet` only | full headers, status, labels, attachments, decoded body (2 500 chars) |
+| HTML entities leaked into snippets | `I&#39;ve` | `I've` |
+| Invisible padding in snippets | zero-width runs | stripped |
+| CRLF in email bodies | gaps of 20 blank lines | collapsed to one |
+| Docs tables silently dropped | header text only | tables rendered as `| a | b |` rows |
+| `list_emails` without sender/subject/date | `ID + snippet` | date, sender, subject, cleaned snippet |
+| Raw `HttpError` dumps | URLs + JSON in tool output | `Google API 403: … — check that the account can access this resource` |
+| ISO timestamps with milliseconds | `2026-09-16T08:28:52.006Z` | `2026-09-16 08:28` |
+| Calendar events without time or location | `2026-12-22 : Title` | `10:00–10:30 (+03:00)`, all-day ranges, location |
+| Tracking URLs in marketing mail | 2 000-character links | `[long link]` |
+| Doubled ellipsis in previews | `…...` | `…` |
 
 ## Breaking changes
 

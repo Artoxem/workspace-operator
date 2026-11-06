@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from ..auth import get_creds
 from ..config import Config
 from ..security import validate_email
+from ..text import format_timestamp
 
 
 def find_files_handler(config: Config, logger: logging.Logger, query: str) -> str:
@@ -181,7 +182,7 @@ def drive_search_advanced_handler(
             output += (
                 f"- {item.get('name')} (ID: {item.get('id')}) "
                 f"[{item.get('mimeType')}] owner={owner} "
-                f"modified={item.get('modifiedTime')}\n"
+                f"modified={format_timestamp(item.get('modifiedTime'))}\n"
             )
 
         logger.info("Drive search: query='%s' results=%s", query, len(items))

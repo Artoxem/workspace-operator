@@ -286,8 +286,8 @@ a `Partial results` note.
 | Tool | Type | Description |
 |------|------|-------------|
 | `get_gmail_profile` | read | Get authenticated email address |
-| `list_emails` | read | List emails (optional search query) |
-| `read_email` | read | Read a single email |
+| `list_emails` | read | List emails with date, sender and subject |
+| `read_email` | read | Headers, labels, attachments and decoded body |
 | `gmail_search_and_summarize` | read | Search and return a brief summary |
 | `create_draft` | write | Create a draft |
 | `send_email` | write | Send or draft (`draft_mode=true` by default) |
@@ -382,7 +382,7 @@ Design rules:
 python -m unittest discover -s tests -v
 ```
 
-22 tests cover profile filtering and search parsing/formatting. No credentials,
+43 tests cover profiles, search parsing, text hygiene and Docs table rendering. No credentials,
 network, or Google API access required.
 
 ---

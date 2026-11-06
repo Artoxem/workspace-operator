@@ -187,9 +187,10 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 - `create_draft(to, subject, body_text)`
   - Создать черновик.
 - `list_emails(max_results?, query?)`
-  - Список писем.
+  - Список писем с датой, отправителем и темой (плюс очищенный сниппет).
 - `read_email(message_id)`
-  - Прочитать письмо (snippet).
+  - Прочитать письмо: From / To / Date / Subject / статус / метки / вложения
+    и декодированное тело (приоритет text/plain, HTML конвертируется, максимум 2 500 символов).
 - `delete_email(message_id, confirm?)`
   - Требует `confirm=true`.
 - `batch_delete_emails(message_ids[], dry_run?)`

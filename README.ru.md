@@ -285,8 +285,8 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 | Инструмент | Тип | Описание |
 |------|------|-------------|
 | `get_gmail_profile` | read | Адрес авторизованного пользователя |
-| `list_emails` | read | Список писем (с фильтром) |
-| `read_email` | read | Прочитать письмо |
+| `list_emails` | read | Список писем с датой, отправителем и темой |
+| `read_email` | read | Заголовки, метки, вложения и тело письма |
 | `gmail_search_and_summarize` | read | Поиск с краткой сводкой |
 | `create_draft` | write | Создать черновик |
 | `send_email` | write | Отправить или создать черновик (`draft_mode=true`) |
@@ -380,7 +380,7 @@ skills/google-workspace/   Agent Skill: когда какой инструмен
 python -m unittest discover -s tests -v
 ```
 
-22 теста: фильтрация профилей и разбор/форматирование поиска. Без креденшелов и сети.
+43 теста: профили, разбор поиска, нормализация текста и таблицы в Docs. Без креденшелов и сети.
 
 ---
 

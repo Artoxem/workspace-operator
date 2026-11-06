@@ -17,6 +17,7 @@ from googleapiclient.discovery import build
 
 from ..auth import get_creds
 from ..config import Config
+from ..text import clean_text
 
 DEFAULT_SOURCES = ("drive", "gmail")
 VALID_SOURCES = ("drive", "gmail", "calendar")
@@ -74,7 +75,7 @@ def _drive_item(file: Dict[str, Any]) -> Dict[str, Any]:
     short_mime = mime.split(".")[-1].replace("vnd.google-apps.", "") or "file"
     return {
         "source": "drive",
-        "title": file.get("name") or "(untitled)",
+        "title": clean_text(file.get("name")) or "(untitled)",
         "id": file.get("id", ""),
         "date": _parse_iso(file.get("modifiedTime")),
         "detail": f"type: {short_mime}",
@@ -110,10 +111,10 @@ def _gmail_item(message: Dict[str, Any], headers: Dict[str, str], snippet: str) 
     sender = headers.get("From", "")
     return {
         "source": "gmail",
-        "title": headers.get("Subject") or "(no subject)",
+        "title": clean_text(headers.get("Subject")) or "(no subject)",
         "id": message.get("id", ""),
         "date": date,
-        "detail": f"from: {sender}" if sender else "gmail message",
+        "detail": f"from: {clean_text(sender)}" if sender else "gmail message",
         "link": f"https://mail.google.com/mail/u/0/#all/{message.get('id', '')}",
         "snippet": snippet,
     }
@@ -127,7 +128,7 @@ def _calendar_item(event: Dict[str, Any]) -> Dict[str, Any]:
     detail = f"attendees: {people}" if people else "calendar event"
     return {
         "source": "calendar",
-        "title": event.get("summary") or "(no title)",
+        "title": clean_text(event.get("summary")) or "(no title)",
         "id": event.get("id", ""),
         "date": _parse_iso(start_raw),
         "detail": detail,
@@ -176,7 +177,7 @@ def _search_gmail(creds, query: str, limit: int) -> List[Dict[str, Any]]:
             header["name"]: header["value"]
             for header in full.get("payload", {}).get("headers", [])
         }
-        snippet = full.get("snippet", "")[:160]
+        snippet = clean_text(full.get("snippet", ""), limit=160)
         items.append(_gmail_item(message, headers, snippet))
     return items
 

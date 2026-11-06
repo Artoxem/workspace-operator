@@ -8,6 +8,60 @@ from googleapiclient.discovery import build
 from ..auth import get_creds
 from ..config import Config
 from ..security import validate_email
+from ..text import clean_text, html_to_text, parse_email_date, shorten_links
+
+BODY_LIMIT = 2500
+
+
+def _header_map(payload: dict) -> dict:
+    return {header["name"]: header["value"] for header in payload.get("headers", [])}
+
+
+def _find_part_data(payload: dict, mime_type: str) -> str | None:
+    """Depth-first search for the first non-empty body part of ``mime_type``."""
+    if payload.get("mimeType") == mime_type and payload.get("body", {}).get("data"):
+        return payload["body"]["data"]
+    for part in payload.get("parts") or []:
+        found = _find_part_data(part, mime_type)
+        if found:
+            return found
+    return None
+
+
+def _decode_part(data: str) -> str:
+    try:
+        return base64.urlsafe_b64decode(data.encode("ascii")).decode("utf-8", "replace")
+    except (ValueError, UnicodeDecodeError):
+        return ""
+
+
+def _message_body(payload: dict) -> str:
+    """Return readable text: text/plain if present, else text/html stripped."""
+    plain = _find_part_data(payload, "text/plain")
+    text = clean_text(_decode_part(plain)) if plain else ""
+    if not text:
+        markup = _find_part_data(payload, "text/html")
+        text = html_to_text(_decode_part(markup)) if markup else ""
+
+    text = shorten_links(text)
+    if len(text) > BODY_LIMIT:
+        return text[:BODY_LIMIT].rstrip() + f"\n… (truncated, {len(text):,} characters total)"
+    return text
+
+
+def _attachment_names(payload: dict) -> list[str]:
+    names: list[str] = []
+
+    def walk(part: dict) -> None:
+        filename = part.get("filename")
+        body = part.get("body", {})
+        if filename and (body.get("attachmentId") or body.get("size")):
+            names.append(clean_text(filename))
+        for child in part.get("parts") or []:
+            walk(child)
+
+    walk(payload)
+    return names
 
 
 def _create_message(to: str, subject: str, message_text: str) -> dict:
@@ -138,16 +192,29 @@ def list_emails_handler(
         if not messages:
             return "No messages found."
 
-        output = "Messages:\n"
-        for msg in messages:
-            txt = (
+        output = f"Messages ({len(messages)}):\n"
+        for index, msg in enumerate(messages, start=1):
+            full = (
                 service.users()
                 .messages()
-                .get(userId="me", id=msg["id"], format="minimal")
+                .get(
+                    userId="me",
+                    id=msg["id"],
+                    format="metadata",
+                    metadataHeaders=["From", "Subject", "Date"],
+                )
                 .execute()
             )
-            snippet = txt.get("snippet", "")
-            output += f"- ID: {msg['id']} | Snippet: {snippet}\n"
+            headers = _header_map(full.get("payload", {}))
+            snippet = clean_text(full.get("snippet", ""), limit=120)
+            output += (
+                f"{index}. {parse_email_date(headers.get('Date'))} | "
+                f"{clean_text(headers.get('From'), single_line=True)} | "
+                f"{clean_text(headers.get('Subject'), single_line=True) or '(no subject)'}\n"
+                f"   ID: {msg['id']}"
+                + (f" | {snippet}" if snippet else "")
+                + "\n"
+            )
 
         return output
     except Exception as e:
@@ -160,23 +227,32 @@ def read_email_handler(config: Config, logger: logging.Logger, message_id: str) 
         service = build("gmail", "v1", credentials=creds)
 
         message = (
-            service.users().messages().get(userId="me", id=message_id).execute()
+            service.users()
+            .messages()
+            .get(userId="me", id=message_id, format="full")
+            .execute()
         )
 
         payload = message.get("payload", {})
-        headers = payload.get("headers", [])
+        headers = _header_map(payload)
+        labels = [label for label in message.get("labelIds", []) if label != "UNREAD"]
+        unread = "UNREAD" in message.get("labelIds", [])
+        attachments = _attachment_names(payload)
+        body = _message_body(payload)
 
-        subject = ""
-        sender = ""
-        for header in headers:
-            if header["name"] == "Subject":
-                subject = header["value"]
-            if header["name"] == "From":
-                sender = header["value"]
+        lines = [
+            f"From: {clean_text(headers.get('From'), single_line=True)}",
+            f"To: {clean_text(headers.get('To'), single_line=True)}",
+            f"Date: {clean_text(headers.get('Date'), single_line=True)}",
+            f"Subject: {clean_text(headers.get('Subject'), single_line=True) or '(no subject)'}",
+            f"Status: {'unread' if unread else 'read'}"
+            + (f" | labels: {', '.join(labels)}" if labels else ""),
+            f"Attachments: {', '.join(attachments) if attachments else 'none'}",
+            "",
+            body or "(no readable text body)",
+        ]
 
-        snippet = message.get("snippet", "")
-
-        return f"From: {sender}\nSubject: {subject}\nSnippet: {snippet}\n"
+        return "\n".join(lines)
     except Exception as e:
         return f"Error reading email: {str(e)}"
 
@@ -197,7 +273,7 @@ def delete_email_handler(
                 .get(userId="me", id=message_id, format="minimal")
                 .execute()
             )
-            snippet = msg.get("snippet", "No preview available")[:100]
+            snippet = clean_text(msg.get("snippet", "No preview available"), limit=120)
         except Exception:
             snippet = "Unable to load preview"
 
@@ -206,7 +282,7 @@ def delete_email_handler(
             return (
                 "⚠️ CONFIRMATION REQUIRED\n\n"
                 f"This will permanently delete email {message_id}.\n\n"
-                f"Email preview:\n{snippet}...\n\n"
+                f"Email preview:\n{snippet}\n\n"
                 "⚠️ To proceed, call this tool again with confirm=True"
             )
 
@@ -240,8 +316,8 @@ def batch_delete_emails_handler(
                         .get(userId="me", id=msg_id, format="minimal")
                         .execute()
                     )
-                    snippet = msg.get("snippet", "No preview")[:80]
-                    preview += f"  • {msg_id}: {snippet}...\n"
+                    snippet = clean_text(msg.get("snippet", "No preview"), limit=100)
+                    preview += f"  • {msg_id}: {snippet}\n"
                 except Exception:
                     preview += f"  • {msg_id}: (unable to load preview)\n"
 
@@ -302,8 +378,9 @@ def gmail_search_and_summarize_handler(
                 for h in full.get("payload", {}).get("headers", [])
             }
             summary_lines.append(
-                f"- {headers.get('Date','')} | {headers.get('From','')} | "
-                f"{headers.get('Subject','')}"
+                f"- {parse_email_date(headers.get('Date'))} | "
+                f"{clean_text(headers.get('From'))} | "
+                f"{clean_text(headers.get('Subject'))}"
             )
 
         logger.info("Gmail search: query='%s' results=%s", query, len(messages))

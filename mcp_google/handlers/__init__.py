@@ -19,6 +19,7 @@ from .docs import (
     create_doc_handler,
     doc_export_pdf_handler,
     doc_fill_template_handler,
+    document_to_text,
     read_doc_handler,
 )
 from .drive import (
@@ -106,4 +107,5 @@ __all__ = [
     "drive_revoke_public_handler",
     "drive_copy_file_handler",
     "workspace_search_handler",
+    "document_to_text",
 ]
