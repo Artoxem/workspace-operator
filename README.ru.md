@@ -221,6 +221,8 @@ python -m workspace_operator serve --http --port 8765
   `Origin` отклоняются;
 * `GET /healthz` не требует токена и отдаёт только версию и транспорт;
 * привязка к не-loopback адресу требует **одновременно** `--allow-network` и
+  `--insecure`; loopback-имена принимают любой порт (контейнеры, прокси),
+  для остального нужен явный `--allow-host`;
   `--insecure`, поэтому выход в сеть всегда осознанный.
 
 ### Docker
@@ -471,7 +473,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 240 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 247 юнит-тестов, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```

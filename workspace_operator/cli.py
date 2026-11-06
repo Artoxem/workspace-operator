@@ -259,6 +259,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         port=args.port,
         allow_network=args.allow_network,
         insecure=args.insecure,
+        extra_hosts=args.allow_host,
     )
     return serve_http(server, config, logger, options, __version__)
 
@@ -298,6 +299,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--insecure",
         action="store_true",
         help="acknowledge there is no TLS in front of a network-exposed bind",
+    )
+    serve.add_argument(
+        "--allow-host",
+        action="append",
+        default=[],
+        metavar="HOST[:PORT]",
+        help=(
+            "extra Host header to accept (repeatable); loopback names already "
+            "accept any port, useful behind a proxy or a container port mapping"
+        ),
     )
     serve.set_defaults(func=cmd_serve)
 

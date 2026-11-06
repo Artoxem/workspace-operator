@@ -78,6 +78,20 @@ class SecuritySettingsTests(unittest.TestCase):
         self.assertIn("localhost:8765", settings.allowed_hosts)
         self.assertEqual(settings.allowed_origins, [])
 
+    def test_loopback_accepts_any_port(self):
+        """A container published on another host port must still pass the check."""
+        settings = _security_settings("0.0.0.0", 8765)
+        self.assertIn("127.0.0.1:*", settings.allowed_hosts)
+        self.assertIn("localhost:*", settings.allowed_hosts)
+        self.assertIn("[::1]:*", settings.allowed_hosts)
+
+    def test_extra_hosts_are_appended_once(self):
+        settings = _security_settings(
+            "127.0.0.1", 8765, ["mcp.example.com", "mcp.example.com"]
+        )
+        self.assertIn("mcp.example.com", settings.allowed_hosts)
+        self.assertEqual(settings.allowed_hosts.count("mcp.example.com"), 1)
+
 
 class OptionsTests(unittest.TestCase):
     def test_defaults_are_local(self):
@@ -85,6 +99,15 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(options.host, "127.0.0.1")
         self.assertFalse(options.allow_network)
         self.assertFalse(options.insecure)
+        self.assertEqual(options.extra_hosts, [])
+
+    def test_cli_accepts_allow_host(self):
+        from workspace_operator.cli import build_parser
+
+        args = build_parser().parse_args(
+            ["serve", "--http", "--allow-host", "a.example:443", "--allow-host", "b"]
+        )
+        self.assertEqual(args.allow_host, ["a.example:443", "b"])
 
 
 if __name__ == "__main__":

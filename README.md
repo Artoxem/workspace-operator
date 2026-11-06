@@ -222,6 +222,8 @@ python -m workspace_operator serve --http --port 8765
   origins are denied unless explicitly allowed;
 * `GET /healthz` is unauthenticated and returns only version and transport info;
 * binding a non-loopback address requires **both** `--allow-network` and
+  `--insecure`; loopback names accept any host port (containers, proxies),
+  anything else needs an explicit `--allow-host`;
   `--insecure`, so network exposure is always deliberate.
 
 ### Docker
@@ -472,7 +474,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 240 unit tests, no network
+python -m unittest discover -s tests -v     # 247 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```

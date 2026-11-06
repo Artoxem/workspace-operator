@@ -18,7 +18,7 @@ import hmac
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import uvicorn
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
@@ -40,6 +40,7 @@ class HttpOptions:
     allow_network: bool = False
     insecure: bool = False
     tokens: Dict[str, str] = field(default_factory=dict)
+    extra_hosts: List[str] = field(default_factory=list)
 
 
 def resolve_bind(host: str, allow_network: bool, insecure: bool) -> Tuple[bool, Optional[str]]:
@@ -81,8 +82,27 @@ def authenticate(authorization: Optional[str], tokens: Dict[str, str]) -> Option
     return None
 
 
-def _security_settings(host: str, port: int) -> TransportSecuritySettings:
-    hosts = [f"{host}:{port}", f"localhost:{port}", f"127.0.0.1:{port}", "localhost:*"]
+def _security_settings(
+    host: str, port: int, extra_hosts: Optional[List[str]] = None
+) -> TransportSecuritySettings:
+    """Allowed ``Host`` headers for the DNS-rebinding check.
+
+    Loopback names accept any port: publishing a container on ``-p 127.0.0.1:8791:8765``
+    makes the browser send ``Host: 127.0.0.1:8791``, which the container cannot
+    predict. The bind address itself is still pinned to ``host:port``.
+    """
+    hosts = [
+        f"{host}:{port}",
+        f"{host}:*",
+        f"localhost:{port}",
+        "localhost:*",
+        f"127.0.0.1:{port}",
+        "127.0.0.1:*",
+        "[::1]:*",
+    ]
+    for extra in extra_hosts or []:
+        if extra and extra not in hosts:
+            hosts.append(extra)
     return TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
         allowed_hosts=hosts,
@@ -95,7 +115,9 @@ def build_asgi_app(server, options: HttpOptions, version: str) -> Starlette:
         app=server,
         stateless=True,
         json_response=True,
-        security_settings=_security_settings(options.host, options.port),
+        security_settings=_security_settings(
+            options.host, options.port, options.extra_hosts
+        ),
     )
 
     async def healthz(_request):
