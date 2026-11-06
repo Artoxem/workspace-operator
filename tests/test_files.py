@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-from mcp_google.handlers.files import (
+from workspace_operator.handlers.files import (
     EXPORT_FORMATS_BY_TYPE,
     EXPORT_MIME,
     conflict_message,

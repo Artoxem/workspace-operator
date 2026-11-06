@@ -2,7 +2,7 @@
 
 import unittest
 
-from mcp_google.handlers.apps_script import format_script_response
+from workspace_operator.handlers.apps_script import format_script_response
 
 
 class SuccessTests(unittest.TestCase):

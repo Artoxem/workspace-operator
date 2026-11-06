@@ -24,7 +24,7 @@ All three surfaces read the same file: `~/.gemini/config/mcp_config.json`
 ```
 {
   "mcpServers": {
-    "google-workspace": {
+    "workspace-operator": {
       "command": "python",
       "args": ["<PROJECT_PATH>\\\\server.py"],
       "env": {
@@ -44,7 +44,7 @@ Notes specific to Antigravity:
 - `timeoutSeconds` default is 180 s per tool call; Apps Script operations need more.
 - Tools are lazy-loaded by default — mark two or three daily drivers as `"eager": true`.
 - Only Streamable HTTP is supported for remote servers; this server is stdio.
-- Permissions default to **Ask**; policies look like `mcp(google-workspace/workspace_search)`.
+- Permissions default to **Ask**; policies look like `mcp(workspace-operator/workspace_search)`.
 
 Ready-made file: [`antigravity/mcp_config.example.json`](../antigravity/mcp_config.example.json),
 walkthrough: [`antigravity/README.md`](../antigravity/README.md).

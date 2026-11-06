@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "google-workspace": {
+    "workspace-operator": {
       "command": "python",
       "args": ["D:\\DEV\\workspace-operator\\server.py"],
       "env": {

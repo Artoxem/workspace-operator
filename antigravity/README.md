@@ -40,6 +40,6 @@ context window.
 
 ## Installing the Agent Skill (optional)
 
-`skills/google-workspace/SKILL.md` teaches the agent *when* to reach for which
+`skills/workspace-operator/SKILL.md` teaches the agent *when* to reach for which
 tool (search first, then read, then write). Copy the folder into your skills
 directory or install it from Antigravity: **Customizations → Skills**.

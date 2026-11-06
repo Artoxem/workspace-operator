@@ -2,7 +2,7 @@
 
 import unittest
 
-from mcp_google.handlers.slides import (
+from workspace_operator.handlers.slides import (
     EMU_PER_PIXEL,
     _count_occurrences,
     _emu,

@@ -1,6 +1,6 @@
 import asyncio
 
-from mcp_google.server import run
+from workspace_operator.server import run
 
 
 if __name__ == "__main__":

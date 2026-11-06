@@ -37,8 +37,8 @@ if str(REPO) not in sys.path:
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from mcp_google.auth import get_creds  # noqa: E402
-from mcp_google.config import Config  # noqa: E402
+from workspace_operator.auth import get_creds  # noqa: E402
+from workspace_operator.config import Config  # noqa: E402
 
 cfg = yaml.safe_load((REPO / "config.yaml").read_text(encoding="utf-8"))
 checks: list[tuple[str, bool, str]] = []

@@ -3,7 +3,7 @@
 import unittest
 from types import SimpleNamespace
 
-from mcp_google.profiles import (
+from workspace_operator.profiles import (
     PROFILE_FULL,
     PROFILE_READ_ONLY,
     PROFILE_READ_WRITE,

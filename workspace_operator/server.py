@@ -13,6 +13,7 @@ from mcp.server.stdio import stdio_server
 from mcp.server.lowlevel.helper_types import ReadResourceContents
 import mcp.types as types
 
+from . import __version__
 from .config import load_config
 from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
@@ -1037,7 +1038,17 @@ async def run() -> None:
     except ProfileError as exc:
         raise SystemExit(f"Configuration error: {exc}") from exc
 
-    server = Server("My Google Tools")
+    server = Server(
+        "Workspace Operator",
+        version=__version__,
+        instructions=(
+            "Workspace Operator gives you deep control over Google Workspace: "
+            "Drive, Docs, Sheets, Slides, Gmail, Calendar and Apps Script. "
+            "Start with workspace_search for open-ended questions, read before "
+            "writing, and prefer staged or confirm-gated operations. Tools outside "
+            "the active tool profile are hidden by design."
+        ),
+    )
     all_tools = _tools()
     exposed_tools = profile.filter(all_tools)
     exposed_names = frozenset(tool.name for tool in exposed_tools)

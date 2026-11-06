@@ -1,11 +1,13 @@
 <div align="center">
 
-# Google Workspace MCP — глубокая автоматизация
+# Workspace Operator
+
+**Глубокая автоматизация Google Workspace**
 
 **Apps Script со стейджингом и откатом · шаблоны документов · кросс-поиск · локальные файлы · Slides · профили**
 
-MCP-сервер, который даёт ИИ-агенту реальный контроль над Google Drive, Sheets, Docs, Gmail
-и Calendar — и закрывает то, чего нет в официальных серверах Google.
+MCP-сервер (ранее *yet-another-google-mcp*), который даёт ИИ-агенту реальный контроль над
+Google Drive, Sheets, Docs, Slides, Gmail и Calendar — и закрывает то, чего нет в официальных серверах Google.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
@@ -381,7 +383,7 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 
 ```
 server.py                  MCP-сервер: 55 инструментов, ресурсы, промпты, профили
-mcp_google/
+workspace_operator/
 ├─ profiles.py             read-only / read-write / full + allow-deny
 ├─ text.py                 нормализация текста, таймстампов и ошибок
 ├─ config.py               конфиг + переменные окружения

@@ -25,7 +25,7 @@ IDE запускает сервер как подпроцесс. Использ�
 ```
 {
   "mcpServers": {
-    "google-workspace": {
+    "workspace-operator": {
       "command": "python",
       "args": ["<PROJECT_PATH>\\\\server.py"],
       "env": {
@@ -45,7 +45,7 @@ IDE запускает сервер как подпроцесс. Использ�
 - `timeoutSeconds` по умолчанию 180 с на вызов инструмента; операциям Apps Script нужно больше.
 - Инструменты по умолчанию загружаются лениво — отметьте 2–3 самых частых как `"eager": true`.
 - Для удалённых серверов поддерживается только Streamable HTTP; этот сервер — stdio.
-- Права по умолчанию — режим **Ask**; политики выглядят как `mcp(google-workspace/workspace_search)`.
+- Права по умолчанию — режим **Ask**; политики выглядят как `mcp(workspace-operator/workspace_search)`.
 
 Готовый файл: [`antigravity/mcp_config.example.json`](../antigravity/mcp_config.example.json),
 пошаговая инструкция: [`antigravity/README.md`](../antigravity/README.md).

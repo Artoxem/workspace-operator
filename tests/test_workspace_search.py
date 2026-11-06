@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from mcp_google.handlers.search import (
+from workspace_operator.handlers.search import (
     MAX_LIMIT,
     _clamp_limit,
     _escape_drive_term,

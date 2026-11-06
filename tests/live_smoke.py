@@ -61,7 +61,7 @@ def _trash(file_id: str) -> None:
     """Move a test artifact to the Drive trash (cleanup, not part of the server)."""
     from googleapiclient.discovery import build
 
-    from mcp_google.auth import get_creds
+    from workspace_operator.auth import get_creds
 
     config = yaml.safe_load((REPO / "config.yaml").read_text(encoding="utf-8"))
     creds = get_creds(_config_obj(config))
@@ -71,7 +71,7 @@ def _trash(file_id: str) -> None:
 
 
 def _config_obj(raw: dict):
-    from mcp_google.config import Config
+    from workspace_operator.config import Config
 
     return Config(
         client_secrets_file=raw["client_secrets_file"],

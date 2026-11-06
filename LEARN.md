@@ -29,7 +29,7 @@ my-mcp-google/
 ├── server.py           # Entry point, runs the MCP server
 ├── config.example.yaml # Example configuration
 ├── requirements.txt
-├── mcp_google/
+├── workspace_operator/
 │   ├── __init__.py
 │   ├── config.py       # Load config from file + env
 │   ├── auth.py         # OAuth flow and credentials
@@ -69,7 +69,7 @@ The server needs paths (OAuth secrets, token file) and an auth token. We load fr
 **Step 2.1:** Implement `config.py`:
 
 ```python
-# mcp_google/config.py
+# workspace_operator/config.py
 import os
 from dataclasses import dataclass
 from typing import List, Optional
@@ -129,7 +129,7 @@ The server uses the Installed Application flow: user authorizes in a browser, to
 **Step 3.2:** Implement `auth.py`:
 
 ```python
-# mcp_google/auth.py
+# workspace_operator/auth.py
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -165,13 +165,13 @@ MCP servers communicate via JSON-RPC over STDIO. The `mcp` Python package provid
 ```python
 # server.py (project root)
 import asyncio
-from mcp_google.server import run
+from workspace_operator.server import run
 
 if __name__ == "__main__":
     asyncio.run(run())
 ```
 
-**Step 4.2:** Core server in `mcp_google/server.py`:
+**Step 4.2:** Core server in `workspace_operator/server.py`:
 
 ```python
 from mcp.server import Server
@@ -179,7 +179,7 @@ from mcp.server.stdio import stdio_server
 import mcp.types as types
 
 config = load_config()
-server = Server("My Google Tools")
+server = Server("Workspace Operator")
 
 async def run() -> None:
     async with stdio_server() as (read, write):
@@ -190,7 +190,7 @@ async def run() -> None:
         )
 ```
 
-> **Important:** MCP uses stdout for JSON-RPC. Log only to stderr or a file. See `mcp_google/logging.py` for `StreamHandler(sys.stderr)`.
+> **Important:** MCP uses stdout for JSON-RPC. Log only to stderr or a file. See `workspace_operator/logging.py` for `StreamHandler(sys.stderr)`.
 
 ---
 
@@ -259,7 +259,7 @@ Handlers are plain functions that return strings. They call Google APIs via `goo
 **Step 6.1:** Minimal Gmail handler:
 
 ```python
-# mcp_google/handlers/gmail.py
+# workspace_operator/handlers/gmail.py
 from googleapiclient.discovery import build
 
 def get_gmail_profile_handler(config: Config, logger: logging.Logger) -> str:
@@ -272,7 +272,7 @@ def get_gmail_profile_handler(config: Config, logger: logging.Logger) -> str:
 **Step 6.2:** Sheets handler:
 
 ```python
-# mcp_google/handlers/sheets.py
+# workspace_operator/handlers/sheets.py
 def read_sheet_handler(config: Config, logger: logging.Logger,
                        spreadsheet_id: str, range_name: str) -> str:
     creds = get_creds(config)
@@ -284,7 +284,7 @@ def read_sheet_handler(config: Config, logger: logging.Logger,
     return "\n".join(" | ".join(row) for row in values)
 ```
 
-Split handlers by domain (Drive, Sheets, Gmail, Calendar, Docs, Apps Script) and import them in `handlers/__init__.py`. See `mcp_google/handlers/` in this repo for full implementations.
+Split handlers by domain (Drive, Sheets, Gmail, Calendar, Docs, Apps Script) and import them in `handlers/__init__.py`. See `workspace_operator/handlers/` in this repo for full implementations.
 
 ---
 

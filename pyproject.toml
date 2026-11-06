@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "yet-another-google-mcp"
-version = "1.2.0"
+name = "workspace-operator-mcp"
+version = "1.3.0"
 description = "Deep Google Workspace automation for AI agents — Apps Script execution, local file transfer, Slides, document templates, cross-product search, and tool profiles"
 readme = "README.md"
 license = { text = "MIT" }
@@ -38,4 +38,4 @@ Documentation = "https://github.com/Artoxem/yet-another-google-mcp#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["mcp_google*"]
+include = ["workspace_operator*"]

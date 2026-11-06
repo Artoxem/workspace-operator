@@ -1,10 +1,13 @@
 <div align="center">
 
-# Google Workspace MCP — deep automation
+# Workspace Operator
+
+**Deep automation for Google Workspace**
 
 **Apps Script staging with rollback · document templates · cross-product search · local file transfer · Slides · tool profiles**
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server that gives AI agents real control over
+A [Model Context Protocol](https://modelcontextprotocol.io) server (formerly *yet-another-google-mcp*)
+that gives AI agents real control over
 Google Drive, Sheets, Docs, Gmail, Calendar — and the parts of Workspace that the official servers leave out.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
@@ -382,7 +385,7 @@ a `Partial results` note.
 
 ```
 server.py                  MCP server: 55 tool definitions, resources, prompts, tool profiles
-mcp_google/
+workspace_operator/
 ├─ profiles.py             read-only / read-write / full + allow-deny lists
 ├─ text.py                 entity/whitespace normalisation, timestamps, error hints
 ├─ config.py               config file + env overrides

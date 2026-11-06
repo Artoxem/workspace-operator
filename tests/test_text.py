@@ -2,8 +2,8 @@
 
 import unittest
 
-from mcp_google.handlers.docs import document_to_text
-from mcp_google.text import (
+from workspace_operator.handlers.docs import document_to_text
+from workspace_operator.text import (
     clean_text,
     format_timestamp,
     html_to_text,

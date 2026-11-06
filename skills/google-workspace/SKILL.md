@@ -3,7 +3,7 @@ name: google-workspace-automation
 description: Use the Google Workspace MCP server for Drive, Docs, Sheets, Gmail, Calendar and Apps Script work. Search before reading, read before writing, and stage every Apps Script change.
 license: MIT
 metadata:
-  server: yet-another-google-mcp
+  server: workspace-operator
   version: "1.1.0"
 ---
 
