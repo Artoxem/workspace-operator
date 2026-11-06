@@ -58,7 +58,15 @@ class SummaryTests(unittest.TestCase):
         self.assertNotIn("sum", model)
 
     def test_empty_table(self):
-        self.assertEqual(summarise_columns([]), {"header": [], "rows": 0, "columns": []})
+        self.assertEqual(
+            summarise_columns([]),
+            {
+                "header": [],
+                "rows": 0,
+                "columns": [],
+                "aggregates": ["sum", "avg", "min", "max"],
+            },
+        )
 
     def test_ragged_rows_are_padded(self):
         summary = summarise_columns([["A", "B"], ["1"], ["2", "3", "extra"]])
@@ -94,6 +102,40 @@ class ReportTests(unittest.TestCase):
         rows = [["A"]] + [[str(index)] for index in range(30)]
         report = render_report("T", "s", "A1:A31", rows, max_rows=5)
         self.assertIn("more row(s) not shown", report)
+
+
+class UniversalityTests(unittest.TestCase):
+    def test_header_false_treats_first_row_as_data(self):
+        summary = summarise_columns([["1", "2"], ["3", "4"]], header=False)
+        self.assertEqual(summary["rows"], 2)
+        self.assertEqual(summary["header"], ["column 1", "column 2"])
+
+    def test_decimal_comma_mode(self):
+        summary = summarise_columns([["v"], ["1.234,50"]], decimal="comma")
+        self.assertAlmostEqual(summary["columns"][0]["sum"], 1234.5)
+
+    def test_decimal_dot_mode(self):
+        summary = summarise_columns([["v"], ["1,234.50"]], decimal="dot")
+        self.assertAlmostEqual(summary["columns"][0]["sum"], 1234.5)
+
+    def test_column_selection_by_name_and_index(self):
+        summary = summarise_columns(ROWS, columns=["Qty"])
+        self.assertEqual(summary["header"], ["Qty"])
+        summary = summarise_columns(ROWS, columns=["2"])
+        self.assertEqual(summary["header"], ["Price"])
+
+    def test_unknown_column_raises(self):
+        with self.assertRaises(ValueError):
+            summarise_columns(ROWS, columns=["Nope"])
+
+    def test_aggregate_subset(self):
+        summary = summarise_columns(ROWS, aggregates=["median"])
+        self.assertIn("median", summary["columns"][1])
+        self.assertNotIn("sum", summary["columns"][1])
+
+    def test_median(self):
+        summary = summarise_columns([["v"], ["1"], ["2"], ["9"]], aggregates=["median"])
+        self.assertAlmostEqual(summary["columns"][0]["median"], 2.0)
 
 
 if __name__ == "__main__":

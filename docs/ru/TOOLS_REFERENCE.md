@@ -33,8 +33,8 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 63 | всё |
-| `read-write` | 55 | всё, кроме `destructiveHint: true` |
+| `full` (по умолчанию) | 66 | всё |
+| `read-write` | 58 | всё, кроме `destructiveHint: true` |
 | `read-only` | 21 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
@@ -256,6 +256,18 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - `response`: `accepted|declined|tentative`; требует `confirm=true`.
 
 ## Составные
+- `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?, header?, decimal?, columns?, aggregates?, output?)`
+  - Читает диапазон, считает статистику и возвращает Doc (по умолчанию) или текст.
+  - `header` (true), `decimal` (`auto|comma|dot`), `columns` (имена или индексы с 1),
+    `aggregates` (`sum`, `avg`, `min`, `max`, `median`, `count`), `output` (`doc|text`).
+- `digest(sources?, since_hours?, limit?, output?, doc_title?)`
+  - Один дайджест по `gmail,calendar,drive` за последние N часов (по умолчанию 24).
+- `compare_tables(spreadsheet_id, range_a, range_b, other_spreadsheet_id?, key_column?, header?, output?, doc_title?)`
+  - Сравнение по ключевой колонке (имя или индекс): добавленные, удалённые, изменённые.
+- `clone_and_fill(file_id, replacements?, name?, folder_id?)`
+  - Копирует любой файл Drive и заменяет плейсхолдеры в копии (Docs, Slides, Sheets).
+
+## Apps Script
 - `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`
   - Читает диапазон, считает статистику по колонкам (sum/avg/min/max для чисел,
     непустые/уникальные для текста) и создаёт Google Doc со сводкой и превью данных.

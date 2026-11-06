@@ -9,7 +9,7 @@ with 59 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-63-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-66-informational)](#-tool-catalog)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -25,7 +25,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**63 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
+**66 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 ## How it compares
@@ -58,7 +58,7 @@ Operator is for "change the workspace and be able to roll it back".
 | ⚙️ Apps Script | 7 | Staged updates with backups, rollback, run functions |
 | 📧 Gmail | 14 | Threads, attachments, replies, drafts, labels, batch delete |
 | 📅 Calendar | 7 | Events, free slots, meetings, update/delete, invite responses |
-| 🧩 Composite | 1 | `report_from_sheet`: sheet → statistics → Google Doc |
+| 🧩 Composite | 4 | report from sheet, cross-source digest, table diff, template clone |
 
 Plus 3 resources, 3 resource templates and 4 prompts — see the
 [tool catalog](#-tool-catalog).
@@ -165,8 +165,8 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 63 | your own machine, full trust |
-| `read-write` | 55 | daily work — destructive tools hidden |
+| `full` | 66 | your own machine, full trust |
+| `read-write` | 58 | daily work — destructive tools hidden |
 | `read-only` | 21 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
@@ -301,11 +301,14 @@ A blocked call returns a clear explanation instead of failing silently.
 </details>
 
 <details>
-<summary>🧩 Composite (1)</summary>
+<summary>🧩 Composite (4)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
-| `report_from_sheet` | write | Read a range, compute column statistics and create a Google Doc report |
+| `report_from_sheet` | write | Read a range → column statistics → Doc or plain text (`output=text`) |
+| `digest` | write | Last N hours across Gmail, Calendar and Drive → text or Doc |
+| `compare_tables` | write | Diff two ranges by a key column: added / removed / changed |
+| `clone_and_fill` | write | Copy any Drive file and replace placeholders in the copy |
 
 </details>
 
@@ -379,6 +382,9 @@ workspace_operator/
    ├─ slides.py              presentations
    ├─ calendar_writes.py     update / delete / invite responses
    ├─ report.py              report_from_sheet: stats + document
+   ├─ digest.py              digest across mail, calendar and drive
+   ├─ compare.py             table diff by key column
+   ├─ template.py            clone a file and fill placeholders
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       unit, live and round-trip checks
@@ -396,8 +402,8 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 142 unit tests, no network
-python tests/live_smoke.py                  # 40 checks against a real account
+python -m unittest discover -s tests -v     # 168 unit tests, no network
+python tests/live_smoke.py                  # 45 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 
@@ -433,7 +439,7 @@ code in sync (tool counts, profile numbers, links, examples).
 - [x] Sheet formatting
 - [x] Gmail threads, attachments, replies
 - [x] Calendar update/delete/respond
-- [x] Composite tools: `report_from_sheet`
+- [x] Composite tools: `report_from_sheet`, `digest`, `compare_tables`, `clone_and_fill`
 - [ ] Optional HTTP transport (stateless, MCP 2026-07-28)
 
 ## Responsibility

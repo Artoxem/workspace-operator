@@ -15,6 +15,9 @@ from .calendar_writes import (
     calendar_update_event_handler,
 )
 from .report import report_from_sheet_handler
+from .digest import digest_handler
+from .compare import compare_tables_handler
+from .template import clone_and_fill_handler
 from .calendar import (
     calendar_create_meeting_handler,
     calendar_find_free_slots_handler,
@@ -146,4 +149,7 @@ __all__ = [
     "calendar_delete_event_handler",
     "calendar_respond_to_invite_handler",
     "report_from_sheet_handler",
+    "digest_handler",
+    "compare_tables_handler",
+    "clone_and_fill_handler",
 ]

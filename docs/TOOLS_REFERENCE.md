@@ -33,8 +33,8 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 63 | everything |
-| `read-write` | 55 | everything except `destructiveHint: true` |
+| `full` (default) | 66 | everything |
+| `read-write` | 58 | everything except `destructiveHint: true` |
 | `read-only` | 21 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
@@ -258,6 +258,18 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
   - `response`: `accepted|declined|tentative`; requires `confirm=true`.
 
 ## Composite
+- `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?, header?, decimal?, columns?, aggregates?, output?)`
+  - Reads a range, computes per-column statistics and returns a Doc (default) or text.
+  - `header` (true), `decimal` (`auto|comma|dot`), `columns` (names or 1-based indexes),
+    `aggregates` (`sum`, `avg`, `min`, `max`, `median`, `count`), `output` (`doc|text`).
+- `digest(sources?, since_hours?, limit?, output?, doc_title?)`
+  - One digest across `gmail,calendar,drive` for the last N hours (default 24).
+- `compare_tables(spreadsheet_id, range_a, range_b, other_spreadsheet_id?, key_column?, header?, output?, doc_title?)`
+  - Diff by key column (name or 1-based index): added, removed, changed rows.
+- `clone_and_fill(file_id, replacements?, name?, folder_id?)`
+  - Copies any Drive file and replaces placeholders in the copy (Docs, Slides, Sheets).
+
+## Apps Script
 - `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`
   - Reads a range, computes per-column statistics (sum/avg/min/max for numeric
     columns, non-empty/unique for text) and creates a Google Doc with the summary

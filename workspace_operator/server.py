@@ -76,6 +76,9 @@ from .handlers import (
     calendar_respond_to_invite_handler,
     calendar_update_event_handler,
     report_from_sheet_handler,
+    digest_handler,
+    compare_tables_handler,
+    clone_and_fill_handler,
     drive_download_handler,
     drive_export_handler,
     drive_upload_handler,
@@ -923,6 +926,73 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+        types.Tool(
+            name="digest",
+            description=(
+                "Composite: one digest across Gmail, Calendar and Drive for the last "
+                "N hours. Returns text by default, or creates a Google Doc."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "sources": {
+                        "type": "string",
+                        "default": "gmail,calendar,drive",
+                        "description": "Comma-separated subset of gmail, calendar, drive",
+                    },
+                    "since_hours": {"type": "integer", "default": 24},
+                    "limit": {"type": "integer", "default": 10},
+                    "output": {"type": "string", "enum": ["text", "doc"], "default": "text"},
+                    "doc_title": {"type": "string"},
+                },
+                "required": [],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="compare_tables",
+            description=(
+                "Composite: diff two ranges by a key column (added / removed / "
+                "changed rows). Works across sheets or spreadsheets."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range_a": {"type": "string"},
+                    "range_b": {"type": "string"},
+                    "other_spreadsheet_id": {"type": "string"},
+                    "key_column": {
+                        "type": "string",
+                        "default": "1",
+                        "description": "Column name or 1-based index",
+                    },
+                    "header": {"type": "boolean", "default": True},
+                    "output": {"type": "string", "enum": ["text", "doc"], "default": "text"},
+                    "doc_title": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range_a", "range_b"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="clone_and_fill",
+            description=(
+                "Composite: copy any Drive file as a template and replace "
+                "placeholders in the copy (Docs, Slides, Sheets)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "replacements": {"type": "object"},
+                    "name": {"type": "string", "description": "Name of the new file"},
+                    "folder_id": {"type": "string"},
+                },
+                "required": ["file_id"],
+            },
+            annotations=_WRITE,
+        ),
 
         # ── Gmail ─────────────────────────────────────────────────────────
         types.Tool(
@@ -1525,6 +1595,40 @@ async def run() -> None:
                     a.get("range"),
                     a.get("doc_title"),
                     a.get("max_rows", 25),
+                    a.get("header", True),
+                    a.get("decimal", "auto"),
+                    a.get("columns"),
+                    a.get("aggregates"),
+                    a.get("output", "doc"),
+                ),
+                "digest": lambda a: digest_handler(
+                    config,
+                    logger,
+                    a.get("sources"),
+                    a.get("since_hours", 24),
+                    a.get("limit", 10),
+                    a.get("output", "text"),
+                    a.get("doc_title"),
+                ),
+                "compare_tables": lambda a: compare_tables_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range_a"),
+                    a.get("range_b"),
+                    a.get("other_spreadsheet_id"),
+                    a.get("key_column", "1"),
+                    a.get("header", True),
+                    a.get("output", "text"),
+                    a.get("doc_title"),
+                ),
+                "clone_and_fill": lambda a: clone_and_fill_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("replacements") or {},
+                    a.get("name"),
+                    a.get("folder_id"),
                 ),
                 "gmail_get_thread": lambda a: gmail_get_thread_handler(
                     config,

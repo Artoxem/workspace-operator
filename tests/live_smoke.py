@@ -121,7 +121,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 63, f"{len(names)} tools")
+    record("tools/list", len(names) == 66, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -521,6 +521,120 @@ async def full_checks(session: ClientSession) -> None:
             not deleted.isError and "deleted" in _text(deleted),
             _text(deleted).splitlines()[0] if _text(deleted) else "empty",
         )
+
+    # ---------- composite tools ----------
+    left = await session.call_tool("create_spreadsheet", {"title": "smoke left"})
+    right = await session.call_tool("create_spreadsheet", {"title": "smoke right"})
+    left_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(left))
+    right_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(right))
+
+    if left_id and right_id:
+        await session.call_tool(
+            "update_sheet",
+            {
+                "spreadsheet_id": left_id.group(1),
+                "range_name": "A1:C3",
+                "values": [["SKU", "Name", "Price"], ["1", "Chair", "100"], ["2", "Table", "300"]],
+            },
+        )
+        await session.call_tool(
+            "update_sheet",
+            {
+                "spreadsheet_id": right_id.group(1),
+                "range_name": "A1:C3",
+                "values": [["SKU", "Name", "Price"], ["1", "Chair", "120"], ["3", "Lamp", "80"]],
+            },
+        )
+
+        compared = await session.call_tool(
+            "compare_tables",
+            {
+                "spreadsheet_id": left_id.group(1),
+                "range_a": "A1:C3",
+                "other_spreadsheet_id": right_id.group(1),
+                "range_b": "A1:C3",
+                "key_column": "SKU",
+                "output": "text",
+            },
+        )
+        compared_text = _text(compared)
+        record(
+            "call compare_tables",
+            not compared.isError and "Compare by 'SKU'" in compared_text,
+            compared_text.splitlines()[1] if len(compared_text.splitlines()) > 1 else "empty",
+        )
+
+        text_report = await session.call_tool(
+            "report_from_sheet",
+            {"spreadsheet_id": left_id.group(1), "range": "A1:C3", "output": "text", "columns": ["Price"]},
+        )
+        text_report_value = _text(text_report)
+        record(
+            "report_from_sheet output=text (no file)",
+            not text_report.isError
+            and "Summary" in text_report_value
+            and "text mode" in text_report_value,
+            f"{len(text_report_value)} chars",
+        )
+
+        for artifact in (left_id.group(1), right_id.group(1)):
+            try:
+                await asyncio.to_thread(_trash, artifact)
+            except Exception as exc:  # noqa: BLE001
+                record("cleanup compare artifacts", False, str(exc))
+
+    digest = await session.call_tool(
+        "digest", {"sources": "gmail", "since_hours": 168, "limit": 2, "output": "text"}
+    )
+    digest_text = _text(digest)
+    record(
+        "call digest (text)",
+        not digest.isError and "## Email" in digest_text and "Total items" in digest_text,
+        digest_text.splitlines()[2] if len(digest_text.splitlines()) > 2 else "empty",
+    )
+
+    template_doc = await session.call_tool(
+        "create_doc", {"title": "Workspace Operator template smoke"}
+    )
+    template_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(template_doc))
+    if template_id:
+        await session.call_tool(
+            "append_to_doc",
+            {"document_id": template_id.group(1), "text": "Hello {{CLIENT}}, report for {{CLIENT}}"},
+        )
+        cloned = await session.call_tool(
+            "clone_and_fill",
+            {
+                "file_id": template_id.group(1),
+                "name": "Workspace Operator cloned smoke",
+                "replacements": {"{{CLIENT}}": "ACME"},
+            },
+        )
+        cloned_text = _text(cloned)
+        record(
+            "call clone_and_fill",
+            not cloned.isError and "Creat" in cloned_text and "occurrence" in cloned_text,
+            cloned_text.splitlines()[0] if cloned_text else "empty",
+        )
+        cloned_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", cloned_text)
+        if cloned_id:
+            filled = await session.call_tool(
+                "read_doc", {"document_id": cloned_id.group(1)}
+            )
+            record(
+                "clone_and_fill replaced placeholders",
+                "ACME" in _text(filled) and "{{CLIENT}}" not in _text(filled),
+                "ACME present",
+            )
+        for artifact in (
+            cloned_id.group(1) if cloned_id else None,
+            template_id.group(1),
+        ):
+            if artifact:
+                try:
+                    await asyncio.to_thread(_trash, artifact)
+                except Exception as exc:  # noqa: BLE001
+                    record("cleanup template artifacts", False, str(exc))
 
     script_run = await session.call_tool(
         "script_run_function", {"script_id": "no-such-script", "function_name": "doWork"}

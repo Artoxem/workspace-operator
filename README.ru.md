@@ -9,7 +9,7 @@ MCP-сервер с 63 инструментами, многошаговыми з
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-63-informational)](#-каталог-инструментов)
+[![Tools](https://img.shields.io/badge/tools-66-informational)](#-каталог-инструментов)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -25,7 +25,7 @@ Workspace Operator (ранее *yet-another-google-mcp*) работает на �
 стейджинг Apps Script, передача файлов в обе стороны, сборка презентаций,
 форматирование таблиц, ответы в тред и работа с вложениями.
 
-**63 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта**, у каждого инструмента
+**66 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта**, у каждого инструмента
 аннотации `readOnlyHint` / `destructiveHint`.
 
 ## Сравнение
@@ -58,7 +58,7 @@ Workspace Operator — для «измени рабочее пространст
 | ⚙️ Apps Script | 7 | Стейджинг с бэкапами, откат, запуск функций |
 | 📧 Gmail | 14 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
 | 📅 Calendar | 7 | События, слоты, встречи, изменение/удаление, ответ на приглашения |
-| 🧩 Составные | 1 | `report_from_sheet`: таблица → статистика → Google Doc |
+| 🧩 Составные | 4 | отчёт из таблицы, дайджест, сравнение таблиц, клон шаблона |
 
 Плюс 3 ресурса, 3 шаблона ресурсов и 4 промпта — см. [каталог](#-каталог-инструментов).
 
@@ -164,8 +164,8 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 63 | своя машина, полное доверие |
-| `read-write` | 55 | ежедневная работа — деструктивные скрыты |
+| `full` | 66 | своя машина, полное доверие |
+| `read-write` | 58 | ежедневная работа — деструктивные скрыты |
 | `read-only` | 21 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
@@ -300,11 +300,14 @@ denied_tools: ["send_email", "share_file"]
 </details>
 
 <details>
-<summary>🧩 Составные (1)</summary>
+<summary>🧩 Составные (4)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
-| `report_from_sheet` | write | Прочитать диапазон, посчитать статистику по колонкам и создать отчёт в Google Doc |
+| `report_from_sheet` | write | Диапазон → статистика по колонкам → Doc или текст (`output=text`) |
+| `digest` | write | Последние N часов по Gmail, Calendar и Drive → текст или Doc |
+| `compare_tables` | write | Сравнение двух диапазонов по ключевой колонке: добавлено / удалено / изменено |
+| `clone_and_fill` | write | Копия любого файла Drive с заменой плейсхолдеров |
 
 </details>
 
@@ -378,6 +381,9 @@ workspace_operator/
    ├─ slides.py              презентации
    ├─ calendar_writes.py     обновление / удаление / ответы на приглашения
    ├─ report.py              report_from_sheet: статистика + документ
+   ├─ digest.py              дайджест по почте, календарю и Drive
+   ├─ compare.py             сравнение таблиц по ключевой колонке
+   ├─ template.py            клон файла с заменой плейсхолдеров
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       юнит-, живые и round-trip проверки
@@ -395,8 +401,8 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 142 юнит-теста, без сети
-python tests/live_smoke.py                  # 40 проверок на реальном аккаунте
+python -m unittest discover -s tests -v     # 168 юнит-тестов, без сети
+python tests/live_smoke.py                  # 45 проверок на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
 
@@ -432,7 +438,7 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 - [x] Форматирование Sheets
 - [x] Треды, вложения и ответы в Gmail
 - [x] Calendar: обновление, удаление, ответ на приглашения
-- [x] Составные инструменты: `report_from_sheet`
+- [x] Составные: `report_from_sheet`, `digest`, `compare_tables`, `clone_and_fill`
 - [ ] Опциональный HTTP-транспорт (stateless, MCP 2026-07-28)
 
 ## Ответственность
