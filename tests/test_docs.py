@@ -65,6 +65,18 @@ class ToolCatalogTests(unittest.TestCase):
         self.assertIn(f"tools-{TOTAL}-informational", read("README.md"))
 
 
+class PromptCatalogTests(unittest.TestCase):
+    def test_readme_lists_every_prompt(self):
+        from workspace_operator.server import _prompts
+
+        names = [prompt.name for prompt in _prompts()]
+        for rel in ("README.md", "README.ru.md", "docs/TOOLS_REFERENCE.md", "docs/ru/TOOLS_REFERENCE.md"):
+            text = read(rel)
+            missing = [name for name in names if f"`{name}`" not in text]
+            with self.subTest(file=rel):
+                self.assertEqual(missing, [], f"undocumented prompts in {rel}: {missing}")
+
+
 class ProfileCountTests(unittest.TestCase):
     def test_readme_profile_table(self):
         text = read("README.md")

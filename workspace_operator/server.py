@@ -1326,6 +1326,151 @@ def _tools() -> List[types.Tool]:
     ]
 
 
+def _prompts() -> List[types.Prompt]:
+    """Scenario prompts offered to MCP clients."""
+    return [
+            types.Prompt(
+                name="summarize_inbox",
+                description=(
+                    "Fetch recent Gmail messages and prepare them for AI summarization. "
+                    "Optionally filter by a Gmail search query."
+                ),
+                arguments=[
+                    types.PromptArgument(
+                        name="query",
+                        description="Gmail search query (default: 'is:unread in:inbox')",
+                        required=False,
+                    ),
+                    types.PromptArgument(
+                        name="max_results",
+                        description="Maximum number of emails to include (default: 20)",
+                        required=False,
+                    ),
+                ],
+            ),
+            types.Prompt(
+                name="analyze_spreadsheet",
+                description=(
+                    "Read a Google Sheet range and prepare the data for AI analysis "
+                    "or visualization."
+                ),
+                arguments=[
+                    types.PromptArgument(
+                        name="spreadsheet_id",
+                        description="The Google Spreadsheet ID",
+                        required=True,
+                    ),
+                    types.PromptArgument(
+                        name="range",
+                        description="Sheet range to read (default: Sheet1)",
+                        required=False,
+                    ),
+                ],
+            ),
+            types.Prompt(
+                name="plan_week",
+                description=(
+                    "Fetch upcoming calendar events and prepare a weekly planning summary "
+                    "for AI-assisted scheduling."
+                ),
+                arguments=[
+                    types.PromptArgument(
+                        name="days_ahead",
+                        description="Number of days to look ahead (default: 7)",
+                        required=False,
+                    ),
+                ],
+            ),
+            types.Prompt(
+                name="search_drive",
+                description=(
+                    "Search Google Drive for files and prepare a structured list "
+                    "for AI review or organisation suggestions."
+                ),
+                arguments=[
+                    types.PromptArgument(
+                        name="query",
+                        description="Drive search query (e.g. 'name contains \"budget\"')",
+                        required=True,
+                    ),
+                    types.PromptArgument(
+                        name="limit",
+                        description="Maximum number of results (default: 20)",
+                        required=False,
+                    ),
+                ],
+            ),
+        types.Prompt(
+            name="weekly_review",
+            description=(
+                "Cross-source review of the last N days: mail, changed files and the "
+                "coming agenda, prepared for a weekly summary."
+            ),
+            arguments=[
+                types.PromptArgument(
+                    name="days_back",
+                    description="How many days to look back (default: 7)",
+                    required=False,
+                ),
+            ],
+        ),
+        types.Prompt(
+            name="inbox_triage",
+            description=(
+                "Fetch a Gmail slice and prepare it for triage: urgent, waiting, "
+                "informational, archive candidates."
+            ),
+            arguments=[
+                types.PromptArgument(
+                    name="query",
+                    description="Gmail search query (default: 'is:unread in:inbox')",
+                    required=False,
+                ),
+                types.PromptArgument(
+                    name="max_results",
+                    description="Maximum messages to include (default: 15)",
+                    required=False,
+                ),
+            ],
+        ),
+        types.Prompt(
+            name="sheet_brief",
+            description=(
+                "Read a spreadsheet range, compute column statistics and prepare a "
+                "briefing for analysis."
+            ),
+            arguments=[
+                types.PromptArgument(
+                    name="spreadsheet_id",
+                    description="The Google Spreadsheet ID",
+                    required=True,
+                ),
+                types.PromptArgument(
+                    name="range",
+                    description="A1 range or sheet name (default: first sheet)",
+                    required=False,
+                ),
+            ],
+        ),
+        types.Prompt(
+            name="compare_brief",
+            description=(
+                "Diff two ranges by a key column and prepare a reconciliation report."
+            ),
+            arguments=[
+                types.PromptArgument(name="spreadsheet_id", description="Spreadsheet ID", required=True),
+                types.PromptArgument(name="range_a", description="Baseline range", required=True),
+                types.PromptArgument(name="range_b", description="New range", required=True),
+                types.PromptArgument(
+                    name="key_column",
+                    description="Column name or 1-based index (default: 1)",
+                    required=False,
+                ),
+            ],
+        ),
+    ]
+
+
 def create_server(config: Config, logger) -> Server:
     """Build a fully configured MCP server (transport independent)."""
     try:
@@ -2060,79 +2205,7 @@ def create_server(config: Config, logger) -> Server:
 
     @server.list_prompts()
     async def handle_list_prompts() -> List[types.Prompt]:
-        return [
-            types.Prompt(
-                name="summarize_inbox",
-                description=(
-                    "Fetch recent Gmail messages and prepare them for AI summarization. "
-                    "Optionally filter by a Gmail search query."
-                ),
-                arguments=[
-                    types.PromptArgument(
-                        name="query",
-                        description="Gmail search query (default: 'is:unread in:inbox')",
-                        required=False,
-                    ),
-                    types.PromptArgument(
-                        name="max_results",
-                        description="Maximum number of emails to include (default: 20)",
-                        required=False,
-                    ),
-                ],
-            ),
-            types.Prompt(
-                name="analyze_spreadsheet",
-                description=(
-                    "Read a Google Sheet range and prepare the data for AI analysis "
-                    "or visualization."
-                ),
-                arguments=[
-                    types.PromptArgument(
-                        name="spreadsheet_id",
-                        description="The Google Spreadsheet ID",
-                        required=True,
-                    ),
-                    types.PromptArgument(
-                        name="range",
-                        description="Sheet range to read (default: Sheet1)",
-                        required=False,
-                    ),
-                ],
-            ),
-            types.Prompt(
-                name="plan_week",
-                description=(
-                    "Fetch upcoming calendar events and prepare a weekly planning summary "
-                    "for AI-assisted scheduling."
-                ),
-                arguments=[
-                    types.PromptArgument(
-                        name="days_ahead",
-                        description="Number of days to look ahead (default: 7)",
-                        required=False,
-                    ),
-                ],
-            ),
-            types.Prompt(
-                name="search_drive",
-                description=(
-                    "Search Google Drive for files and prepare a structured list "
-                    "for AI review or organisation suggestions."
-                ),
-                arguments=[
-                    types.PromptArgument(
-                        name="query",
-                        description="Drive search query (e.g. 'name contains \"budget\"')",
-                        required=True,
-                    ),
-                    types.PromptArgument(
-                        name="limit",
-                        description="Maximum number of results (default: 20)",
-                        required=False,
-                    ),
-                ],
-            ),
-        ]
+        return _prompts()
 
     @server.get_prompt()
     async def handle_get_prompt(
@@ -2344,6 +2417,136 @@ def create_server(config: Config, logger) -> Server:
                                 "Please review these Google Drive files and provide a summary "
                                 "report. Group related files, identify the most recently modified "
                                 "ones, and suggest any organisation improvements if relevant."
+                            ),
+                        ),
+                    )
+                ],
+            )
+
+        elif name == "weekly_review":
+            days = max(1, int(args.get("days_back", "7")))
+            digest_text = await asyncio.to_thread(
+                digest_handler,
+                config,
+                logger,
+                "gmail,calendar,drive",
+                days * 24,
+                15,
+                "text",
+                None,
+            )
+            return types.GetPromptResult(
+                description=f"Weekly review — last {days} days",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(
+                            type="text",
+                            text=(
+                                f"{digest_text}\n\n"
+                                "Review this week: what needs a decision, which threads "
+                                "are waiting on someone, what changed unexpectedly, and "
+                                "which three things deserve attention first."
+                            ),
+                        ),
+                    )
+                ],
+            )
+
+        elif name == "inbox_triage":
+            query = args.get("query", "is:unread in:inbox")
+            max_results = int(args.get("max_results", "15"))
+            listing = await asyncio.to_thread(
+                gmail_search_and_summarize_handler, config, logger, query, max_results
+            )
+            return types.GetPromptResult(
+                description=f"Inbox triage — query: {query}",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(
+                            type="text",
+                            text=(
+                                f"{listing}\n\n"
+                                "Triage these messages into: needs a reply today, waiting "
+                                "on someone else, informational, and archive candidates. "
+                                "For each, give one line of reasoning. Do not send or delete "
+                                "anything — propose actions only."
+                            ),
+                        ),
+                    )
+                ],
+            )
+
+        elif name == "sheet_brief":
+            spreadsheet_id = args.get("spreadsheet_id", "")
+            if not spreadsheet_id:
+                raise ValueError("spreadsheet_id is required for the sheet_brief prompt")
+            report = await asyncio.to_thread(
+                report_from_sheet_handler,
+                config,
+                logger,
+                spreadsheet_id,
+                args.get("range"),
+                None,
+                25,
+                True,
+                "auto",
+                None,
+                None,
+                "text",
+            )
+            return types.GetPromptResult(
+                description=f"Sheet brief — {spreadsheet_id[:12]}…",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(
+                            type="text",
+                            text=(
+                                f"{report}\n\n"
+                                "Brief me on this table: what the columns mean, notable "
+                                "outliers, data-quality issues, and two questions I should "
+                                "ask the owner of this data."
+                            ),
+                        ),
+                    )
+                ],
+            )
+
+        elif name == "compare_brief":
+            spreadsheet_id = args.get("spreadsheet_id", "")
+            range_a = args.get("range_a", "")
+            range_b = args.get("range_b", "")
+            if not (spreadsheet_id and range_a and range_b):
+                raise ValueError(
+                    "spreadsheet_id, range_a and range_b are required for compare_brief"
+                )
+            diff = await asyncio.to_thread(
+                compare_tables_handler,
+                config,
+                logger,
+                spreadsheet_id,
+                range_a,
+                range_b,
+                None,
+                args.get("key_column", "1"),
+                True,
+                "text",
+                None,
+            )
+            return types.GetPromptResult(
+                description=f"Reconciliation brief — {range_a} vs {range_b}",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(
+                            type="text",
+                            text=(
+                                f"{diff}\n\n"
+                                "Explain this diff in business terms: which changes look "
+                                "intentional, which look like errors, and what should be "
+                                "checked before applying the new data."
                             ),
                         ),
                     )

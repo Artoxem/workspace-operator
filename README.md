@@ -25,7 +25,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**67 tools · 3 resources · 3 resource templates · 4 prompts**, every tool annotated
+**67 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -63,7 +63,7 @@ Operator is for "change the workspace and be able to roll it back".
 | 📅 Calendar | 7 | Events, free slots, meetings, update/delete, invite responses |
 | 🧩 Composite | 5 | report from sheet, digest, table diff, template clone, table → deck |
 
-Plus 3 resources, 3 resource templates and 4 prompts — see the
+Plus 3 resources, 3 resource templates and 8 prompts — see the
 [tool catalog](#-tool-catalog).
 
 ## Quick start
@@ -393,6 +393,11 @@ read-only.
 | `analyze_spreadsheet` | Read a range → ready for analysis |
 | `plan_week` | Load calendar events → ready for planning |
 | `search_drive` | Search files → ready for organisation advice |
+| `weekly_review` | Last N days of mail, files and agenda → weekly summary |
+| `inbox_triage` | Gmail slice → urgent / waiting / informational / archive |
+| `sheet_brief` | Range → statistics plus a briefing question |
+| `compare_brief` | Two ranges → reconciliation report |
+
 
 ## Safety by default
 
@@ -413,7 +418,7 @@ read-only.
 ## How it works
 
 ```
-server.py                    MCP server: 63 tool definitions, resources, prompts, profiles
+server.py                    MCP server: 67 tool definitions, resources, prompts, profiles
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny lists
 ├─ config.py                 config file + environment overrides
@@ -452,8 +457,8 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 234 unit tests, no network
-python tests/live_smoke.py                  # 49 checks against a real account
+python -m unittest discover -s tests -v     # 240 unit tests, no network
+python tests/live_smoke.py                  # 51 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 

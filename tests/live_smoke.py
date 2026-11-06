@@ -130,7 +130,15 @@ async def full_checks(session: ClientSession) -> None:
     )
 
     prompts = await session.list_prompts()
-    record("prompts/list", len(prompts.prompts) == 4, f"{len(prompts.prompts)} prompts")
+    record("prompts/list", len(prompts.prompts) == 8, f"{len(prompts.prompts)} prompts")
+
+    triage = await session.get_prompt("inbox_triage", {"max_results": "1"})
+    triage_text = "\n".join(getattr(message.content, "text", "") for message in triage.messages)
+    record(
+        "prompt inbox_triage renders",
+        len(triage_text) > 100 and "Triage these messages" in triage_text,
+        f"{len(triage_text)} chars",
+    )
 
     resources = await session.list_resources()
     record("resources/list", len(resources.resources) == 3, f"{len(resources.resources)} resources")
@@ -587,6 +595,18 @@ async def full_checks(session: ClientSession) -> None:
                 await asyncio.to_thread(_trash, native_doc.group(1))
             except Exception as exc:  # noqa: BLE001
                 record("cleanup native report", False, str(exc))
+
+        brief = await session.get_prompt(
+            "sheet_brief", {"spreadsheet_id": left_id.group(1)}
+        )
+        brief_text = "\n".join(
+            getattr(message.content, "text", "") for message in brief.messages
+        )
+        record(
+            "prompt sheet_brief renders",
+            "Brief me on this table" in brief_text,
+            f"{len(brief_text)} chars",
+        )
 
         text_report = await session.call_tool(
             "report_from_sheet",

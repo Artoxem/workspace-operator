@@ -368,3 +368,36 @@ Search Google Drive for files and prepare a structured list for AI review or org
 |----------|----------|---------|-------------|
 | `query` | Yes | — | Drive search query, e.g. `name contains "budget"` |
 | `limit` | No | `20` | Maximum number of results |
+
+### `weekly_review`
+Cross-source review: mail, changed files and the coming agenda for the last N days.
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `days_back` | No | `7` | Days to look back |
+
+### `inbox_triage`
+Gmail slice prepared for triage into urgent / waiting / informational / archive.
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `query` | No | `is:unread in:inbox` | Gmail search query |
+| `max_results` | No | `15` | Messages to include |
+
+### `sheet_brief`
+Range statistics plus a briefing question — no document is created.
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `spreadsheet_id` | Yes | — | Spreadsheet ID |
+| `range` | No | first sheet | A1 range or sheet name |
+
+### `compare_brief`
+Diff of two ranges by a key column, prepared as a reconciliation report.
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `spreadsheet_id` | Yes | — | Spreadsheet ID |
+| `range_a` | Yes | — | Baseline range |
+| `range_b` | Yes | — | New range |
+| `key_column` | No | `1` | Column name or 1-based index |
