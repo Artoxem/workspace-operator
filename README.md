@@ -5,11 +5,12 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
-with 59 tools, staged writes and server-side tool profiles.
+with 67 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-67-informational)](#-tool-catalog)
+[![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -71,13 +72,20 @@ Plus 3 resources, 3 resource templates and 8 prompts — see the
 ### 1 — Install
 
 ```bash
+pip install workspace-operator-mcp
+```
+
+From source (development):
+
+```bash
 git clone https://github.com/Artoxem/workspace-operator.git
 cd workspace-operator
 python -m venv .venv && .venv\Scripts\activate    # Windows
 pip install -r requirements.txt
 ```
 
-Python 3.10 or newer. The package is not on PyPI yet — install from source.
+Python 3.10 or newer. The package installs the `workspace-operator` command; the
+`python -m workspace_operator` form works from a source checkout too.
 
 ### 2 — Google OAuth
 

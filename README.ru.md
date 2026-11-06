@@ -5,11 +5,12 @@
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — один локальный
-MCP-сервер с 63 инструментами, многошаговыми записями и профилями на стороне сервера.
+MCP-сервер с 67 инструментами, многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/tools-67-informational)](#-каталог-инструментов)
+[![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -70,13 +71,20 @@ Workspace Operator — для «измени рабочее пространст
 ### 1 — Установка
 
 ```bash
+pip install workspace-operator-mcp
+```
+
+Из исходников (для разработки):
+
+```bash
 git clone https://github.com/Artoxem/workspace-operator.git
 cd workspace-operator
 python -m venv .venv && .venv\Scripts\activate    # Windows
 pip install -r requirements.txt
 ```
 
-Нужен Python 3.10+. В PyPI пакета пока нет — установка из исходников.
+Нужен Python 3.10+. Пакет ставит команду `workspace-operator`; форма
+`python -m workspace_operator` тоже работает из исходников.
 
 ### 2 — Google OAuth
 

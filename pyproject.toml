@@ -41,6 +41,7 @@ workspace-operator = "workspace_operator.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/Artoxem/workspace-operator"
+PyPI = "https://pypi.org/project/workspace-operator-mcp/"
 Repository = "https://github.com/Artoxem/workspace-operator"
 Documentation = "https://github.com/Artoxem/workspace-operator#readme"
 Changelog = "https://github.com/Artoxem/workspace-operator/tree/master/docs"
