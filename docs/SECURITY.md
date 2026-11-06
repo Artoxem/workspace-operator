@@ -148,3 +148,14 @@ operations performed by this server. Use it at your own discretion and
 follow your organization's security policies.
 
 For questions about specific scopes, see [Google's OAuth 2.0 Scopes documentation](https://developers.google.com/identity/protocols/oauth2/scopes).
+
+## Code execution and local files (v1.2)
+
+- `script_run_function` runs arbitrary Apps Script code with the authority of the
+  OAuth token. It is marked `destructiveHint`, so the `read-write` profile hides it;
+  the `full` profile exposes it deliberately.
+- `drive_download` and `drive_export` write to the local filesystem on the machine
+  running the server — `save_to` is honoured literally and the absolute path is
+  echoed back. Never overwrite without `overwrite=true`.
+- `drive_upload` reads any local file the process can read (100 MB cap); treat the
+  server process as having the file access of its user.

@@ -2,14 +2,14 @@
 
 # Google Workspace MCP — deep automation
 
-**Apps Script staging with rollback · document templates · cross-product search · tool profiles**
+**Apps Script staging with rollback · document templates · cross-product search · local file transfer · Slides · tool profiles**
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that gives AI agents real control over
 Google Drive, Sheets, Docs, Gmail, Calendar — and the parts of Workspace that the official servers leave out.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-46-informational)](#-all-tools)
+[![Tools](https://img.shields.io/badge/tools-55-informational)](#-all-tools)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -37,6 +37,7 @@ ranges, find & replace), and **one-query search across Drive, Gmail and Calendar
 | Document templates | — | — | **`doc_fill_template`** |
 | Batch operations | — | — | **batch delete, batch labels, dry-runs** |
 | Sheets depth | read ranges | partial | **filter views, named ranges, find & replace, CSV** |
+| Presentations | — | — | **create, add slides, fill text, insert images** |
 | Cross-product search | `search_corpus` | — | **`workspace_search`** |
 | Server-side tool profiles | IAM / admin allow-list | — | **read-only / read-write / full + allow-deny** |
 | Your data path | Google MCP endpoint | local | **local, your own OAuth client** |
@@ -52,15 +53,17 @@ ranges, find & replace), and **one-query search across Drive, Gmail and Calendar
 |---------|-------------|
 | 🔎 **Cross-search** | One query over Drive + Gmail + Calendar, merged and date-sorted |
 | 📁 **Drive** | Search, copy, move, share, permissions, revoke public access |
+| 💾 **Files** | Upload local files, download binaries, export Docs/Sheets/Slides to pdf/docx/xlsx/pptx |
 | 📊 **Sheets** | Read/write ranges, filter views, named ranges, find & replace, CSV export |
-| 📄 **Docs** | Read, create, append, fill templates, export to PDF |
+| 📄 **Docs** | Read (tables included), create, append, fill templates, export to PDF |
+| 🖼 **Slides** | Create decks, add slides, replace placeholders, insert images |
 | 📧 **Gmail** | Draft, send, search, archive, labels, delete with confirmation |
 | 📅 **Calendar** | List events, find free slots, create meetings with attendees |
 | ⚙️ **Apps Script** | Create, read, stage updates, execute with auto-backup, rollback |
 | 🔗 **Resources** | Attach live Drive / Gmail / Calendar / Sheets / Docs snapshots to context |
 | 💬 **Prompts** | One-click workflows: summarize inbox, analyze sheet, plan week, search Drive |
 
-**46 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
+**55 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
 `readOnlyHint` / `destructiveHint` so clients can warn before risky actions.
 
 ---
@@ -80,6 +83,9 @@ pip install -r requirements.txt
 
 Create an OAuth 2.0 Client ID (Desktop app) in [Google Cloud Console](https://console.cloud.google.com/),
 enable the Drive / Docs / Sheets / Gmail / Calendar / Apps Script APIs, download the JSON.
+
+Enable the Drive, Docs, Sheets, Slides, Gmail, Calendar and Apps Script APIs. Upgrading from
+1.1? Re-run OAuth once — v1.2 adds the Slides scope.
 
 > Step-by-step: [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md) · [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md)
 
@@ -163,9 +169,9 @@ do without asking).
 
 | Profile | Tools | Use it when |
 |---|---:|---|
-| `full` | 46 | your own machine, full trust |
-| `read-write` | 41 | daily work — destructive tools hidden |
-| `read-only` | 16 | exploring, demos, shared machines, untrusted agents |
+| `full` | 55 | your own machine, full trust |
+| `read-write` | 48 | daily work — destructive tools hidden |
+| `read-only` | 19 | exploring, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-write"
@@ -249,6 +255,17 @@ a `Partial results` note.
 </details>
 
 <details>
+<summary>💾 Drive files (3)</summary>
+
+| Tool | Type | Description |
+|------|------|-------------|
+| `drive_upload` | write | Upload a local file; `convert_to` turns docx/xlsx/pptx into native Google files |
+| `drive_download` | read | Download a binary Drive file to disk |
+| `drive_export` | read | Export a Doc/Sheet/Slide to pdf, docx, xlsx, pptx, csv… |
+
+</details>
+
+<details>
 <summary>📊 Sheets (11)</summary>
 
 | Tool | Type | Description |
@@ -277,6 +294,19 @@ a `Partial results` note.
 | `create_doc` | write | Create a new document |
 | `append_to_doc` | write | Append text |
 | `doc_fill_template` | destructive | Fill template placeholders (`confirm=true`) |
+
+</details>
+
+<details>
+<summary>🖼 Slides (5)</summary>
+
+| Tool | Type | Description |
+|------|------|-------------|
+| `slides_create` | write | Create a presentation |
+| `slides_get` | read | Slide count, IDs and text per slide |
+| `slides_add_slide` | write | Add a slide with a predefined layout |
+| `slides_replace_text` | destructive | Replace placeholders (`confirm=true`) |
+| `slides_insert_image` | write | Insert a public image URL onto a slide |
 
 </details>
 
@@ -322,6 +352,7 @@ a `Partial results` note.
 | `execute_operation` | write | Execute a staged update (auto-backup) |
 | `cancel_operation` | write | Cancel a pending staged update |
 | `restore_script_backup` | write | Restore from auto-backup |
+| `script_run_function` | destructive | Run a function from an API-executable deployment |
 
 </details>
 
@@ -350,15 +381,18 @@ a `Partial results` note.
 ## 🏗 How it works
 
 ```
-server.py                  MCP server: 46 tool definitions, resources, prompts, tool profiles
+server.py                  MCP server: 55 tool definitions, resources, prompts, tool profiles
 mcp_google/
 ├─ profiles.py             read-only / read-write / full + allow-deny lists
+├─ text.py                 entity/whitespace normalisation, timestamps, error hints
 ├─ config.py               config file + env overrides
 ├─ auth.py                 OAuth 2.0 credentials, token cache
 ├─ operations.py           staged operation store (Apps Script)
 ├─ security.py             token checks, email validation
 └─ handlers/
    ├─ search.py            workspace_search — Drive + Gmail + Calendar
+   ├─ files.py             drive_upload / drive_download / drive_export
+   ├─ slides.py            Slides: create, read, add, replace, images
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                     unit tests, no network needed
@@ -382,8 +416,11 @@ Design rules:
 python -m unittest discover -s tests -v
 ```
 
-43 tests cover profiles, search parsing, text hygiene and Docs table rendering. No credentials,
-network, or Google API access required.
+66 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
+v1.2 helpers. No credentials, network, or Google API access required.
+
+`tests/live_smoke.py` runs 23 read-only end-to-end checks against a real account and
+cleans up after itself (uploads, downloads and trashes a temp file; creates and trashes a deck).
 
 ---
 
@@ -413,7 +450,9 @@ network, or Google API access required.
 - [x] `workspace_search` — cross-product search
 - [x] Tool profiles (`read-only` / `read-write` / `full`)
 - [x] Antigravity config + Agent Skill
-- [ ] `drive_upload` / `drive_download` for local files
+- [x] `drive_upload` / `drive_download` / `drive_export`
+- [x] Slides: create, add slides, replace text, insert images
+- [x] `script_run_function` for API-executable deployments
 - [ ] Docs: replace-text and formatting operations
 - [ ] `workspace_search` filters by type and date range
 - [ ] Optional HTTP transport for team deployments (stateless, MCP 2026-07-28)

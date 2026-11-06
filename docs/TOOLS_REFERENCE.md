@@ -123,6 +123,19 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
    https://docs.google.com/spreadsheets/d/1a2b3c
 ```
 
+## Drive files
+- `drive_upload(local_path, name?, parent_id?, mime_type?, convert_to?)`
+  - Upload a local file (limit 100 MB). `convert_to`: `google-docs`, `google-sheets`
+    or `google-slides` converts docx/xlsx/pptx into a native Google file.
+- `drive_download(file_id, save_to?, overwrite?)`
+  - Download a binary file. `save_to` may be a directory (default `~/Downloads`)
+    or a full path. Google-native files are rejected with a hint to use `drive_export`.
+- `drive_export(file_id, format, save_to?, overwrite?)`
+  - Export a native file: `pdf`, `docx`, `xlsx`, `pptx`, `csv`, `txt`, `md`,
+    `html`, `rtf`, `epub`, `odt/ods/odp`, `png/jpeg/svg`, `zip`.
+  - The tool validates the format against the file type and never overwrites
+    without `overwrite=true`.
+
 ## Drive
 - `find_files(query)`
   - Search by name or full Drive query.
@@ -177,6 +190,20 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
 - `doc_export_pdf(document_id)`
   - Export document as a binary PDF. Returns an `EmbeddedResource` with MIME type `application/pdf`.
 
+## Slides
+- `slides_create(title)`
+  - Create a presentation, returns its ID and URL.
+- `slides_get(presentation_id)`
+  - Slide count, slide IDs and the text on each slide.
+- `slides_add_slide(presentation_id, layout?, insertion_index?)`
+  - Add a slide; layouts: `TITLE_AND_BODY` (default), `TITLE_ONLY`, `BLANK`,
+    `SECTION_HEADER`, `MAIN_POINT`, …
+- `slides_replace_text(presentation_id, replacements, confirm?)`
+  - Replace placeholders everywhere; without `confirm=true` returns a preview
+    with per-key occurrence counts.
+- `slides_insert_image(presentation_id, slide_id, image_url, width?, height?, left?, top?)`
+  - Image URL must be publicly reachable; size and position are in pixels.
+
 ## Gmail
 - `send_email(to, subject, body_text, draft_mode?)`
   - Defaults to draft mode.
@@ -213,6 +240,10 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
   - Requires `confirm=true`.
 
 ## Apps Script
+- `script_run_function(script_id, function_name, parameters?, dev_mode?)`
+  - Run a function from a project deployed as an API executable. `dev_mode=true`
+    (default) executes the latest saved code. Returns the JSON result or the
+    Apps Script error with its stack trace.
 - `create_script_project(title, parent_id?)`
   - Create an Apps Script project.
 - `get_script_content(script_id)`

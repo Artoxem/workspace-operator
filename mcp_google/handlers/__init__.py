@@ -7,6 +7,7 @@ from .apps_script import (
     prepare_script_update_handler,
     restore_script_backup_handler,
     create_script_project_handler,
+    script_run_function_handler,
 )
 from .calendar import (
     calendar_create_meeting_handler,
@@ -58,7 +59,15 @@ from .sheets import (
     sheet_find_replace_handler,
     update_sheet_handler,
 )
+from .files import drive_download_handler, drive_export_handler, drive_upload_handler
 from .search import workspace_search_handler
+from .slides import (
+    slides_add_slide_handler,
+    slides_create_handler,
+    slides_get_handler,
+    slides_insert_image_handler,
+    slides_replace_text_handler,
+)
 
 __all__ = [
     "find_files_handler",
@@ -108,4 +117,13 @@ __all__ = [
     "drive_copy_file_handler",
     "workspace_search_handler",
     "document_to_text",
+    "drive_upload_handler",
+    "drive_download_handler",
+    "drive_export_handler",
+    "script_run_function_handler",
+    "slides_create_handler",
+    "slides_get_handler",
+    "slides_add_slide_handler",
+    "slides_replace_text_handler",
+    "slides_insert_image_handler",
 ]

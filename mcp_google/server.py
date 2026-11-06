@@ -67,6 +67,15 @@ from .handlers import (
     update_sheet_handler,
     workspace_search_handler,
     document_to_text,
+    drive_download_handler,
+    drive_export_handler,
+    drive_upload_handler,
+    script_run_function_handler,
+    slides_add_slide_handler,
+    slides_create_handler,
+    slides_get_handler,
+    slides_insert_image_handler,
+    slides_replace_text_handler,
 )
 
 # ---------------------------------------------------------------------------
@@ -242,6 +251,87 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_DESTRUCTIVE,
         ),
+        # ── Drive files (local ↔ cloud) ───────────────────────────────────
+        types.Tool(
+            name="drive_upload",
+            description=(
+                "Upload a local file to Google Drive. Use convert_to to turn a "
+                "docx/xlsx/pptx into a native Google Doc, Sheet or Slide."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "local_path": {
+                        "type": "string",
+                        "description": "Path on the machine running this server",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Drive file name (default: the local file name)",
+                    },
+                    "parent_id": {
+                        "type": "string",
+                        "description": "Destination folder ID (default: My Drive root)",
+                    },
+                    "mime_type": {
+                        "type": "string",
+                        "description": "Override the detected content type",
+                    },
+                    "convert_to": {
+                        "type": "string",
+                        "enum": ["google-docs", "google-sheets", "google-slides"],
+                        "description": "Convert to a native Google file on upload",
+                    },
+                },
+                "required": ["local_path"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_download",
+            description=(
+                "Download a binary Google Drive file to disk. Google-native files "
+                "(Docs, Sheets, Slides) must be converted with drive_export first."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "save_to": {
+                        "type": "string",
+                        "description": "File or directory path (default: ~/Downloads)",
+                    },
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["file_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="drive_export",
+            description=(
+                "Export a Google Doc, Sheet or Presentation to a local file: pdf, "
+                "docx, xlsx, pptx, csv, txt and more."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "format": {
+                        "type": "string",
+                        "description": "pdf | docx | xlsx | pptx | csv | txt | md | html | …",
+                    },
+                    "save_to": {
+                        "type": "string",
+                        "description": "File or directory path (default: ~/Downloads)",
+                    },
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["file_id", "format"],
+            },
+            annotations=_READ_ONLY,
+        ),
+
         # ── Google Sheets ─────────────────────────────────────────────────
         types.Tool(
             name="read_sheet",
@@ -474,6 +564,93 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_READ_ONLY,
         ),
+        # ── Google Slides ─────────────────────────────────────────────────
+        types.Tool(
+            name="slides_create",
+            description="Create a new Google Slides presentation",
+            inputSchema={
+                "type": "object",
+                "properties": {"title": {"type": "string"}},
+                "required": ["title"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_get",
+            description=(
+                "Read a presentation: title, slide count, slide IDs and the text "
+                "on each slide"
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {"presentation_id": {"type": "string"}},
+                "required": ["presentation_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="slides_add_slide",
+            description="Add a slide to a presentation using a predefined layout",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "layout": {
+                        "type": "string",
+                        "default": "TITLE_AND_BODY",
+                        "description": "Predefined layout, e.g. TITLE_AND_BODY, TITLE_ONLY, BLANK",
+                    },
+                    "insertion_index": {
+                        "type": "integer",
+                        "description": "Where to insert the slide (default: at the end)",
+                    },
+                },
+                "required": ["presentation_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_replace_text",
+            description=(
+                "Replace placeholder text across a presentation. Requires "
+                "confirm=true; without it returns a preview of what will change."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "replacements": {
+                        "type": "object",
+                        "description": "Map of placeholder → value",
+                    },
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["presentation_id", "replacements"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="slides_insert_image",
+            description=(
+                "Insert an image from a public URL onto a slide. Size and position "
+                "are in pixels and optional."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "slide_id": {"type": "string"},
+                    "image_url": {"type": "string"},
+                    "width": {"type": "number"},
+                    "height": {"type": "number"},
+                    "left": {"type": "number"},
+                    "top": {"type": "number"},
+                },
+                "required": ["presentation_id", "slide_id", "image_url"],
+            },
+            annotations=_WRITE,
+        ),
+
         # ── Apps Script ───────────────────────────────────────────────────
         types.Tool(
             name="create_script_project",
@@ -571,6 +748,33 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+        types.Tool(
+            name="script_run_function",
+            description=(
+                "Run a function from an Apps Script project deployed as an API "
+                "executable. Executes arbitrary code with your account's authority."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "script_id": {"type": "string"},
+                    "function_name": {"type": "string"},
+                    "parameters": {
+                        "type": "array",
+                        "items": {},
+                        "description": "Positional arguments passed to the function",
+                    },
+                    "dev_mode": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Run the latest saved code instead of the deployed version",
+                    },
+                },
+                "required": ["script_id", "function_name"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+
         # ── Gmail ─────────────────────────────────────────────────────────
         types.Tool(
             name="get_gmail_profile",
@@ -887,6 +1091,69 @@ async def run() -> None:
                     a.get("limit", 10),
                     a.get("calendar_days_back", 30),
                     a.get("calendar_days_ahead", 180),
+                ),
+                "drive_upload": lambda a: drive_upload_handler(
+                    config,
+                    logger,
+                    a.get("local_path"),
+                    a.get("name"),
+                    a.get("parent_id"),
+                    a.get("mime_type"),
+                    a.get("convert_to"),
+                ),
+                "drive_download": lambda a: drive_download_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("save_to"),
+                    a.get("overwrite", False),
+                ),
+                "drive_export": lambda a: drive_export_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("format"),
+                    a.get("save_to"),
+                    a.get("overwrite", False),
+                ),
+                "slides_create": lambda a: slides_create_handler(
+                    config, logger, a.get("title")
+                ),
+                "slides_get": lambda a: slides_get_handler(
+                    config, logger, a.get("presentation_id")
+                ),
+                "slides_add_slide": lambda a: slides_add_slide_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("layout", "TITLE_AND_BODY"),
+                    a.get("insertion_index"),
+                ),
+                "slides_replace_text": lambda a: slides_replace_text_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("replacements") or {},
+                    a.get("confirm", False),
+                ),
+                "slides_insert_image": lambda a: slides_insert_image_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("slide_id"),
+                    a.get("image_url"),
+                    a.get("width"),
+                    a.get("height"),
+                    a.get("left"),
+                    a.get("top"),
+                ),
+                "script_run_function": lambda a: script_run_function_handler(
+                    config,
+                    logger,
+                    a.get("script_id"),
+                    a.get("function_name"),
+                    a.get("parameters"),
+                    a.get("dev_mode", True),
                 ),
                 "find_files": lambda a: find_files_handler(config, logger, a.get("query")),
                 "read_sheet": lambda a: read_sheet_handler(

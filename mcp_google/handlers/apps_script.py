@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -222,3 +223,57 @@ def restore_script_backup_handler(
     except Exception as e:
         logger.error("Error restoring backup: %s", str(e))
         return f"Error restoring backup: {str(e)}"
+
+def format_script_response(function_name: str, response: dict) -> str:
+    """Render an Apps Script ``scripts.run`` response (pure, unit-testable)."""
+    error = response.get("error")
+    if error is not None:
+        message = error.get("message") or "Apps Script execution failed"
+        lines = [f"Error: {message}"]
+        for detail in error.get("details") or []:
+            if isinstance(detail, dict):
+                for frame in detail.get("scriptStackTraceElements") or []:
+                    lines.append(
+                        f"  at {frame.get('function')} (line {frame.get('lineNumber')})"
+                    )
+        return "\n".join(lines)
+
+    result = response.get("result")
+    rendered = (
+        json.dumps(result, indent=2, ensure_ascii=False)
+        if result is not None
+        else "(no return value)"
+    )
+    if len(rendered) > 4000:
+        rendered = rendered[:4000].rstrip() + "… (truncated)"
+
+    return f"Executed {function_name}:\n{rendered}"
+
+def script_run_function_handler(
+    config: Config,
+    logger: logging.Logger,
+    script_id: str,
+    function_name: str,
+    parameters: Optional[List] = None,
+    dev_mode: bool = True,
+) -> str:
+    """Run a function from an Apps Script project that is deployed as an API executable."""
+    try:
+        if not script_id or not function_name:
+            return "Error: script_id and function_name are required."
+
+        creds = get_creds(config)
+        service = build("script", "v1", credentials=creds)
+
+        body = {
+            "function": function_name,
+            "parameters": parameters or [],
+            "devMode": bool(dev_mode),
+        }
+        response = service.scripts().run(scriptId=script_id, body=body).execute()
+
+        logger.info("Script function executed: %s.%s", script_id, function_name)
+        return format_script_response(function_name, response)
+    except Exception as e:
+        logger.error("Error running script function %s: %s", function_name, str(e))
+        return f"Error running script function: {str(e)}"

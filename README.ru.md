@@ -2,14 +2,14 @@
 
 # Google Workspace MCP — глубокая автоматизация
 
-**Apps Script со стейджингом и откатом · шаблоны документов · кросс-поиск · профили инструментов**
+**Apps Script со стейджингом и откатом · шаблоны документов · кросс-поиск · локальные файлы · Slides · профили**
 
 MCP-сервер, который даёт ИИ-агенту реальный контроль над Google Drive, Sheets, Docs, Gmail
 и Calendar — и закрывает то, чего нет в официальных серверах Google.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-46-informational)](#-все-инструменты)
+[![Tools](https://img.shields.io/badge/tools-55-informational)](#-все-инструменты)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -37,6 +37,7 @@ MCP-сервер, который даёт ИИ-агенту реальный к�
 | Шаблоны документов | — | — | **`doc_fill_template`** |
 | Пакетные операции | — | — | **пакетное удаление, метки, dry-run** |
 | Глубина Sheets | чтение диапазонов | частично | **фильтры, именованные диапазоны, find & replace, CSV** |
+| Презентации | — | — | **создание, слайды, замена текста, картинки** |
 | Кросс-поиск | `search_corpus` | — | **`workspace_search`** |
 | Профили инструментов на сервере | IAM / allow-list админа | — | **read-only / read-write / full + allow-deny** |
 | Путь данных | эндпоинт MCP Google | локально | **локально, свой OAuth-клиент** |
@@ -52,15 +53,17 @@ MCP-сервер, который даёт ИИ-агенту реальный к�
 |---------|-------------|
 | 🔎 **Кросс-поиск** | Один запрос по Drive + Gmail + Calendar, объединение и сортировка по дате |
 | 📁 **Drive** | Поиск, копирование, перемещение, шаринг, права, отзыв публичного доступа |
+| 💾 **Файлы** | Загрузка локальных файлов, скачивание, экспорт Docs/Sheets/Slides в pdf/docx/xlsx/pptx |
 | 📊 **Sheets** | Чтение и запись диапазонов, фильтры, именованные диапазоны, find & replace, экспорт CSV |
-| 📄 **Docs** | Чтение, создание, дописывание, заполнение шаблонов, экспорт в PDF |
+| 📄 **Docs** | Чтение (включая таблицы), создание, дописывание, шаблоны, экспорт в PDF |
+| 🖼 **Slides** | Создание презентаций, слайды, замена плейсхолдеров, картинки |
 | 📧 **Gmail** | Черновики, отправка, поиск, архив, метки, удаление с подтверждением |
 | 📅 **Calendar** | Список событий, свободные слоты, встречи с участниками |
 | ⚙️ **Apps Script** | Создание, чтение, стейджинг обновлений, запуск с бэкапом, откат |
 | 🔗 **Ресурсы** | Живые снимки Drive / Gmail / Calendar / Sheets / Docs прямо в контексте |
 | 💬 **Промпты** | Готовые сценарии: сводка почты, анализ таблицы, план недели, поиск файлов |
 
-**46 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта** — у каждого инструмента
+**55 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта** — у каждого инструмента
 есть аннотации `readOnlyHint` / `destructiveHint`, чтобы клиент предупреждал об опасных действиях.
 
 ---
@@ -80,6 +83,9 @@ pip install -r requirements.txt
 
 Создайте OAuth 2.0 Client ID (Desktop app) в [Google Cloud Console](https://console.cloud.google.com/),
 включите Drive / Docs / Sheets / Gmail / Calendar / Apps Script API, скачайте JSON.
+
+Включите Drive, Docs, Sheets, Slides, Gmail, Calendar и Apps Script API. Обновляетесь с 1.1?
+Переавторизуйтесь один раз — в 1.2 добавлен скоуп Slides.
 
 > Пошагово: [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md) · [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md)
 
@@ -162,9 +168,9 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Когда использовать |
 |---|---:|---|
-| `full` | 46 | своя машина, полное доверие |
-| `read-write` | 41 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 16 | разведка, демо, общие машины, недоверенные агенты |
+| `full` | 55 | своя машина, полное доверие |
+| `read-write` | 48 | ежедневная работа — деструктивные скрыты |
+| `read-only` | 19 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-write"
@@ -248,6 +254,17 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 </details>
 
 <details>
+<summary>💾 Файлы (3)</summary>
+
+| Инструмент | Тип | Описание |
+|------|------|-------------|
+| `drive_upload` | write | Загрузить локальный файл; `convert_to` превращает docx/xlsx/pptx в Google-файлы |
+| `drive_download` | read | Скачать бинарный файл Drive на диск |
+| `drive_export` | read | Экспорт Doc/Sheet/Slide в pdf, docx, xlsx, pptx, csv… |
+
+</details>
+
+<details>
 <summary>📊 Sheets (11)</summary>
 
 | Инструмент | Тип | Описание |
@@ -276,6 +293,19 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 | `create_doc` | write | Создать документ |
 | `append_to_doc` | write | Дописать текст |
 | `doc_fill_template` | destructive | Заполнить шаблон (`confirm=true`) |
+
+</details>
+
+<details>
+<summary>🖼 Slides (5)</summary>
+
+| Инструмент | Тип | Описание |
+|------|------|-------------|
+| `slides_create` | write | Создать презентацию |
+| `slides_get` | read | Количество слайдов, ID и текст по слайдам |
+| `slides_add_slide` | write | Добавить слайд с готовым макетом |
+| `slides_replace_text` | destructive | Замена плейсхолдеров (`confirm=true`) |
+| `slides_insert_image` | write | Вставить картинку по публичному URL |
 
 </details>
 
@@ -321,6 +351,7 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 | `execute_operation` | write | Применить обновление (с бэкапом) |
 | `cancel_operation` | write | Отменить подготовленное обновление |
 | `restore_script_backup` | write | Восстановить из бэкапа |
+| `script_run_function` | destructive | Запустить функцию из API-executable деплоя |
 
 </details>
 
@@ -349,15 +380,18 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 ## 🏗 Как устроено
 
 ```
-server.py                  MCP-сервер: 46 инструментов, ресурсы, промпты, профили
+server.py                  MCP-сервер: 55 инструментов, ресурсы, промпты, профили
 mcp_google/
 ├─ profiles.py             read-only / read-write / full + allow-deny
+├─ text.py                 нормализация текста, таймстампов и ошибок
 ├─ config.py               конфиг + переменные окружения
 ├─ auth.py                 OAuth 2.0, кэш токена
 ├─ operations.py           хранилище подготовленных операций (Apps Script)
 ├─ security.py             проверки токена и email
 └─ handlers/
    ├─ search.py            workspace_search — Drive + Gmail + Calendar
+   ├─ files.py             drive_upload / drive_download / drive_export
+   ├─ slides.py            Slides: создание, чтение, слайды, картинки
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                     юнит-тесты без сети
@@ -380,7 +414,10 @@ skills/google-workspace/   Agent Skill: когда какой инструмен
 python -m unittest discover -s tests -v
 ```
 
-43 теста: профили, разбор поиска, нормализация текста и таблицы в Docs. Без креденшелов и сети.
+66 тестов: профили, разбор поиска, нормализация текста, таблицы Docs, работа с путями и
+хелперы v1.2. Без креденшелов и сети.
+
+`tests/live_smoke.py` — 23 сквозные проверки на реальном аккаунте с самоочисткой.
 
 ---
 
@@ -410,7 +447,9 @@ python -m unittest discover -s tests -v
 - [x] `workspace_search` — кросс-поиск
 - [x] Профили инструментов (`read-only` / `read-write` / `full`)
 - [x] Конфиг Antigravity + Agent Skill
-- [ ] `drive_upload` / `drive_download` для локальных файлов
+- [x] `drive_upload` / `drive_download` / `drive_export`
+- [x] Slides: создание, слайды, замена текста, картинки
+- [x] `script_run_function` для API-executable деплоев
 - [ ] Docs: замена текста и форматирование
 - [ ] Фильтры `workspace_search` по типу и дате
 - [ ] Опциональный HTTP-транспорт для команд (stateless, MCP 2026-07-28)

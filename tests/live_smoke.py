@@ -12,7 +12,9 @@ Exit code 0 means every check passed.
 import asyncio
 import os
 import re
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -22,18 +24,27 @@ from mcp.client.stdio import stdio_client
 REPO = Path(__file__).resolve().parents[1]
 SERVER = REPO / "server.py"
 
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
 # Google responses may contain emoji; never fail a check because of the console.
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 PASS, FAIL = "PASS", "FAIL"
 results: list[tuple[str, bool, str]] = []
+skipped: list[str] = []
 
 
 def record(name: str, ok: bool, detail: str = "") -> None:
     results.append((name, ok, detail))
     mark = PASS if ok else FAIL
     print(f"[{mark}] {name}" + (f" — {detail}" if detail else ""))
+
+
+def record_skip(name: str, detail: str = "") -> None:
+    skipped.append(name)
+    print(f"[SKIP] {name}" + (f" — {detail}" if detail else ""))
 
 
 def _env(profile: str) -> dict:
@@ -44,6 +55,32 @@ def _env(profile: str) -> dict:
     env["MCP_TOOL_PROFILE"] = profile
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     return env
+
+
+def _trash(file_id: str) -> None:
+    """Move a test artifact to the Drive trash (cleanup, not part of the server)."""
+    from googleapiclient.discovery import build
+
+    from mcp_google.auth import get_creds
+
+    config = yaml.safe_load((REPO / "config.yaml").read_text(encoding="utf-8"))
+    creds = get_creds(_config_obj(config))
+    build("drive", "v3", credentials=creds).files().update(
+        fileId=file_id, body={"trashed": True}
+    ).execute()
+
+
+def _config_obj(raw: dict):
+    from mcp_google.config import Config
+
+    return Config(
+        client_secrets_file=raw["client_secrets_file"],
+        token_file=raw["token_file"],
+        backup_dir=raw.get("backup_dir", ""),
+        log_file=raw.get("log_file"),
+        mcp_auth_token=raw.get("mcp_auth_token"),
+        scopes=raw.get("scopes") or [],
+    )
 
 
 def _text(result) -> str:
@@ -72,7 +109,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 46, f"{len(names)} tools")
+    record("tools/list", len(names) == 55, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -179,6 +216,116 @@ async def full_checks(session: ClientSession) -> None:
             f"{kind} {mime}",
         )
 
+    # ---------- v1.2: local files, slides, script execution ----------
+    workspace = Path(tempfile.mkdtemp(prefix="google-mcp-smoke-"))
+    sample = workspace / "smoke-upload.txt"
+    sample.write_text("workspace smoke test\n", encoding="utf-8")
+
+    upload = await session.call_tool("drive_upload", {"local_path": str(sample)})
+    upload_text = _text(upload)
+    uploaded_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", upload_text)
+    record(
+        "call drive_upload",
+        not upload.isError and uploaded_id is not None,
+        upload_text.splitlines()[0] if upload_text else "empty",
+    )
+
+    if uploaded_id:
+        target = workspace / "smoke-download.txt"
+        download = await session.call_tool(
+            "drive_download",
+            {"file_id": uploaded_id.group(1), "save_to": str(target), "overwrite": True},
+        )
+        round_trip = target.exists() and target.read_text(
+            encoding="utf-8"
+        ) == sample.read_text(encoding="utf-8")
+        record("call drive_download (round-trip)", not download.isError and round_trip, target.name)
+
+    presentation = await session.call_tool(
+        "slides_create", {"title": "Workspace Operator smoke"}
+    )
+    presentation_text = _text(presentation)
+    slides_disabled = (
+        "has not been used in project" in presentation_text
+        or "is disabled" in presentation_text
+    )
+    presentation_id = None
+    if slides_disabled:
+        record_skip(
+            "slides_* tools",
+            "enable slides.googleapis.com for the Cloud project, then re-run",
+        )
+    else:
+        presentation_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", presentation_text)
+        record(
+            "call slides_create",
+            not presentation.isError and presentation_id is not None,
+            presentation_text.splitlines()[0] if presentation_text else "empty",
+        )
+
+    if presentation_id:
+        pid = presentation_id.group(1)
+        summary = await session.call_tool("slides_get", {"presentation_id": pid})
+        record(
+            "call slides_get",
+            not summary.isError and "Slides:" in _text(summary),
+            _text(summary).splitlines()[0] if _text(summary) else "empty",
+        )
+
+        added = await session.call_tool(
+            "slides_add_slide", {"presentation_id": pid, "layout": "TITLE_AND_BODY"}
+        )
+        record(
+            "call slides_add_slide",
+            not added.isError and "Slide added" in _text(added),
+            _text(added).splitlines()[0] if _text(added) else "empty",
+        )
+
+        preview = await session.call_tool(
+            "slides_replace_text",
+            {"presentation_id": pid, "replacements": {"X": "Y"}},
+        )
+        record(
+            "slides_replace_text preview (no write)",
+            not preview.isError and "CONFIRMATION REQUIRED" in _text(preview),
+            "preview only",
+        )
+
+        pdf_target = workspace / "smoke-export.pdf"
+        exported = await session.call_tool(
+            "drive_export",
+            {
+                "file_id": pid,
+                "format": "pdf",
+                "save_to": str(pdf_target),
+                "overwrite": True,
+            },
+        )
+        pdf_size = pdf_target.stat().st_size if pdf_target.exists() else 0
+        record(
+            "call drive_export (pdf)",
+            not exported.isError and pdf_size > 1000,
+            f"{pdf_size} bytes",
+        )
+
+    script_run = await session.call_tool(
+        "script_run_function", {"script_id": "no-such-script", "function_name": "doWork"}
+    )
+    script_text = _text(script_run)
+    record(
+        "script_run_function error path",
+        script_run.isError and "Error" in script_text,
+        script_text.splitlines()[0][:80] if script_text else "empty",
+    )
+
+    for artifact in (uploaded_id, presentation_id):
+        if artifact:
+            try:
+                await asyncio.to_thread(_trash, artifact.group(1))
+            except Exception as exc:  # noqa: BLE001
+                record("cleanup test artifacts", False, str(exc))
+    shutil.rmtree(workspace, ignore_errors=True)
+
     broken = await session.call_tool(
         "read_sheet", {"spreadsheet_id": "definitely-not-a-real-id", "range_name": "A1:B2"}
     )
@@ -201,7 +348,7 @@ async def full_checks(session: ClientSession) -> None:
 async def read_only_checks(session: ClientSession) -> None:
     await session.initialize()
     tools = await session.list_tools()
-    record("read-only profile tools/list", len(tools.tools) == 16, f"{len(tools.tools)} tools")
+    record("read-only profile tools/list", len(tools.tools) == 19, f"{len(tools.tools)} tools")
 
     blocked = await session.call_tool(
         "send_email", {"to": "nobody@example.com", "subject": "x", "body_text": "x"}
@@ -220,7 +367,10 @@ async def main() -> int:
 
     failed = [name for name, ok, _ in results if not ok]
     print()
-    print(f"{len(results) - len(failed)}/{len(results)} checks passed")
+    print(
+        f"{len(results) - len(failed)}/{len(results)} checks passed"
+        + (f", {len(skipped)} skipped" if skipped else "")
+    )
     if failed:
         print("failed:", ", ".join(failed))
     return 1 if failed else 0

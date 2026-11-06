@@ -123,6 +123,18 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
    https://docs.google.com/spreadsheets/d/1a2b3c
 ```
 
+## Файлы Drive
+- `drive_upload(local_path, name?, parent_id?, mime_type?, convert_to?)`
+  - Загрузить локальный файл (лимит 100 МБ). `convert_to`: `google-docs`,
+    `google-sheets` или `google-slides` превращает docx/xlsx/pptx в Google-файл.
+- `drive_download(file_id, save_to?, overwrite?)`
+  - Скачать бинарный файл. `save_to` — папка (по умолчанию `~/Downloads`) или путь
+    к файлу. Для Google-файлов вернётся подсказка использовать `drive_export`.
+- `drive_export(file_id, format, save_to?, overwrite?)`
+  - Экспорт: `pdf`, `docx`, `xlsx`, `pptx`, `csv`, `txt`, `md`, `html`, `rtf`,
+    `epub`, `odt/ods/odp`, `png/jpeg/svg`, `zip`. Формат проверяется на совместимость
+    с типом файла, без `overwrite=true` ничего не перезаписывается.
+
 ## Drive
 - `find_files(query)`
   - Поиск по имени или по полноценному запросу Drive query.
@@ -177,6 +189,19 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 - `doc_export_pdf(document_id)`
   - Экспорт документа в бинарный PDF. Возвращает `EmbeddedResource` с MIME-типом `application/pdf`.
 
+## Slides
+- `slides_create(title)`
+  - Создать презентацию, вернуть ID и ссылку.
+- `slides_get(presentation_id)`
+  - Количество слайдов, их ID и текст.
+- `slides_add_slide(presentation_id, layout?, insertion_index?)`
+  - Добавить слайд; макеты: `TITLE_AND_BODY` (по умолчанию), `TITLE_ONLY`, `BLANK`,
+    `SECTION_HEADER`, `MAIN_POINT`, …
+- `slides_replace_text(presentation_id, replacements, confirm?)`
+  - Замена плейсхолдеров; без `confirm=true` возвращает превью с числом вхождений.
+- `slides_insert_image(presentation_id, slide_id, image_url, width?, height?, left?, top?)`
+  - URL картинки должен быть публичным; размеры и позиция — в пикселях.
+
 ## Gmail
 - `send_email(to, subject, body_text, draft_mode?)`
   - По умолчанию создаёт черновик.
@@ -213,6 +238,10 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - Требует `confirm=true`.
 
 ## Apps Script
+- `script_run_function(script_id, function_name, parameters?, dev_mode?)`
+  - Запустить функцию из проекта, развёрнутого как API executable. `dev_mode=true`
+    (по умолчанию) выполняет последний сохранённый код. Возвращает JSON-результат
+    или ошибку Apps Script со стеком.
 - `create_script_project(title, parent_id?)`
   - Создать проект Apps Script.
 - `get_script_content(script_id)`
