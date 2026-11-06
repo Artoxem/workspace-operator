@@ -419,6 +419,10 @@ python -m unittest discover -s tests -v
 
 `tests/live_smoke.py` — 30 сквозных проверок на реальном аккаунте с самоочисткой.
 
+`tests/pptx_roundtrip.py` проверяет конвертацию Office → Google:
+`drive_upload(convert_to="google-slides")` → `slides_replace_text` → `slides_get`.
+Передайте `.pptx` с плейсхолдером `{{NAME}}` или запускайте интерпретатором с `python-pptx`.
+
 ---
 
 ## 📚 Документация

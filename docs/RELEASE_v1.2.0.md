@@ -53,6 +53,8 @@ preview and occurrence counts, and images positioned in pixels.
 - `tests/live_smoke.py` — 30 end-to-end checks, self-cleaning: uploads a temp
   file, downloads it back and compares bytes, creates a deck, exports it to PDF,
   trashes both artifacts.
+- `tests/pptx_roundtrip.py` — .pptx → Google Slides → replace text → read back,
+  trashing the deck afterwards (5 checks).
 
 ## Known limitations
 

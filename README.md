@@ -422,6 +422,11 @@ v1.2 helpers. No credentials, network, or Google API access required.
 `tests/live_smoke.py` runs 30 end-to-end checks against a real account and
 cleans up after itself (uploads, downloads and trashes a temp file; creates and trashes a deck).
 
+`tests/pptx_roundtrip.py` verifies the Office → Google conversion path:
+`drive_upload(convert_to="google-slides")` → `slides_replace_text` → `slides_get`.
+Pass a `.pptx` that contains `{{NAME}}`, or run it with an interpreter that has
+`python-pptx` installed.
+
 ---
 
 ## 📚 Documentation
