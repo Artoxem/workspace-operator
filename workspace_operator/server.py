@@ -1,6 +1,7 @@
 """MCP server exposing Google Workspace tools, resources and prompts."""
 
 import asyncio
+import time
 import base64
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,7 @@ from .profiles import ProfileError, resolve_profile
 from .security import require_token_configured
 from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
+from .runtime import AuditLog, call_with_retry
 from .handlers import (
     add_sheet_handler,
     append_row_handler,
@@ -1328,11 +1330,17 @@ async def run() -> None:
     all_tools = _tools()
     exposed_tools = profile.filter(all_tools)
     exposed_names = frozenset(tool.name for tool in exposed_tools)
+
+    audit = AuditLog(config.audit_log)
+    tool_index = {tool.name: tool for tool in exposed_tools}
+
     logger.info(
-        "Starting with tool %s — %d of %d tools exposed",
+        "Starting with tool %s — %d of %d tools exposed%s%s",
         profile.describe(),
         len(exposed_tools),
         len(all_tools),
+        " [dry-run]" if config.dry_run else "",
+        f" [audit: {config.audit_log}]" if audit.enabled else "",
     )
 
     # ------------------------------------------------------------------
@@ -1364,6 +1372,28 @@ async def run() -> None:
                     )
                 ],
                 isError=True,
+            )
+
+        tool = tool_index.get(name)
+        annotations = getattr(tool, "annotations", None)
+        is_read_only = bool(getattr(annotations, "readOnlyHint", False))
+        argument_names = tuple((arguments or {}).keys())
+        started = time.perf_counter()
+
+        if config.dry_run and not is_read_only:
+            logger.info("Dry run: %s was not executed", name)
+            audit.record(name, profile.name, "dry-run", 0, argument_names)
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=(
+                            f"DRY RUN: '{name}' was not executed. "
+                            f"Arguments: {sorted(argument_names)}. "
+                            "Unset dry_run / MCP_DRY_RUN to apply changes."
+                        ),
+                    )
+                ]
             )
 
         try:
@@ -1739,7 +1769,12 @@ async def run() -> None:
             if name not in handlers:
                 raise ValueError(f"Unknown tool: {name}")
 
-            result = await asyncio.to_thread(handlers[name], arguments)
+            result = await asyncio.to_thread(
+                call_with_retry,
+                lambda: handlers[name](arguments),
+                config.retry_attempts,
+                logger=logger,
+            )
 
             if isinstance(result, BinaryResult):
                 return types.CallToolResult(
@@ -1762,12 +1797,27 @@ async def run() -> None:
             is_error = text.lstrip().startswith("Error")
             if is_error:
                 text = humanize_http_error(text)
+            audit.record(
+                name,
+                profile.name,
+                "error" if is_error else "ok",
+                int((time.perf_counter() - started) * 1000),
+                argument_names,
+            )
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=text)],
                 isError=is_error,
             )
 
         except Exception as e:
+            audit.record(
+                name,
+                profile.name,
+                "exception",
+                int((time.perf_counter() - started) * 1000),
+                argument_names,
+                error=str(e),
+            )
             logger.exception("Tool call error [%s]: %s", name, e)
             return types.CallToolResult(
                 content=[

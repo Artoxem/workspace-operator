@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from .runtime import parse_bool
+
 DEFAULT_SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
@@ -28,6 +30,9 @@ class Config:
     tool_profile: str = "full"
     allowed_tools: Optional[List[str]] = None
     denied_tools: Optional[List[str]] = None
+    dry_run: bool = False
+    audit_log: Optional[str] = None
+    retry_attempts: int = 3
 
 
 def _default_path(*parts: str) -> str:
@@ -107,6 +112,21 @@ def load_config() -> Config:
     if denied_tools is not None:
         denied_tools = [str(item) for item in denied_tools]
 
+    dry_run = parse_bool(
+        os.environ.get("MCP_DRY_RUN", file_config.get("dry_run", False))
+    )
+
+    audit_log = os.environ.get(
+        "MCP_AUDIT_LOG", file_config.get("audit_log")
+    )
+
+    try:
+        retry_attempts = int(
+            os.environ.get("MCP_RETRY_ATTEMPTS", file_config.get("retry_attempts", 3))
+        )
+    except (TypeError, ValueError):
+        retry_attempts = 3
+
     return Config(
         client_secrets_file=client_secrets_file,
         token_file=token_file,
@@ -118,4 +138,7 @@ def load_config() -> Config:
         tool_profile=tool_profile,
         allowed_tools=allowed_tools,
         denied_tools=denied_tools,
+        dry_run=dry_run,
+        audit_log=audit_log,
+        retry_attempts=retry_attempts,
     )

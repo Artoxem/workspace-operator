@@ -179,6 +179,24 @@ denied_tools: ["send_email", "share_file"]
 Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
 A blocked call returns a clear explanation instead of failing silently.
 
+## Operations
+
+```bash
+python -m workspace_operator doctor     # config, token, scopes, API reachability
+python -m workspace_operator tools      # catalog (--profile read-only, --json)
+python -m workspace_operator serve      # stdio server (same as python server.py)
+```
+
+| Feature | How to use it | What it does |
+|---|---|---|
+| **Dry run** | `MCP_DRY_RUN=1` or `dry_run: true` | Every non-read-only tool returns a preview instead of executing — safe demos, safe exploration |
+| **Audit log** | `MCP_AUDIT_LOG=~/.google/audit.jsonl` | One JSON line per call: tool, profile, status, duration, argument **names** (never values) |
+| **Retries** | `MCP_RETRY_ATTEMPTS=3` | Transient Google API errors (429/5xx) are retried with exponential backoff |
+| **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes, and Drive/Gmail/Calendar reachability |
+
+In dry-run the read-only tools still work, so an agent can explore data while every
+write is turned into an explicit preview.
+
 ## Tool catalog
 
 <details>
@@ -374,6 +392,8 @@ workspace_operator/
 ├─ text.py                   entity/whitespace normalisation, timestamps, error hints
 ├─ operations.py             staged-operation store for Apps Script
 ├─ security.py               token and email checks
+├─ runtime.py                retries, audit log, dry-run helpers
+├─ cli.py                    doctor / tools / serve
 └─ handlers/
    ├─ search.py              workspace_search — Drive + Gmail + Calendar
    ├─ files.py               drive_upload / drive_download / drive_export
@@ -402,7 +422,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 168 unit tests, no network
+python -m unittest discover -s tests -v     # 190 unit tests, no network
 python tests/live_smoke.py                  # 45 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```

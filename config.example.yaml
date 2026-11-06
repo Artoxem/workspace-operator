@@ -43,6 +43,18 @@ scopes:
   - "https://www.googleapis.com/auth/calendar"                # Manage calendar events
   - "https://www.googleapis.com/auth/presentations"           # Google Slides
 
+
+# Runtime behaviour
+# dry_run: true  -> every non-read-only tool returns a preview instead of executing
+dry_run: false
+
+# JSONL audit trail: one line per tool call (tool, profile, status, duration, argument names)
+# Leave empty to disable.
+audit_log: ""
+
+# Retries for transient Google API errors (429/5xx), exponential backoff
+retry_attempts: 3
+
 # Example: Read-only configuration (safer for exploration)
 # Uncomment and replace the scopes above with:
 # scopes:

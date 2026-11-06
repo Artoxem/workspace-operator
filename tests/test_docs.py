@@ -135,6 +135,20 @@ class ConfigExampleTests(unittest.TestCase):
         self.assertTrue(server["args"][0].endswith("server.py"))
         self.assertIn("MCP_AUTH_TOKEN", server["env"])
 
+    def test_config_example_runtime_keys(self):
+        data = yaml.safe_load(read("config.example.yaml"))
+        for key in ("tool_profile", "dry_run", "audit_log", "retry_attempts"):
+            with self.subTest(key=key):
+                self.assertIn(key, data)
+
+    def test_readme_documents_operations(self):
+        for rel in ("README.md", "README.ru.md"):
+            text = read(rel)
+            with self.subTest(file=rel):
+                self.assertIn("python -m workspace_operator doctor", text)
+                self.assertIn("MCP_DRY_RUN", text)
+                self.assertIn("MCP_AUDIT_LOG", text)
+
     def test_config_example_scopes(self):
         data = yaml.safe_load(read("config.example.yaml"))
         self.assertIn("tool_profile", data)

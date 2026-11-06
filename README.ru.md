@@ -178,6 +178,24 @@ denied_tools: ["send_email", "share_file"]
 Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
 Заблокированный вызов возвращает понятное объяснение, а не молчит.
 
+## Эксплуатация
+
+```bash
+python -m workspace_operator doctor     # конфиг, токен, скоупы, доступность API
+python -m workspace_operator tools      # каталог (--profile read-only, --json)
+python -m workspace_operator serve      # stdio-сервер (то же, что python server.py)
+```
+
+| Возможность | Как включить | Что делает |
+|---|---|---|
+| **Dry run** | `MCP_DRY_RUN=1` или `dry_run: true` | Все инструменты, кроме read-only, возвращают превью вместо выполнения — безопасные демо и разведка |
+| **Аудит-лог** | `MCP_AUDIT_LOG=~/.google/audit.jsonl` | Одна JSON-строка на вызов: инструмент, профиль, статус, длительность, **имена** аргументов (без значений) |
+| **Ретраи** | `MCP_RETRY_ATTEMPTS=3` | Транзиентные ошибки Google (429/5xx) повторяются с экспоненциальной паузой |
+| **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, выданные скоупы и доступность Drive/Gmail/Calendar |
+
+В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
+данные, пока каждая запись превращается в явное превью.
+
 ## Каталог инструментов
 
 <details>
@@ -373,6 +391,8 @@ workspace_operator/
 ├─ text.py                   нормализация текста, таймстампов и ошибок
 ├─ operations.py             хранилище подготовленных операций Apps Script
 ├─ security.py               проверки токена и email
+├─ runtime.py                ретраи, аудит-лог, dry-run
+├─ cli.py                    doctor / tools / serve
 └─ handlers/
    ├─ search.py              workspace_search — Drive + Gmail + Calendar
    ├─ files.py               drive_upload / drive_download / drive_export
@@ -401,7 +421,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 168 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 190 юнит-тестов, без сети
 python tests/live_smoke.py                  # 45 проверок на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
