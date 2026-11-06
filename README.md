@@ -76,7 +76,7 @@ ranges, find & replace), and **one-query search across Drive, Gmail and Calendar
 ### 1 — Install
 
 ```bash
-git clone https://github.com/Artoxem/yet-another-google-mcp.git
+git clone https://github.com/Artoxem/workspace-operator.git
 cd yet-another-google-mcp
 python -m venv .venv && .venv\Scripts\activate    # Windows
 pip install -r requirements.txt
