@@ -11,7 +11,7 @@ Google Drive, Sheets, Docs, Slides, Gmail и Calendar — и закрывает 
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-55-informational)](#-все-инструменты)
+[![Tools](https://img.shields.io/badge/tools-56-informational)](#-все-инструменты)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -56,7 +56,7 @@ Google Drive, Sheets, Docs, Slides, Gmail и Calendar — и закрывает 
 | 🔎 **Кросс-поиск** | Один запрос по Drive + Gmail + Calendar, объединение и сортировка по дате |
 | 📁 **Drive** | Поиск, копирование, перемещение, шаринг, права, отзыв публичного доступа |
 | 💾 **Файлы** | Загрузка локальных файлов, скачивание, экспорт Docs/Sheets/Slides в pdf/docx/xlsx/pptx |
-| 📊 **Sheets** | Чтение и запись диапазонов, фильтры, именованные диапазоны, find & replace, экспорт CSV |
+| 📊 **Sheets** | Чтение и запись, форматирование (жирный, цвета, форматы чисел, ширины, закрепление), фильтры, именованные диапазоны, find & replace, экспорт CSV |
 | 📄 **Docs** | Чтение (включая таблицы), создание, дописывание, шаблоны, экспорт в PDF |
 | 🖼 **Slides** | Создание презентаций, слайды, замена плейсхолдеров, картинки |
 | 📧 **Gmail** | Черновики, отправка, поиск, архив, метки, удаление с подтверждением |
@@ -65,7 +65,7 @@ Google Drive, Sheets, Docs, Slides, Gmail и Calendar — и закрывает 
 | 🔗 **Ресурсы** | Живые снимки Drive / Gmail / Calendar / Sheets / Docs прямо в контексте |
 | 💬 **Промпты** | Готовые сценарии: сводка почты, анализ таблицы, план недели, поиск файлов |
 
-**55 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта** — у каждого инструмента
+**56 инструментов · 3 ресурса · 3 шаблона ресурсов · 4 промпта** — у каждого инструмента
 есть аннотации `readOnlyHint` / `destructiveHint`, чтобы клиент предупреждал об опасных действиях.
 
 ---
@@ -170,8 +170,8 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Когда использовать |
 |---|---:|---|
-| `full` | 55 | своя машина, полное доверие |
-| `read-write` | 48 | ежедневная работа — деструктивные скрыты |
+| `full` | 56 | своя машина, полное доверие |
+| `read-write` | 49 | ежедневная работа — деструктивные скрыты |
 | `read-only` | 19 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
@@ -267,7 +267,7 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 </details>
 
 <details>
-<summary>📊 Sheets (11)</summary>
+<summary>📊 Sheets (12)</summary>
 
 | Инструмент | Тип | Описание |
 |------|------|-------------|
@@ -282,6 +282,7 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 | `sheet_create_named_range` | write | Создать именованный диапазон |
 | `sheet_find_replace` | write | Поиск и замена (`dry_run=true` по умолчанию) |
 | `clear_range` | destructive | Очистить диапазон (авто dry-run для больших) |
+| `sheet_format` | write | Жирный, цвета, формат чисел, ширины, закрепление — одним вызовом |
 
 </details>
 
@@ -382,7 +383,7 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 ## 🏗 Как устроено
 
 ```
-server.py                  MCP-сервер: 55 инструментов, ресурсы, промпты, профили
+server.py                  MCP-сервер: 56 инструментов, ресурсы, промпты, профили
 workspace_operator/
 ├─ profiles.py             read-only / read-write / full + allow-deny
 ├─ text.py                 нормализация текста, таймстампов и ошибок
@@ -394,6 +395,7 @@ workspace_operator/
    ├─ search.py            workspace_search — Drive + Gmail + Calendar
    ├─ files.py             drive_upload / drive_download / drive_export
    ├─ slides.py            Slides: создание, чтение, слайды, картинки
+   ├─ formatting.py        sheet_format: сборка запросов форматирования
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                     юнит-тесты без сети

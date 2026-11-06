@@ -60,6 +60,7 @@ from .sheets import (
     update_sheet_handler,
 )
 from .files import drive_download_handler, drive_export_handler, drive_upload_handler
+from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
     slides_add_slide_handler,
@@ -126,4 +127,5 @@ __all__ = [
     "slides_add_slide_handler",
     "slides_replace_text_handler",
     "slides_insert_image_handler",
+    "format_sheet_handler",
 ]

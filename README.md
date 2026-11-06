@@ -12,7 +12,7 @@ Google Drive, Sheets, Docs, Gmail, Calendar — and the parts of Workspace that 
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-55-informational)](#-all-tools)
+[![Tools](https://img.shields.io/badge/tools-56-informational)](#-all-tools)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -57,7 +57,7 @@ ranges, find & replace), and **one-query search across Drive, Gmail and Calendar
 | 🔎 **Cross-search** | One query over Drive + Gmail + Calendar, merged and date-sorted |
 | 📁 **Drive** | Search, copy, move, share, permissions, revoke public access |
 | 💾 **Files** | Upload local files, download binaries, export Docs/Sheets/Slides to pdf/docx/xlsx/pptx |
-| 📊 **Sheets** | Read/write ranges, filter views, named ranges, find & replace, CSV export |
+| 📊 **Sheets** | Read/write ranges, formatting (bold, colours, number formats, widths, freeze), filter views, named ranges, find & replace, CSV export |
 | 📄 **Docs** | Read (tables included), create, append, fill templates, export to PDF |
 | 🖼 **Slides** | Create decks, add slides, replace placeholders, insert images |
 | 📧 **Gmail** | Draft, send, search, archive, labels, delete with confirmation |
@@ -66,7 +66,7 @@ ranges, find & replace), and **one-query search across Drive, Gmail and Calendar
 | 🔗 **Resources** | Attach live Drive / Gmail / Calendar / Sheets / Docs snapshots to context |
 | 💬 **Prompts** | One-click workflows: summarize inbox, analyze sheet, plan week, search Drive |
 
-**55 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
+**56 tools · 3 resources · 3 resource templates · 4 prompts** — all annotated with
 `readOnlyHint` / `destructiveHint` so clients can warn before risky actions.
 
 ---
@@ -172,8 +172,8 @@ do without asking).
 
 | Profile | Tools | Use it when |
 |---|---:|---|
-| `full` | 55 | your own machine, full trust |
-| `read-write` | 48 | daily work — destructive tools hidden |
+| `full` | 56 | your own machine, full trust |
+| `read-write` | 49 | daily work — destructive tools hidden |
 | `read-only` | 19 | exploring, demos, shared machines, untrusted agents |
 
 ```yaml
@@ -269,7 +269,7 @@ a `Partial results` note.
 </details>
 
 <details>
-<summary>📊 Sheets (11)</summary>
+<summary>📊 Sheets (12)</summary>
 
 | Tool | Type | Description |
 |------|------|-------------|
@@ -284,6 +284,7 @@ a `Partial results` note.
 | `sheet_create_named_range` | write | Create a named range |
 | `sheet_find_replace` | write | Find & replace (`dry_run=true` by default) |
 | `clear_range` | destructive | Clear a range (auto dry-run for large ranges) |
+| `sheet_format` | write | Bold, colours, number format, widths, freeze — one call |
 
 </details>
 
@@ -384,7 +385,7 @@ a `Partial results` note.
 ## 🏗 How it works
 
 ```
-server.py                  MCP server: 55 tool definitions, resources, prompts, tool profiles
+server.py                  MCP server: 56 tool definitions, resources, prompts, tool profiles
 workspace_operator/
 ├─ profiles.py             read-only / read-write / full + allow-deny lists
 ├─ text.py                 entity/whitespace normalisation, timestamps, error hints
@@ -396,6 +397,7 @@ workspace_operator/
    ├─ search.py            workspace_search — Drive + Gmail + Calendar
    ├─ files.py             drive_upload / drive_download / drive_export
    ├─ slides.py            Slides: create, read, add, replace, images
+   ├─ formatting.py        sheet_format request builder
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                     unit tests, no network needed
@@ -419,7 +421,7 @@ Design rules:
 python -m unittest discover -s tests -v
 ```
 
-66 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
+86 tests cover profiles, search parsing, text hygiene, Docs tables, path handling and the
 v1.2 helpers. No credentials, network, or Google API access required.
 
 `tests/live_smoke.py` runs 30 end-to-end checks against a real account and

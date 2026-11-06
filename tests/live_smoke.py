@@ -109,7 +109,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 55, f"{len(names)} tools")
+    record("tools/list", len(names) == 56, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -337,6 +337,40 @@ async def full_checks(session: ClientSession) -> None:
             not exported.isError and pdf_size > 1000,
             f"{pdf_size} bytes",
         )
+
+    created_sheet = await session.call_tool(
+        "create_spreadsheet", {"title": "Workspace Operator format smoke"}
+    )
+    sheet_match = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(created_sheet))
+    record(
+        "call create_spreadsheet",
+        not created_sheet.isError and sheet_match is not None,
+        _text(created_sheet).splitlines()[0] if _text(created_sheet) else "empty",
+    )
+
+    if sheet_match:
+        spreadsheet_id = sheet_match.group(1)
+        formatted = await session.call_tool(
+            "sheet_format",
+            {
+                "spreadsheet_id": spreadsheet_id,
+                "range": "A1:C10",
+                "bold": True,
+                "background_color": "#FFF2CC",
+                "number_format": "#,##0.00",
+                "column_width": 140,
+                "freeze_rows": 1,
+            },
+        )
+        record(
+            "call sheet_format",
+            not formatted.isError and "Formatted" in _text(formatted),
+            _text(formatted).splitlines()[0] if _text(formatted) else "empty",
+        )
+        try:
+            await asyncio.to_thread(_trash, spreadsheet_id)
+        except Exception as exc:  # noqa: BLE001
+            record("cleanup spreadsheet", False, str(exc))
 
     script_run = await session.call_tool(
         "script_run_function", {"script_id": "no-such-script", "function_name": "doWork"}

@@ -68,6 +68,7 @@ from .handlers import (
     update_sheet_handler,
     workspace_search_handler,
     document_to_text,
+    format_sheet_handler,
     drive_download_handler,
     drive_export_handler,
     drive_upload_handler,
@@ -507,6 +508,52 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+        types.Tool(
+            name="sheet_format",
+            description=(
+                "Format a Google Sheets range or sheet: bold/italic/size, number "
+                "format, colours, alignment, wrap, column width, row height and "
+                "frozen panes — all in one call."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "sheet_name": {
+                        "type": "string",
+                        "description": "Sheet tab name (default: first sheet or the one in range)",
+                    },
+                    "range": {
+                        "type": "string",
+                        "description": "A1 range, e.g. A1:C10, A:C or 1:10 (default: whole sheet)",
+                    },
+                    "bold": {"type": "boolean"},
+                    "italic": {"type": "boolean"},
+                    "font_size": {"type": "number"},
+                    "number_format": {
+                        "type": "string",
+                        "description": "Sheets number pattern, e.g. '#,##0.00' or '0.0%'",
+                    },
+                    "background_color": {"type": "string", "description": "#RRGGBB"},
+                    "text_color": {"type": "string", "description": "#RRGGBB"},
+                    "horizontal_alignment": {
+                        "type": "string",
+                        "enum": ["LEFT", "CENTER", "RIGHT"],
+                    },
+                    "wrap": {
+                        "type": "string",
+                        "enum": ["OVERFLOW_CELL", "CLIP", "WRAP"],
+                    },
+                    "column_width": {"type": "number", "description": "Pixels"},
+                    "row_height": {"type": "number", "description": "Pixels"},
+                    "freeze_rows": {"type": "integer"},
+                    "freeze_cols": {"type": "integer"},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_WRITE,
+        ),
+
         # ── Google Docs ───────────────────────────────────────────────────
         types.Tool(
             name="read_doc",
@@ -1248,6 +1295,25 @@ async def run() -> None:
                     a.get("end_row"),
                     a.get("start_col"),
                     a.get("end_col"),
+                ),
+                "sheet_format": lambda a: format_sheet_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("sheet_name"),
+                    a.get("range"),
+                    a.get("bold"),
+                    a.get("italic"),
+                    a.get("font_size"),
+                    a.get("number_format"),
+                    a.get("background_color"),
+                    a.get("text_color"),
+                    a.get("horizontal_alignment"),
+                    a.get("wrap"),
+                    a.get("column_width"),
+                    a.get("row_height"),
+                    a.get("freeze_rows"),
+                    a.get("freeze_cols"),
                 ),
                 "get_spreadsheet_meta": lambda a: get_spreadsheet_meta_handler(
                     config, logger, a.get("spreadsheet_id")

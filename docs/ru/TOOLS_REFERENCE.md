@@ -177,6 +177,11 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 - `get_spreadsheet_meta(spreadsheet_id)`
   - Метаданные таблицы.
 
+- `sheet_format(spreadsheet_id, sheet_name?, range?, bold?, italic?, font_size?, number_format?, background_color?, text_color?, horizontal_alignment?, wrap?, column_width?, row_height?, freeze_rows?, freeze_cols?)`
+  - Один `batchUpdate`: формат ячеек, ширины колонок и высоты строк, закрепление областей.
+  - `range`: `A1:C10`, `A:C` или `1:10`; по умолчанию весь лист. Цвета — `#RRGGBB`.
+  - `column_width`/`row_height` в пикселях; `freeze_rows`/`freeze_cols` — на уровне листа.
+
 ## Docs
 - `read_doc(document_id)`
   - Прочитать текст документа.

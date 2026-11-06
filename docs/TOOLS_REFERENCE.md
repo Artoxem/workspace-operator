@@ -178,6 +178,11 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
 - `get_spreadsheet_meta(spreadsheet_id)`
   - Spreadsheet metadata.
 
+- `sheet_format(spreadsheet_id, sheet_name?, range?, bold?, italic?, font_size?, number_format?, background_color?, text_color?, horizontal_alignment?, wrap?, column_width?, row_height?, freeze_rows?, freeze_cols?)`
+  - One `batchUpdate` for cell formatting, column/row sizes and frozen panes.
+  - `range`: `A1:C10`, `A:C` or `1:10`; default is the whole sheet. Colours are `#RRGGBB`.
+  - `column_width`/`row_height` are pixels; `freeze_rows`/`freeze_cols` are sheet-level.
+
 ## Docs
 - `read_doc(document_id)`
   - Read document text.
