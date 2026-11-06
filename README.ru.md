@@ -346,9 +346,9 @@ Compose публикует только `127.0.0.1:8765` и монтирует O
 
 | Инструмент | Тип | Описание |
 |---|---|---|
-| `report_from_sheet` | write | Диапазон → статистика по колонкам → Doc или текст (`output=text`) |
+| `report_from_sheet` | write | Диапазон → статистика → Doc с **нативными таблицами** или текст (`output=text`) |
 | `digest` | write | Последние N часов по Gmail, Calendar и Drive → текст или Doc |
-| `compare_tables` | write | Сравнение двух диапазонов по ключевой колонке: добавлено / удалено / изменено |
+| `compare_tables` | write | Сравнение по ключевой колонке; `output=doc` собирает нативные таблицы |
 | `clone_and_fill` | write | Копия любого файла Drive с заменой плейсхолдеров |
 
 </details>
@@ -445,8 +445,8 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 206 юнит-тестов, без сети
-python tests/live_smoke.py                  # 45 проверок на реальном аккаунте
+python -m unittest discover -s tests -v     # 220 юнит-тестов, без сети
+python tests/live_smoke.py                  # 47 проверок на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
 

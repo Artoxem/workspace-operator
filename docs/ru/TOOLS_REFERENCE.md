@@ -257,13 +257,15 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 
 ## Составные
 - `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?, header?, decimal?, columns?, aggregates?, output?)`
-  - Читает диапазон, считает статистику и возвращает Doc (по умолчанию) или текст.
+  - Читает диапазон, считает статистику и возвращает Doc с нативными таблицами
+    (по умолчанию) или текст.
   - `header` (true), `decimal` (`auto|comma|dot`), `columns` (имена или индексы с 1),
     `aggregates` (`sum`, `avg`, `min`, `max`, `median`, `count`), `output` (`doc|text`).
 - `digest(sources?, since_hours?, limit?, output?, doc_title?)`
   - Один дайджест по `gmail,calendar,drive` за последние N часов (по умолчанию 24).
 - `compare_tables(spreadsheet_id, range_a, range_b, other_spreadsheet_id?, key_column?, header?, output?, doc_title?)`
-  - Сравнение по ключевой колонке (имя или индекс): добавленные, удалённые, изменённые.
+  - Сравнение по ключевой колонке (имя или индекс): добавленные, удалённые,
+    изменённые; `output=doc` собирает нативные таблицы.
 - `clone_and_fill(file_id, replacements?, name?, folder_id?)`
   - Копирует любой файл Drive и заменяет плейсхолдеры в копии (Docs, Slides, Sheets).
 

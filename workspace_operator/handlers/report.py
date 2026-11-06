@@ -23,6 +23,7 @@ from googleapiclient.discovery import build
 from ..auth import get_creds
 from ..config import Config
 from ..text import clean_text
+from .doc_tables import create_document_with_blocks
 
 MAX_STATS_ROWS = 5000
 PREVIEW_ROWS = 25
@@ -315,13 +316,40 @@ def report_from_sheet_handler(
             logger.info("Report rendered as text: sheet=%s rows=%s", spreadsheet_id, summary["rows"])
             return f"{content}\n\n{stats} (text mode, no document created)"
 
-        docs = build("docs", "v1", credentials=creds)
-        document = docs.documents().create(body={"title": title}).execute()
-        document_id = document.get("documentId")
-        docs.documents().batchUpdate(
-            documentId=document_id,
-            body={"requests": [{"insertText": {"location": {"index": 1}, "text": content}}]},
-        ).execute()
+        summary_header = ["Column", "Type", "Non-empty", "Unique"] + [
+            aggregate.capitalize() for aggregate in chosen_aggregates
+        ]
+        summary_rows = [summary_header]
+        for column in summary["columns"]:
+            row = [
+                column["name"],
+                column["kind"],
+                str(column["non_empty"]),
+                str(column["unique"]),
+            ]
+            for aggregate in chosen_aggregates:
+                value = column.get(aggregate)
+                row.append(f"{value:.2f}" if isinstance(value, float) else "—")
+            summary_rows.append(row)
+
+        preview = values[: int(max_rows) + 1]
+        data_rows = [list(row) for row in preview]
+        if header and data_rows:
+            data_rows[0] = summary["header"]
+
+        blocks = [
+            (
+                "text",
+                f"{title}\n\nSource: {spreadsheet_id}\nRange: {target_range}\n"
+                f"Generated: {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}\n"
+                f"Rows: {summary['rows']} | columns: {len(summary['columns'])}\n",
+            ),
+            ("text", "Summary"),
+            ("table", summary_rows),
+            ("text", "Data"),
+            ("table", data_rows),
+        ]
+        document_id = create_document_with_blocks(config, logger, title, blocks)
 
         logger.info(
             "Report created: sheet=%s range=%s doc=%s rows=%s",

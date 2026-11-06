@@ -14,6 +14,7 @@ from googleapiclient.discovery import build
 from ..auth import get_creds
 from ..config import Config
 from ..text import clean_text
+from .doc_tables import create_document_with_blocks
 
 MAX_DIFF_ROWS = 400
 DEFAULT_KEY = "1"
@@ -207,13 +208,32 @@ def compare_tables_handler(
             return content
 
         title = doc_title or f"Diff {range_a} vs {range_b} {datetime.now(timezone.utc):%Y-%m-%d}"
-        docs = build("docs", "v1", credentials=creds)
-        document = docs.documents().create(body={"title": title}).execute()
-        document_id = document.get("documentId")
-        docs.documents().batchUpdate(
-            documentId=document_id,
-            body={"requests": [{"insertText": {"location": {"index": 1}, "text": content}}]},
-        ).execute()
+
+        added_rows = [["Added"], *[[key] for key in diff["added"][:MAX_DIFF_ROWS]]]
+        removed_rows = [["Removed"], *[[key] for key in diff["removed"][:MAX_DIFF_ROWS]]]
+        changed_rows = [["Key", "Column", "Before", "After"]]
+        for entry in diff["changed"][:MAX_DIFF_ROWS]:
+            for change in entry["changes"]:
+                changed_rows.append(
+                    [entry["key"], change["column"], change["before"], change["after"]]
+                )
+
+        blocks = [
+            (
+                "text",
+                f"{title}\n\nCompared by '{diff['key']}': "
+                f"{diff['rows_a']} vs {diff['rows_b']} row(s).\n"
+                f"added {len(diff['added'])}, removed {len(diff['removed'])}, "
+                f"changed {len(diff['changed'])}, unchanged {diff['unchanged']}\n",
+            ),
+            ("text", "Added"),
+            ("table", added_rows),
+            ("text", "Removed"),
+            ("table", removed_rows),
+            ("text", "Changed"),
+            ("table", changed_rows),
+        ]
+        document_id = create_document_with_blocks(config, logger, title, blocks)
         return (
             f"Diff document created: {title}\n"
             f"Document ID: {document_id}\n"

@@ -564,6 +564,30 @@ async def full_checks(session: ClientSession) -> None:
             compared_text.splitlines()[1] if len(compared_text.splitlines()) > 1 else "empty",
         )
 
+        native_report = await session.call_tool(
+            "report_from_sheet",
+            {"spreadsheet_id": left_id.group(1), "range": "A1:C3", "doc_title": "smoke native table"},
+        )
+        native_text = _text(native_report)
+        native_doc = re.search(r"Document ID:\s*([A-Za-z0-9_-]{10,})", native_text)
+        record(
+            "report_from_sheet creates a native table doc",
+            not native_report.isError and native_doc is not None,
+            native_text.splitlines()[0] if native_text else "empty",
+        )
+        if native_doc:
+            rendered = await session.call_tool("read_doc", {"document_id": native_doc.group(1)})
+            rendered_text = _text(rendered)
+            record(
+                "native table is readable",
+                "| SKU |" in rendered_text and "Summary" in rendered_text,
+                f"{len(rendered_text)} chars",
+            )
+            try:
+                await asyncio.to_thread(_trash, native_doc.group(1))
+            except Exception as exc:  # noqa: BLE001
+                record("cleanup native report", False, str(exc))
+
         text_report = await session.call_tool(
             "report_from_sheet",
             {"spreadsheet_id": left_id.group(1), "range": "A1:C3", "output": "text", "columns": ["Price"]},

@@ -348,9 +348,9 @@ read-only.
 
 | Tool | Type | Description |
 |---|---|---|
-| `report_from_sheet` | write | Read a range → column statistics → Doc or plain text (`output=text`) |
+| `report_from_sheet` | write | Read a range → column statistics → Doc with **native tables** or plain text (`output=text`) |
 | `digest` | write | Last N hours across Gmail, Calendar and Drive → text or Doc |
-| `compare_tables` | write | Diff two ranges by a key column: added / removed / changed |
+| `compare_tables` | write | Diff two ranges by a key column; `output=doc` builds native tables |
 | `clone_and_fill` | write | Copy any Drive file and replace placeholders in the copy |
 
 </details>
@@ -447,8 +447,8 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 206 unit tests, no network
-python tests/live_smoke.py                  # 45 checks against a real account
+python -m unittest discover -s tests -v     # 220 unit tests, no network
+python tests/live_smoke.py                  # 47 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 
