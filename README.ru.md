@@ -193,6 +193,7 @@ denied_tools: ["send_email", "share_file"]
 
 ```bash
 python -m workspace_operator doctor     # конфиг, токен, скоупы, доступность API
+python -m workspace_operator doctor --offline   # то же, но без сети
 python -m workspace_operator tools      # каталог (--profile read-only, --json)
 python -m workspace_operator serve      # stdio-сервер (то же, что python server.py)
 ```
@@ -240,6 +241,18 @@ docker run --rm -p 127.0.0.1:8765:8765 \
 Образ работает под непривилегированным пользователем (uid 10001), публикует порт только
 на loopback и монтирует Google-креденшелы на запись — сервер обновляет токен на месте.
 `docker compose up --build` собирает тот же образ локально.
+
+Клиенты, которые умеют только stdio, тоже могут работать с образом — entrypoint
+принимает те же аргументы, что и CLI:
+
+```bash
+docker run -i --rm \
+  -v "$HOME/.google:/home/app/.google" \
+  --entrypoint python \
+  ghcr.io/artoxem/workspace-operator:latest -m workspace_operator serve
+```
+
+Что-то не работает? Смотрите [docs/ru/TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md).
 
 ## Каталог инструментов
 
@@ -473,7 +486,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 247 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 251 юнит-тестов, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
@@ -492,6 +505,7 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 | [TOOLS_REFERENCE.md](docs/ru/TOOLS_REFERENCE.md) | Справочник инструментов |
 | [SECURITY.md](docs/ru/SECURITY.md) | Скоупы, профили, модель безопасности |
 | [IDE_SETUP.md](docs/ru/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
+| [TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md) | Симптом → причина → решение, включая Docker |
 
 ### 🇬🇧 English
 | Document | Description |
@@ -500,8 +514,22 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 | [TOOLS_REFERENCE.md](docs/TOOLS_REFERENCE.md) | Full tool reference |
 | [SECURITY.md](docs/SECURITY.md) | Scopes, profiles, safety model |
 | [IDE_SETUP.md](docs/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → fix, including Docker |
 | [LEARN.md](LEARN.md) | How this server was built |
 | [docs/](docs/) | Release notes and specs |
+
+## Ограничения
+
+Границы возможностей — часть контракта:
+
+- **Drive**: файлы можно создавать, копировать, перемещать и закрывать доступ, но
+  не удалять — для этого интерфейс Drive.
+- **Sheets**: нет условного форматирования, графиков и сводных таблиц; только
+  обычное форматирование ячеек.
+- **Docs**: нет комментариев; таблицы создаёт инструмент отчёта, но редактировать
+  их по ячейкам потом нельзя.
+- **Slides**: слайды можно добавлять и заполнять, но не удалять и не менять порядок.
+- **Один аккаунт на сервер**: один OAuth-токен, мультиаккаунтности нет.
 
 ## План
 

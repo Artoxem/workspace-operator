@@ -35,6 +35,24 @@ denied_tools: ["gmail_search_and_summarize"]
 ```
 
 Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS="a,b"`, `MCP_DENIED_TOOLS="x,y"`.
+У каждого ключа есть переменная окружения:
+
+| Переменная | Переопределяет | Примечание |
+|---|---|---|
+| `MCP_CONFIG_FILE` | — | путь к `config.yaml` / `config.json` |
+| `MCP_AUTH_TOKEN` | `mcp_auth_token` | обязателен до первого вызова инструмента |
+| `MCP_TOOL_PROFILE` | `tool_profile` | `full` / `read-write` / `read-only` |
+| `MCP_ALLOWED_TOOLS` | `allowed_tools` | белый список через запятую |
+| `MCP_DENIED_TOOLS` | `denied_tools` | чёрный список; запрет сильнее разрешения |
+| `MCP_DRY_RUN` | `dry_run` | `1` превращает записи в превью |
+| `MCP_AUDIT_LOG` | `audit_log` | JSONL-журнал вызовов |
+| `MCP_RETRY_ATTEMPTS` | `retry_attempts` | повторы на 429/5xx |
+| `GOOGLE_CLIENT_SECRETS_FILE` | `client_secrets_file` | JSON OAuth-клиента |
+| `GOOGLE_TOKEN_FILE` | `token_file` | кэш токена, перезаписывается при обновлении |
+| `GOOGLE_BACKUP_DIR` | `backup_dir` | бэкапы Apps Script |
+| `GOOGLE_LOG_FILE` | `log_file` | лог сервера |
+| `GOOGLE_LOG_LEVEL` | `log_level` | `DEBUG` / `INFO` / `WARNING` |
+
 
 Профили — это **дополнительный слой защиты, а не граница безопасности сама по себе**:
 OAuth-токен всё равно несёт те скоупы, которые вы выдали. Самая надёжная комбинация —

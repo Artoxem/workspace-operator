@@ -35,6 +35,24 @@ denied_tools: ["gmail_search_and_summarize"]
 ```
 
 Env overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS="a,b"`, `MCP_DENIED_TOOLS="x,y"`.
+Every key has an environment override:
+
+| Variable | Overrides | Notes |
+|---|---|---|
+| `MCP_CONFIG_FILE` | — | path to `config.yaml` / `config.json` |
+| `MCP_AUTH_TOKEN` | `mcp_auth_token` | required before any tool call is served |
+| `MCP_TOOL_PROFILE` | `tool_profile` | `full` / `read-write` / `read-only` |
+| `MCP_ALLOWED_TOOLS` | `allowed_tools` | comma-separated allow list |
+| `MCP_DENIED_TOOLS` | `denied_tools` | comma-separated deny list; deny beats allow |
+| `MCP_DRY_RUN` | `dry_run` | `1` turns writes into previews |
+| `MCP_AUDIT_LOG` | `audit_log` | JSONL audit trail |
+| `MCP_RETRY_ATTEMPTS` | `retry_attempts` | retries on 429/5xx |
+| `GOOGLE_CLIENT_SECRETS_FILE` | `client_secrets_file` | OAuth client JSON |
+| `GOOGLE_TOKEN_FILE` | `token_file` | cached token, rewritten on refresh |
+| `GOOGLE_BACKUP_DIR` | `backup_dir` | Apps Script backups |
+| `GOOGLE_LOG_FILE` | `log_file` | server log |
+| `GOOGLE_LOG_LEVEL` | `log_level` | `DEBUG` / `INFO` / `WARNING` |
+
 
 Profiles are a **defense-in-depth layer, not a security boundary you can rely on
 alone**: the OAuth token still carries whatever scopes you granted. The strongest

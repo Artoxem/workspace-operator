@@ -194,6 +194,7 @@ A blocked call returns a clear explanation instead of failing silently.
 
 ```bash
 python -m workspace_operator doctor     # config, token, scopes, API reachability
+python -m workspace_operator doctor --offline   # same, without network probes
 python -m workspace_operator tools      # catalog (--profile read-only, --json)
 python -m workspace_operator serve      # stdio server (same as python server.py)
 ```
@@ -241,6 +242,18 @@ docker run --rm -p 127.0.0.1:8765:8765 \
 The image runs as an unprivileged user (uid 10001), publishes only to loopback and
 mounts the Google credentials read-write, because the server refreshes the token in
 place. `docker compose up --build` builds the same image locally.
+
+Clients that only speak stdio can still use the image — the entrypoint takes the
+same arguments as the CLI:
+
+```bash
+docker run -i --rm \
+  -v "$HOME/.google:/home/app/.google" \
+  --entrypoint python \
+  ghcr.io/artoxem/workspace-operator:latest -m workspace_operator serve
+```
+
+Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Tool catalog
 
@@ -474,7 +487,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 247 unit tests, no network
+python -m unittest discover -s tests -v     # 251 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
@@ -493,6 +506,7 @@ code in sync (tool counts, profile numbers, links, examples).
 | [TOOLS_REFERENCE.md](docs/TOOLS_REFERENCE.md) | Every tool, resource and prompt |
 | [SECURITY.md](docs/SECURITY.md) | Scopes, profiles, safety model |
 | [IDE_SETUP.md](docs/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → cause → fix, including Docker |
 | [LEARN.md](LEARN.md) | How this server was built |
 | [docs/](docs/) | Release notes and specs for every version |
 
@@ -503,6 +517,19 @@ code in sync (tool counts, profile numbers, links, examples).
 | [TOOLS_REFERENCE.md](docs/ru/TOOLS_REFERENCE.md) | Справочник инструментов |
 | [SECURITY.md](docs/ru/SECURITY.md) | Скоупы, профили, модель безопасности |
 | [IDE_SETUP.md](docs/ru/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
+
+## Limitations
+
+Knowing the edges is part of the contract:
+
+- **Drive**: files can be created, copied, moved and unshared, but not deleted —
+  use the Drive UI for that.
+- **Sheets**: no conditional formatting, charts or pivot tables; plain cell
+  formatting only.
+- **Docs**: no comments, and tables can be created by the report tool but not
+  edited cell by cell afterwards.
+- **Slides**: slides can be added and filled, but not deleted or reordered.
+- **One account per server**: a single OAuth token, no multi-tenant mode.
 
 ## Roadmap
 

@@ -65,6 +65,37 @@ class ToolCatalogTests(unittest.TestCase):
         self.assertIn(f"tools-{TOTAL}-informational", read("README.md"))
 
 
+class DocumentationCoverageTests(unittest.TestCase):
+    def test_troubleshooting_exists_and_is_linked(self):
+        for rel in ("docs/TROUBLESHOOTING.md", "docs/ru/TROUBLESHOOTING.md"):
+            self.assertIn("/healthz", read(rel), rel)
+            self.assertIn("421", read(rel), rel)
+        self.assertIn("docs/TROUBLESHOOTING.md", read("README.md"))
+        self.assertIn("docs/ru/TROUBLESHOOTING.md", read("README.ru.md"))
+
+    def test_readme_states_limitations(self):
+        self.assertIn("## Limitations", read("README.md"))
+        self.assertIn("## Ограничения", read("README.ru.md"))
+
+    def test_security_lists_every_env_override(self):
+        names = [
+            "MCP_CONFIG_FILE", "MCP_AUTH_TOKEN", "MCP_TOOL_PROFILE",
+            "MCP_ALLOWED_TOOLS", "MCP_DENIED_TOOLS", "MCP_DRY_RUN",
+            "MCP_AUDIT_LOG", "MCP_RETRY_ATTEMPTS", "GOOGLE_CLIENT_SECRETS_FILE",
+            "GOOGLE_TOKEN_FILE", "GOOGLE_BACKUP_DIR", "GOOGLE_LOG_FILE",
+            "GOOGLE_LOG_LEVEL",
+        ]
+        for rel in ("docs/SECURITY.md", "docs/ru/SECURITY.md"):
+            text = read(rel)
+            missing = [name for name in names if name not in text]
+            with self.subTest(file=rel):
+                self.assertEqual(missing, [])
+
+    def test_doctor_offline_is_documented(self):
+        self.assertIn("--offline", read("README.md"))
+        self.assertIn("--offline", read("README.ru.md"))
+
+
 class DockerTests(unittest.TestCase):
     def test_docker_workflow_and_config(self):
         workflow = yaml.safe_load(read(".github/workflows/docker-publish.yml"))
