@@ -208,7 +208,7 @@ python -m workspace_operator serve      # stdio-сервер (то же, что 
 | **Dry run** | `MCP_DRY_RUN=1` или `dry_run: true` | Все инструменты, кроме read-only, возвращают превью вместо выполнения — безопасные демо и разведка |
 | **Аудит-лог** | `MCP_AUDIT_LOG=~/.google/audit.jsonl` | Одна JSON-строка на вызов: инструмент, профиль, статус, длительность, **имена** аргументов (без значений) |
 | **Ретраи** | `MCP_RETRY_ATTEMPTS=3` | Транзиентные ошибки Google (429/5xx) повторяются с экспоненциальной паузой |
-| **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, выданные скоупы и доступность Drive/Gmail/Calendar |
+| **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, скоупы и доступность API; код 1 при критичной ошибке |
 
 В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
 данные, пока каждая запись превращается в явное превью.
@@ -560,7 +560,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 284 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 285 юнит-тестов, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/live_new_tools.py              # 15 проверок партии v1.14
 python tests/live_phase2.py                 # 8 проверок партии v1.15

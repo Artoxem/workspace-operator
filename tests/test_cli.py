@@ -66,6 +66,16 @@ class CatalogTests(unittest.TestCase):
 
 
 class ConfigCheckTests(unittest.TestCase):
+    def test_missing_scope_is_critical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = make_config(tmp)
+            Path(config.token_file).write_text(json.dumps({"scopes": []}), encoding="utf-8")
+            checks = check_token(config, refresh=False)
+            scopes = next(check for check in checks if check.name == "scopes")
+            self.assertFalse(scopes.ok)
+            self.assertTrue(scopes.critical)
+            self.assertIn("re-authorize", scopes.detail)
+
     def test_missing_secrets_is_critical(self):
         with tempfile.TemporaryDirectory() as tmp:
             checks = check_config(make_config(tmp))

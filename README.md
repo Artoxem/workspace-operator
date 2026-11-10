@@ -209,7 +209,7 @@ python -m workspace_operator serve      # stdio server (same as python server.py
 | **Dry run** | `MCP_DRY_RUN=1` or `dry_run: true` | Every non-read-only tool returns a preview instead of executing — safe demos, safe exploration |
 | **Audit log** | `MCP_AUDIT_LOG=~/.google/audit.jsonl` | One JSON line per call: tool, profile, status, duration, argument **names** (never values) |
 | **Retries** | `MCP_RETRY_ATTEMPTS=3` | Transient Google API errors (429/5xx) are retried with exponential backoff |
-| **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes, and Drive/Gmail/Calendar reachability |
+| **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes and API reachability; exits 1 when a critical check fails |
 
 In dry-run the read-only tools still work, so an agent can explore data while every
 write is turned into an explicit preview.
@@ -561,7 +561,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 284 unit tests, no network
+python -m unittest discover -s tests -v     # 285 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch

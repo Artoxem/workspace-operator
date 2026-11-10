@@ -136,8 +136,11 @@ def check_token(config: Config, refresh: bool = True) -> List[Check]:
             not missing,
             "all configured scopes granted"
             if not missing
-            else f"missing: {', '.join(sorted(missing))}",
-            critical=False,
+            else (
+                f"missing: {', '.join(sorted(missing))} — delete token.json and "
+                "re-authorize"
+            ),
+            critical=True,
         )
     )
 
@@ -229,7 +232,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     failed = [check for check in checks if not check.ok and check.critical]
     print()
     if failed:
-        print(f"{len(failed)} critical problem(s) — see FAIL lines above")
+        print(f"configuration has problems: {len(failed)} critical check(s) failed")
         return 1
     print("configuration looks good")
     return 0
