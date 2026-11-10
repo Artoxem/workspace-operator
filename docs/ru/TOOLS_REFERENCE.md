@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 98 | всё |
-| `read-write` | 81 | всё, кроме `destructiveHint: true` |
-| `read-only` | 26 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 106 | всё |
+| `read-write` | 87 | всё, кроме `destructiveHint: true` |
+| `read-only` | 28 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -453,3 +453,16 @@ Prompts — это переиспользуемые шаблоны, которы
 
 `create_event` принимает `recurrence`: список строк RRULE, например
 `["RRULE:FREQ=WEEKLY;COUNT=4"]`.
+
+## Сводные, стилизация и интеграции (v1.17)
+
+| Инструмент | Аргументы | Что делает |
+|---|---|---|
+| `sheet_add_pivot_table` | `spreadsheet_id`, `source_range`, `rows`, `values`, `columns`, `aggregation`, `target_sheet_name` | Сводная таблица на новом листе (SUM/COUNT/AVERAGE/MIN/MAX) |
+| `docs_format_text` | `document_id`, `find`, `bold`, `italic`, `font_size`, `heading`, `confirm` | Стилизует все совпадения; без confirm — превью |
+| `gmail_list_drafts` | `limit` | Черновики с получателем и темой |
+| `gmail_delete_draft` | `draft_id`, `confirm` | Удалить черновик |
+| `calendar_move_event` | `event_id`, `destination_calendar_id`, `calendar_id` | Перенести событие между календарями |
+| `slides_list_layouts` | `presentation_id` | Названия макетов и их ID |
+| `script_create_deployment` | `script_id`, `description`, `version_number` | Задеплоить версию (по умолчанию последнюю) |
+| `drive_create_shortcut` | `target_id`, `name`, `parent_id` | Ярлык на другой файл |

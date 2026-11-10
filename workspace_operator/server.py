@@ -23,6 +23,14 @@ from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .runtime import AuditLog, call_with_retry
 from .handlers import (
+    add_pivot_table_handler,
+    create_deployment_handler,
+    create_shortcut_handler,
+    delete_draft_tool,
+    format_text_handler,
+    list_drafts_handler,
+    list_layouts_handler,
+    move_event_handler,
     add_table_handler,
     delete_columns_handler,
     insert_columns_handler,
@@ -1888,6 +1896,136 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_READ_ONLY,
         ),
+
+        types.Tool(
+            name="sheet_add_pivot_table",
+            description=(
+                "Create a pivot table on a new sheet from a source range. Columns are "
+                "1-based positions inside that range."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "source_range": {"type": "string", "description": "A1 range with headers"},
+                    "rows": {"type": "array", "items": {"type": "integer"}},
+                    "values": {"type": "array", "items": {"type": "integer"}},
+                    "columns": {"type": "array", "items": {"type": "integer"}},
+                    "aggregation": {
+                        "type": "string",
+                        "enum": ["SUM", "COUNT", "AVERAGE", "MIN", "MAX"],
+                        "default": "SUM",
+                    },
+                    "target_sheet_name": {"type": "string", "default": "Pivot"},
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "source_range", "rows", "values"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="docs_format_text",
+            description=(
+                "Style every occurrence of a text: bold, italic, font size and/or "
+                "heading. Without confirm returns a preview."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "document_id": {"type": "string"},
+                    "find": {"type": "string"},
+                    "bold": {"type": "boolean", "default": False},
+                    "italic": {"type": "boolean", "default": False},
+                    "font_size": {"type": "number", "description": "Points"},
+                    "heading": {
+                        "type": "string",
+                        "description": "NORMAL_TEXT, HEADING_1..6, TITLE, SUBTITLE",
+                    },
+                    "match_case": {"type": "boolean", "default": False},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["document_id", "find"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="gmail_list_drafts",
+            description="List Gmail drafts with recipient and subject.",
+            inputSchema={
+                "type": "object",
+                "properties": {"limit": {"type": "integer", "default": 10}},
+                "required": [],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="gmail_delete_draft",
+            description="Delete a draft. Requires confirm=true; nothing is sent.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "draft_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["draft_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="calendar_move_event",
+            description="Move an event to another calendar.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "event_id": {"type": "string"},
+                    "destination_calendar_id": {"type": "string"},
+                    "calendar_id": {"type": "string", "default": "primary"},
+                },
+                "required": ["event_id", "destination_calendar_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_list_layouts",
+            description="List the layouts available in a presentation.",
+            inputSchema={
+                "type": "object",
+                "properties": {"presentation_id": {"type": "string"}},
+                "required": ["presentation_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="script_create_deployment",
+            description=(
+                "Create an Apps Script deployment from a saved version (latest when "
+                "version_number is omitted)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "script_id": {"type": "string"},
+                    "description": {"type": "string"},
+                    "version_number": {"type": "integer", "default": 0},
+                },
+                "required": ["script_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_create_shortcut",
+            description="Create a Drive shortcut to an existing file or folder.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "target_id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "parent_id": {"type": "string"},
+                },
+                "required": ["target_id"],
+            },
+            annotations=_WRITE,
+        ),
     ]
 
 
@@ -2711,6 +2849,60 @@ def create_server(config: Config, logger) -> Server:
                 ),
                 "script_list_deployments": lambda a: list_deployments_handler(
                     config, logger, a.get("script_id")
+                ),
+                "sheet_add_pivot_table": lambda a: add_pivot_table_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("source_range"),
+                    a.get("rows") or [],
+                    a.get("values") or [],
+                    a.get("columns") or [],
+                    a.get("aggregation", "SUM"),
+                    a.get("target_sheet_name", "Pivot"),
+                    a.get("sheet_name"),
+                ),
+                "docs_format_text": lambda a: format_text_handler(
+                    config,
+                    logger,
+                    a.get("document_id"),
+                    a.get("find"),
+                    a.get("bold", False),
+                    a.get("italic", False),
+                    a.get("font_size", 0),
+                    a.get("heading", ""),
+                    a.get("match_case", False),
+                    a.get("confirm", False),
+                ),
+                "gmail_list_drafts": lambda a: list_drafts_handler(
+                    config, logger, a.get("limit", 10)
+                ),
+                "gmail_delete_draft": lambda a: delete_draft_tool(
+                    config, logger, a.get("draft_id"), a.get("confirm", False)
+                ),
+                "calendar_move_event": lambda a: move_event_handler(
+                    config,
+                    logger,
+                    a.get("event_id"),
+                    a.get("destination_calendar_id"),
+                    a.get("calendar_id", "primary"),
+                ),
+                "slides_list_layouts": lambda a: list_layouts_handler(
+                    config, logger, a.get("presentation_id")
+                ),
+                "script_create_deployment": lambda a: create_deployment_handler(
+                    config,
+                    logger,
+                    a.get("script_id"),
+                    a.get("description", ""),
+                    a.get("version_number", 0),
+                ),
+                "drive_create_shortcut": lambda a: create_shortcut_handler(
+                    config,
+                    logger,
+                    a.get("target_id"),
+                    a.get("name", ""),
+                    a.get("parent_id"),
                 ),
             }
 

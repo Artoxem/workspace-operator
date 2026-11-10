@@ -286,3 +286,34 @@ def list_calendars_handler(config: Config, logger: logging.Logger) -> str:
         return "\n".join(lines)
     except Exception as e:
         return f"Error listing calendars: {str(e)}"
+
+
+def move_event_handler(
+    config: Config,
+    logger: logging.Logger,
+    event_id: str,
+    destination_calendar_id: str,
+    calendar_id: str = "primary",
+) -> str:
+    try:
+        if not event_id or not destination_calendar_id:
+            return "Error: event_id and destination_calendar_id are required."
+
+        service = build("calendar", "v3", credentials=get_creds(config))
+        event = (
+            service.events()
+            .move(
+                calendarId=calendar_id,
+                eventId=event_id,
+                destination=destination_calendar_id,
+            )
+            .execute()
+        )
+        logger.info("Event %s moved to %s", event_id, destination_calendar_id)
+        return (
+            f"Event moved: {clean_text(event.get('summary')) or event_id}\n"
+            f"Calendar: {destination_calendar_id}\n"
+            f"{event.get('htmlLink', '')}"
+        )
+    except Exception as e:
+        return f"Error moving event: {str(e)}"

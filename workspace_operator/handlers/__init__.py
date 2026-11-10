@@ -2,6 +2,7 @@
 
 from .apps_script import (
     cancel_operation_handler,
+    create_deployment_handler,
     list_deployments_handler,
     execute_operation_handler,
     get_script_content_handler,
@@ -23,6 +24,7 @@ from .deck import sheet_to_slides_handler
 from .calendar import (
     calendar_create_meeting_handler,
     list_calendars_handler,
+    move_event_handler,
     calendar_find_free_slots_handler,
     create_event_handler,
     list_events_handler,
@@ -43,6 +45,7 @@ from .comments import (
 )
 from .doc_edit import replace_text_handler
 from .drive_extra import (
+    create_shortcut_handler,
     delete_file_handler,
     transfer_ownership_handler,
     empty_trash_handler,
@@ -52,6 +55,9 @@ from .drive_extra import (
     restore_file_handler,
 )
 from .sheets_extra import add_chart_handler, conditional_format_handler
+from .sheets_pivot import add_pivot_table_handler
+from .doc_format import format_text_handler
+from .gmail_drafts import delete_draft_handler as delete_draft_tool, list_drafts_handler
 from .sheets_more import (
     delete_columns_handler,
     insert_columns_handler,
@@ -116,6 +122,7 @@ from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
     add_table_handler,
+    list_layouts_handler,
     delete_slide_handler,
     move_slide_handler,
     set_notes_handler,
@@ -227,4 +234,12 @@ __all__ = [
     "transfer_ownership_handler",
     "send_with_attachments_handler",
     "list_deployments_handler",
+    "add_pivot_table_handler",
+    "format_text_handler",
+    "list_drafts_handler",
+    "delete_draft_tool",
+    "calendar_move_event_handler",
+    "slides_list_layouts_handler",
+    "create_deployment_handler",
+    "create_shortcut_handler",
 ]

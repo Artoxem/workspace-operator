@@ -213,3 +213,38 @@ def transfer_ownership_handler(
         return f"Ownership of '{meta.get('name')}' transferred to {email}."
     except Exception as e:
         return f"Error transferring ownership: {str(e)}"
+
+
+def create_shortcut_handler(
+    config: Config,
+    logger: logging.Logger,
+    target_id: str,
+    name: str = "",
+    parent_id: Optional[str] = None,
+) -> str:
+    try:
+        if not target_id:
+            return "Error: target_id is required."
+
+        drive = _drive(config)
+        target = drive.files().get(fileId=target_id, fields="id,name").execute()
+        body = {
+            "name": name or f"Shortcut to {target.get('name')}",
+            "mimeType": "application/vnd.google-apps.shortcut",
+            "shortcutDetails": {"targetId": target_id},
+        }
+        if parent_id:
+            body["parents"] = [parent_id]
+
+        created = (
+            drive.files()
+            .create(body=body, fields="id,name,webViewLink")
+            .execute()
+        )
+        logger.info("Shortcut created for %s", target_id)
+        return (
+            f"Shortcut created: {created.get('name')} (ID: {created.get('id')})\n"
+            f"{created.get('webViewLink', '')}"
+        )
+    except Exception as e:
+        return f"Error creating shortcut: {str(e)}"

@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 98 | everything |
-| `read-write` | 81 | everything except `destructiveHint: true` |
-| `read-only` | 26 | only `readOnlyHint: true` |
+| `full` (default) | 106 | everything |
+| `read-write` | 87 | everything except `destructiveHint: true` |
+| `read-only` | 28 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -456,3 +456,16 @@ Conditions for `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
 
 `create_event` also accepts `recurrence`: a list of RRULE lines, for example
 `["RRULE:FREQ=WEEKLY;COUNT=4"]`.
+
+## Pivots, styling and integrations (v1.17)
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `sheet_add_pivot_table` | `spreadsheet_id`, `source_range`, `rows`, `values`, `columns`, `aggregation`, `target_sheet_name` | Build a pivot on a new sheet (SUM/COUNT/AVERAGE/MIN/MAX) |
+| `docs_format_text` | `document_id`, `find`, `bold`, `italic`, `font_size`, `heading`, `confirm` | Style every match; preview without confirm |
+| `gmail_list_drafts` | `limit` | Drafts with recipient and subject |
+| `gmail_delete_draft` | `draft_id`, `confirm` | Delete a draft |
+| `calendar_move_event` | `event_id`, `destination_calendar_id`, `calendar_id` | Move an event between calendars |
+| `slides_list_layouts` | `presentation_id` | Layout names and object IDs |
+| `script_create_deployment` | `script_id`, `description`, `version_number` | Deploy a saved version (latest by default) |
+| `drive_create_shortcut` | `target_id`, `name`, `parent_id` | Shortcut to another file |

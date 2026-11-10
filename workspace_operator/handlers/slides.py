@@ -484,3 +484,30 @@ def add_table_handler(
         )
     except Exception as e:
         return f"Error inserting table: {str(e)}"
+
+
+def list_layouts_handler(
+    config: Config, logger: logging.Logger, presentation_id: str
+) -> str:
+    try:
+        if not presentation_id:
+            return "Error: presentation_id is required."
+
+        presentation = (
+            _service(config)
+            .presentations()
+            .get(presentationId=presentation_id)
+            .execute()
+        )
+        layouts = presentation.get("layouts", [])
+        if not layouts:
+            return "No layouts in this presentation."
+
+        lines = [f"Layouts ({len(layouts)}):"]
+        for layout in layouts:
+            props = layout.get("layoutProperties") or {}
+            name = props.get("displayName") or props.get("name") or "—"
+            lines.append(f"- {name} · {layout.get('objectId')}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error listing layouts: {str(e)}"

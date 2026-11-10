@@ -17,9 +17,9 @@ Google Antigravity (App, IDE and CLI) reads MCP servers from one shared file:
 
    | `MCP_TOOL_PROFILE` | What the agent sees |
    |---|---|
-   | `read-only` | 26 read tools — safe for exploration |
-   | `read-write` | 81 tools, destructive ones hidden |
-   | `full` | all 98 tools |
+   | `read-only` | 28 read tools — safe for exploration |
+   | `read-write` | 87 tools, destructive ones hidden |
+   | `full` | all 106 tools |
 
 4. Restart the server: **Customizations → Installed → MCP servers → Refresh**
    (App/IDE) or `/mcp` (CLI).

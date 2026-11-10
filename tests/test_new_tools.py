@@ -52,12 +52,20 @@ NEW_TOOLS = [
     "drive_transfer_ownership",
     "gmail_send_with_attachments",
     "script_list_deployments",
+    "sheet_add_pivot_table",
+    "docs_format_text",
+    "gmail_list_drafts",
+    "gmail_delete_draft",
+    "calendar_move_event",
+    "slides_list_layouts",
+    "script_create_deployment",
+    "drive_create_shortcut",
 ]
 
 
 class CatalogTests(unittest.TestCase):
     def test_new_tools_are_registered(self):
-        self.assertEqual(len(_tools()), 98)
+        self.assertEqual(len(_tools()), 106)
         for name in NEW_TOOLS:
             with self.subTest(tool=name):
                 self.assertIn(name, BY_NAME)
@@ -73,6 +81,8 @@ class CatalogTests(unittest.TestCase):
             "drive_empty_trash",
             "sheet_delete_columns",
             "drive_transfer_ownership",
+            "docs_format_text",
+            "gmail_delete_draft",
         ):
             with self.subTest(tool=name):
                 self.assertTrue(is_destructive(BY_NAME[name]))
@@ -84,6 +94,8 @@ class CatalogTests(unittest.TestCase):
             "gmail_list_labels",
             "calendar_list_calendars",
             "script_list_deployments",
+            "gmail_list_drafts",
+            "slides_list_layouts",
         ):
             with self.subTest(tool=name):
                 self.assertTrue(is_read_only(BY_NAME[name]))
@@ -103,12 +115,14 @@ class CatalogTests(unittest.TestCase):
             "drive_empty_trash",
             "sheet_delete_columns",
             "drive_transfer_ownership",
+            "docs_format_text",
+            "gmail_delete_draft",
         ):
             self.assertNotIn(name, read_write)
             self.assertNotIn(name, read_only)
         self.assertIn("drive_get_metadata", read_only)
-        self.assertEqual(len(read_write), 81)
-        self.assertEqual(len(read_only), 26)
+        self.assertEqual(len(read_write), 87)
+        self.assertEqual(len(read_only), 28)
 
 
 class ConditionTests(unittest.TestCase):
@@ -239,6 +253,58 @@ class BatchThreeTests(unittest.TestCase):
             slide_id="slide",
             rows=0,
             columns=2,
+        )
+        self.assertTrue(message.startswith("Error: rows"))
+
+
+class BatchFourTests(unittest.TestCase):
+    def test_find_ranges_maps_offsets(self):
+        from workspace_operator.handlers.doc_format import find_ranges
+
+        document = {
+            "body": {
+                "content": [
+                    {
+                        "paragraph": {
+                            "elements": [
+                                {"startIndex": 1, "textRun": {"content": "Hello "}},
+                                {"startIndex": 7, "textRun": {"content": "world hello"}},
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+        ranges = find_ranges(document, "hello")
+        self.assertEqual(len(ranges), 2)
+        self.assertEqual(ranges[0], (1, 6))
+        self.assertEqual(ranges[1], (13, 18))
+
+    def test_absolute_falls_back_to_end(self):
+        from workspace_operator.handlers.doc_format import _absolute
+
+        self.assertEqual(_absolute([(1, "abc")], 10), 4)
+
+    def test_pivot_aggregation_is_validated(self):
+        from workspace_operator.handlers.sheets_pivot import add_pivot_table_handler
+
+        message = add_pivot_table_handler(
+            config=None,
+            logger=LOGGER,
+            spreadsheet_id="id",
+            source_range="A1:C10",
+            rows=[1],
+            values=[3],
+            aggregation="MEDIAN",
+        )
+        self.assertTrue(message.startswith("Error: aggregation"))
+
+    def test_pivot_requires_rows_and_values(self):
+        from workspace_operator.handlers.sheets_pivot import add_pivot_table_handler
+
+        message = add_pivot_table_handler(
+            config=None, logger=LOGGER, spreadsheet_id="id", source_range="A1:C10",
+            rows=[], values=[2],
         )
         self.assertTrue(message.startswith("Error: rows"))
 

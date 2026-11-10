@@ -304,3 +304,56 @@ def list_deployments_handler(
         return "\n".join(lines)
     except Exception as e:
         return f"Error listing deployments: {str(e)}"
+
+
+def create_deployment_handler(
+    config: Config,
+    logger: logging.Logger,
+    script_id: str,
+    description: str = "",
+    version_number: int = 0,
+) -> str:
+    try:
+        if not script_id:
+            return "Error: script_id is required."
+
+        service = build("script", "v1", credentials=get_creds(config))
+        version = int(version_number or 0)
+        if not version:
+            versions = (
+                service.projects()
+                .versions()
+                .list(scriptId=script_id, pageSize=1)
+                .execute()
+                .get("versions", [])
+            )
+            if not versions:
+                return (
+                    "Error: this project has no saved versions yet — create a "
+                    "version in the Apps Script editor first, or pass version_number."
+                )
+            version = int(versions[0].get("versionNumber", 0))
+
+        deployment = (
+            service.projects()
+            .deployments()
+            .create(
+                scriptId=script_id,
+                body={
+                    "deploymentConfig": {
+                        "scriptId": script_id,
+                        "versionNumber": version,
+                        "manifestFileName": "appsscript",
+                        "description": description,
+                    }
+                },
+            )
+            .execute()
+        )
+        logger.info("Deployment created for %s", script_id)
+        return (
+            f"Deployment created: {deployment.get('deploymentId')} "
+            f"(version {version})."
+        )
+    except Exception as e:
+        return f"Error creating deployment: {str(e)}"
