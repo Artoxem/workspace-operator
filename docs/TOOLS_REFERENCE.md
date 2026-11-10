@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 89 | everything |
-| `read-write` | 74 | everything except `destructiveHint: true` |
-| `read-only` | 24 | only `readOnlyHint: true` |
+| `full` (default) | 98 | everything |
+| `read-write` | 81 | everything except `destructiveHint: true` |
+| `read-only` | 26 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -439,3 +439,20 @@ Conditions for `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
 | `gmail_list_labels` | — | Labels with IDs, user and system |
 | `gmail_create_label` | `name`, visibility args | Create a label (duplicates are rejected by Gmail) |
 | `drive_empty_trash` | `confirm` | Permanently delete the trash — irreversible |
+
+## Columns, media and integrations (v1.16)
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `sheet_insert_columns` | `spreadsheet_id`, `sheet_name`, `start_column`, `count` | Insert empty columns before a 1-based column |
+| `sheet_delete_columns` | `spreadsheet_id`, `sheet_name`, `start_column`, `count`, `confirm` | Delete columns after a preview |
+| `sheet_sort_range` | `spreadsheet_id`, `range`, `column`, `ascending`, `sheet_name` | Sort a range by a 1-based column inside it |
+| `slides_add_table` | `presentation_id`, `slide_id`, `rows`, `columns`, position/size | Insert a native table (pixels) |
+| `docs_insert_image` | `document_id`, `image_url`, `width`, `height` | Inline image at the end of the body (points) |
+| `calendar_list_calendars` | — | Calendars with access roles |
+| `drive_transfer_ownership` | `file_id`, `email`, `confirm` | Transfer ownership; you lose owner rights |
+| `gmail_send_with_attachments` | `to`, `subject`, `body_text`, `attachments`, `draft_mode` | Draft or send with local files (20 MB total) |
+| `script_list_deployments` | `script_id` | Deployments of an Apps Script project |
+
+`create_event` also accepts `recurrence`: a list of RRULE lines, for example
+`["RRULE:FREQ=WEEKLY;COUNT=4"]`.

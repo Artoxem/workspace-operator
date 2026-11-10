@@ -43,12 +43,21 @@ NEW_TOOLS = [
     "gmail_list_labels",
     "gmail_create_label",
     "drive_empty_trash",
+    "sheet_insert_columns",
+    "sheet_delete_columns",
+    "sheet_sort_range",
+    "slides_add_table",
+    "docs_insert_image",
+    "calendar_list_calendars",
+    "drive_transfer_ownership",
+    "gmail_send_with_attachments",
+    "script_list_deployments",
 ]
 
 
 class CatalogTests(unittest.TestCase):
     def test_new_tools_are_registered(self):
-        self.assertEqual(len(_tools()), 89)
+        self.assertEqual(len(_tools()), 98)
         for name in NEW_TOOLS:
             with self.subTest(tool=name):
                 self.assertIn(name, BY_NAME)
@@ -62,6 +71,8 @@ class CatalogTests(unittest.TestCase):
             "sheet_delete_sheet",
             "sheet_delete_rows",
             "drive_empty_trash",
+            "sheet_delete_columns",
+            "drive_transfer_ownership",
         ):
             with self.subTest(tool=name):
                 self.assertTrue(is_destructive(BY_NAME[name]))
@@ -71,6 +82,8 @@ class CatalogTests(unittest.TestCase):
             "drive_get_metadata",
             "drive_list_comments",
             "gmail_list_labels",
+            "calendar_list_calendars",
+            "script_list_deployments",
         ):
             with self.subTest(tool=name):
                 self.assertTrue(is_read_only(BY_NAME[name]))
@@ -88,12 +101,14 @@ class CatalogTests(unittest.TestCase):
             "slides_delete_slide",
             "sheet_delete_sheet",
             "drive_empty_trash",
+            "sheet_delete_columns",
+            "drive_transfer_ownership",
         ):
             self.assertNotIn(name, read_write)
             self.assertNotIn(name, read_only)
         self.assertIn("drive_get_metadata", read_only)
-        self.assertEqual(len(read_write), 74)
-        self.assertEqual(len(read_only), 24)
+        self.assertEqual(len(read_write), 81)
+        self.assertEqual(len(read_only), 26)
 
 
 class ConditionTests(unittest.TestCase):
@@ -183,6 +198,49 @@ class StructureTests(unittest.TestCase):
             config=None, logger=LOGGER, message_ids=["m1"], dry_run=True
         )
         self.assertTrue(message.startswith("Error:"))
+
+
+class BatchThreeTests(unittest.TestCase):
+    def test_create_event_takes_recurrence(self):
+        schema = BY_NAME["create_event"].input_schema
+        self.assertIn("recurrence", schema["properties"])
+
+    def test_insert_columns_validates_count(self):
+        from workspace_operator.handlers.sheets_more import insert_columns_handler
+
+        message = insert_columns_handler(
+            config=None, logger=LOGGER, spreadsheet_id="id", count=0
+        )
+        self.assertTrue(message.startswith("Error: count"))
+
+    def test_sort_range_validates_column(self):
+        from workspace_operator.handlers.sheets_more import sort_range_handler
+
+        message = sort_range_handler(
+            config=None, logger=LOGGER, spreadsheet_id="id", range_name="A1:B5", column=0
+        )
+        self.assertTrue(message.startswith("Error: column"))
+
+    def test_attachment_requires_an_existing_file(self):
+        from workspace_operator.handlers.gmail import _create_message_with_attachments
+
+        with self.assertRaises(FileNotFoundError):
+            _create_message_with_attachments(
+                "a@example.com", "s", "b", ["/definitely/missing.txt"]
+            )
+
+    def test_slides_table_validates_shape(self):
+        from workspace_operator.handlers.slides import add_table_handler
+
+        message = add_table_handler(
+            config=None,
+            logger=LOGGER,
+            presentation_id="id",
+            slide_id="slide",
+            rows=0,
+            columns=2,
+        )
+        self.assertTrue(message.startswith("Error: rows"))
 
 
 class ExcerptTests(unittest.TestCase):

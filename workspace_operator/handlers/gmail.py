@@ -1,6 +1,10 @@
 import base64
 import logging
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email import encoders
+from pathlib import Path
 from typing import List, Optional
 
 from googleapiclient.discovery import build
@@ -484,3 +488,68 @@ def gmail_label_apply_handler(
     except Exception as e:
         logger.error("Error applying label: %s", str(e))
         return f"Error applying label: {str(e)}"
+
+
+def _create_message_with_attachments(
+    to: str, subject: str, body_text: str, attachments: List[str]
+) -> dict:
+    message = MIMEMultipart()
+    message["to"] = to
+    message["subject"] = subject
+    message.attach(MIMEText(body_text, "plain", "utf-8"))
+
+    total = 0
+    for item in attachments:
+        path = Path(item).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"attachment not found: {item}")
+        total += path.stat().st_size
+        if total > 20 * 1024 * 1024:
+            raise ValueError("attachments exceed the 20 MB limit")
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(path.read_bytes())
+        encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition", f'attachment; filename="{path.name}"'
+        )
+        message.attach(part)
+
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    return {"raw": raw}
+
+
+def send_with_attachments_handler(
+    config: Config,
+    logger: logging.Logger,
+    to: str,
+    subject: str,
+    body_text: str,
+    attachments: List[str],
+    draft_mode: bool = True,
+) -> str:
+    """Send or draft an email with local file attachments (20 MB cap)."""
+    try:
+        if not validate_email(to):
+            return f"Error: Invalid email format: {to}"
+        if not attachments:
+            return "Error: attachments must list at least one local file."
+
+        message = _create_message_with_attachments(to, subject, body_text, attachments)
+        service = build("gmail", "v1", credentials=get_creds(config))
+        names = ", ".join(Path(item).name for item in attachments)
+
+        if draft_mode:
+            draft = service.users().drafts().create(
+                userId="me", body={"message": message}
+            ).execute()
+            return (
+                f"EMAIL DRAFT CREATED (ID: {draft['id']})\n\n"
+                f"To: {to}\nSubject: {subject}\nAttachments: {names}\n\n"
+                "Saved as a draft, not sent."
+            )
+
+        sent = service.users().messages().send(userId="me", body=message).execute()
+        logger.info("Email with attachments sent: %s", sent.get("id"))
+        return f"Email sent with {len(attachments)} attachment(s). Message Id: {sent.get('id')}"
+    except Exception as e:
+        return f"Error sending email with attachments: {str(e)}"

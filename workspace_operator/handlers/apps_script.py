@@ -277,3 +277,30 @@ def script_run_function_handler(
     except Exception as e:
         logger.error("Error running script function %s: %s", function_name, str(e))
         return f"Error running script function: {str(e)}"
+
+
+def list_deployments_handler(
+    config: Config, logger: logging.Logger, script_id: str
+) -> str:
+    try:
+        if not script_id:
+            return "Error: script_id is required."
+
+        service = build("script", "v1", credentials=get_creds(config))
+        result = service.projects().deployments().list(scriptId=script_id).execute()
+        deployments = result.get("deployments", [])
+        if not deployments:
+            return "No deployments for this script."
+
+        lines = [f"Deployments ({len(deployments)}):"]
+        for item in deployments:
+            config_info = item.get("deploymentConfig") or {}
+            entry = item.get("entryPoint") or {}
+            lines.append(
+                f"- {item.get('deploymentId')} · "
+                f"{config_info.get('description') or entry.get('entryPointType') or '—'} · "
+                f"version {config_info.get('versionNumber', '—')}"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error listing deployments: {str(e)}"

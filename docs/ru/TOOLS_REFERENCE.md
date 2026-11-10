@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 89 | всё |
-| `read-write` | 74 | всё, кроме `destructiveHint: true` |
-| `read-only` | 24 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 98 | всё |
+| `read-write` | 81 | всё, кроме `destructiveHint: true` |
+| `read-only` | 26 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -436,3 +436,20 @@ Prompts — это переиспользуемые шаблоны, которы
 | `gmail_list_labels` | — | Метки с ID, пользовательские и системные |
 | `gmail_create_label` | `name`, видимость | Создать метку (дубликат Gmail отклонит) |
 | `drive_empty_trash` | `confirm` | Полностью очистить корзину — необратимо |
+
+## Колонки, медиа и интеграции (v1.16)
+
+| Инструмент | Аргументы | Что делает |
+|---|---|---|
+| `sheet_insert_columns` | `spreadsheet_id`, `sheet_name`, `start_column`, `count` | Вставить пустые колонки перед колонкой (1-based) |
+| `sheet_delete_columns` | `spreadsheet_id`, `sheet_name`, `start_column`, `count`, `confirm` | Удалить колонки после превью |
+| `sheet_sort_range` | `spreadsheet_id`, `range`, `column`, `ascending`, `sheet_name` | Отсортировать диапазон по колонке внутри него |
+| `slides_add_table` | `presentation_id`, `slide_id`, `rows`, `columns`, позиция/размер | Нативная таблица (пиксели) |
+| `docs_insert_image` | `document_id`, `image_url`, `width`, `height` | Картинка в конце документа (пункты) |
+| `calendar_list_calendars` | — | Календари с ролями доступа |
+| `drive_transfer_ownership` | `file_id`, `email`, `confirm` | Передача владения; вы теряете права владельца |
+| `gmail_send_with_attachments` | `to`, `subject`, `body_text`, `attachments`, `draft_mode` | Черновик или отправка с файлами (до 20 МБ) |
+| `script_list_deployments` | `script_id` | Деплои проекта Apps Script |
+
+`create_event` принимает `recurrence`: список строк RRULE, например
+`["RRULE:FREQ=WEEKLY;COUNT=4"]`.

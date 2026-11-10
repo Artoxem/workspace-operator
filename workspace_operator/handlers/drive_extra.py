@@ -181,3 +181,35 @@ def empty_trash_handler(
         return "Trash emptied. Every trashed file is permanently gone."
     except Exception as e:
         return f"Error emptying trash: {str(e)}"
+
+
+def transfer_ownership_handler(
+    config: Config,
+    logger: logging.Logger,
+    file_id: str,
+    email: str,
+    confirm: bool = False,
+) -> str:
+    try:
+        if not file_id or not email:
+            return "Error: file_id and email are required."
+
+        drive = _drive(config)
+        meta = drive.files().get(fileId=file_id, fields="id,name").execute()
+        if not confirm:
+            return (
+                "CONFIRMATION REQUIRED\n\n"
+                f"Transfer ownership of '{meta.get('name')}' to {email}.\n"
+                "You lose owner rights; the new owner controls sharing and deletion.\n"
+                "Call again with confirm=true to proceed."
+            )
+
+        drive.permissions().create(
+            fileId=file_id,
+            body={"type": "user", "role": "owner", "emailAddress": email},
+            transferOwnership=True,
+        ).execute()
+        logger.info("Transferred ownership of %s to %s", file_id, email)
+        return f"Ownership of '{meta.get('name')}' transferred to {email}."
+    except Exception as e:
+        return f"Error transferring ownership: {str(e)}"

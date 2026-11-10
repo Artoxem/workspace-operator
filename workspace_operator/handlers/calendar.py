@@ -99,6 +99,7 @@ def create_event_handler(
     end_time: str,
     description: str = "",
     calendar_id: str = "primary",
+    recurrence: Optional[List[str]] = None,
 ) -> str:
     try:
         creds = get_creds(config)
@@ -110,6 +111,8 @@ def create_event_handler(
             "start": {"dateTime": start_time, "timeZone": "UTC"},
             "end": {"dateTime": end_time, "timeZone": "UTC"},
         }
+        if recurrence:
+            event["recurrence"] = list(recurrence)
 
         event = service.events().insert(calendarId=calendar_id, body=event).execute()
         logger.info("Event created: %s", event.get("id"))
@@ -265,3 +268,21 @@ def calendar_create_meeting_handler(
     except Exception as e:
         logger.error("Error creating meeting: %s", str(e))
         return f"Error creating meeting: {str(e)}"
+
+
+def list_calendars_handler(config: Config, logger: logging.Logger) -> str:
+    try:
+        service = build("calendar", "v3", credentials=get_creds(config))
+        result = service.calendarList().list().execute()
+        items = result.get("items", [])
+        if not items:
+            return "No calendars found."
+
+        lines = [f"Calendars ({len(items)}):"]
+        for item in items:
+            primary = " [primary]" if item.get("primary") else ""
+            access = item.get("accessRole", "?")
+            lines.append(f"- {item.get('summary')} ({access}){primary} — ID: {item.get('id')}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error listing calendars: {str(e)}"

@@ -425,3 +425,62 @@ def set_notes_handler(
         return f"Speaker notes updated for slide {slide_id} ({len(notes)} chars)."
     except Exception as e:
         return f"Error setting speaker notes: {str(e)}"
+
+
+def add_table_handler(
+    config: Config,
+    logger: logging.Logger,
+    presentation_id: str,
+    slide_id: str,
+    rows: int,
+    columns: int,
+    left: float = 0,
+    top: float = 0,
+    width: float = 600,
+    height: float = 300,
+) -> str:
+    try:
+        if not presentation_id or not slide_id:
+            return "Error: presentation_id and slide_id are required."
+        if rows < 1 or columns < 1:
+            return "Error: rows and columns must be at least 1."
+
+        table_id = f"table_{abs(hash((presentation_id, slide_id, rows, columns))) % 10**10}"
+        element = {
+            "pageObjectId": slide_id,
+            "size": {"width": _emu(width), "height": _emu(height)},
+            "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "translateX": int(round(float(left) * EMU_PER_PIXEL)),
+                "translateY": int(round(float(top) * EMU_PER_PIXEL)),
+                "unit": "EMU",
+            },
+        }
+        response = (
+            _service(config)
+            .presentations()
+            .batchUpdate(
+                presentationId=presentation_id,
+                body={
+                    "requests": [
+                        {
+                            "createTable": {
+                                "objectId": table_id,
+                                "elementProperties": element,
+                                "rows": rows,
+                                "columns": columns,
+                            }
+                        }
+                    ]
+                },
+            )
+            .execute()
+        )
+        reply = (response.get("replies") or [{}])[0].get("createTable", {})
+        return (
+            f"Table inserted on slide {slide_id}: {rows}×{columns} "
+            f"(ID: {reply.get('objectId', table_id)})."
+        )
+    except Exception as e:
+        return f"Error inserting table: {str(e)}"

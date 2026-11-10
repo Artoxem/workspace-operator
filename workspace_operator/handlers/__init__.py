@@ -2,6 +2,7 @@
 
 from .apps_script import (
     cancel_operation_handler,
+    list_deployments_handler,
     execute_operation_handler,
     get_script_content_handler,
     prepare_script_update_handler,
@@ -21,6 +22,7 @@ from .template import clone_and_fill_handler
 from .deck import sheet_to_slides_handler
 from .calendar import (
     calendar_create_meeting_handler,
+    list_calendars_handler,
     calendar_find_free_slots_handler,
     create_event_handler,
     list_events_handler,
@@ -42,6 +44,7 @@ from .comments import (
 from .doc_edit import replace_text_handler
 from .drive_extra import (
     delete_file_handler,
+    transfer_ownership_handler,
     empty_trash_handler,
     get_metadata_handler,
     remove_permission_handler,
@@ -49,6 +52,12 @@ from .drive_extra import (
     restore_file_handler,
 )
 from .sheets_extra import add_chart_handler, conditional_format_handler
+from .sheets_more import (
+    delete_columns_handler,
+    insert_columns_handler,
+    sort_range_handler,
+)
+from .doc_media import insert_image_handler
 from .sheets_structure import (
     delete_rows_handler,
     delete_sheet_handler,
@@ -72,6 +81,7 @@ from .drive import (
 )
 from .gmail import (
     batch_delete_emails_handler,
+    send_with_attachments_handler,
     create_draft_handler,
     delete_email_handler,
     get_gmail_profile_handler,
@@ -105,6 +115,7 @@ from .gmail_threads import (
 from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
+    add_table_handler,
     delete_slide_handler,
     move_slide_handler,
     set_notes_handler,
@@ -207,4 +218,13 @@ __all__ = [
     "create_label_handler",
     "modify_messages_handler",
     "empty_trash_handler",
+    "insert_columns_handler",
+    "delete_columns_handler",
+    "sort_range_handler",
+    "add_table_handler",
+    "insert_image_handler",
+    "list_calendars_handler",
+    "transfer_ownership_handler",
+    "send_with_attachments_handler",
+    "list_deployments_handler",
 ]

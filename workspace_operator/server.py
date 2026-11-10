@@ -23,6 +23,15 @@ from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .runtime import AuditLog, call_with_retry
 from .handlers import (
+    add_table_handler,
+    delete_columns_handler,
+    insert_columns_handler,
+    insert_image_handler,
+    list_calendars_handler,
+    list_deployments_handler,
+    send_with_attachments_handler,
+    sort_range_handler,
+    transfer_ownership_handler,
     delete_rows_handler,
     delete_sheet_handler,
     empty_trash_handler,
@@ -1314,6 +1323,13 @@ def _tools() -> List[types.Tool]:
                     },
                     "description": {"type": "string"},
                     "calendar_id": {"type": "string", "default": "primary"},
+                    "recurrence": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "RRULE lines, e.g. ['RRULE:FREQ=WEEKLY;COUNT=4']"
+                        ),
+                    },
                 },
                 "required": ["summary", "start_time", "end_time"],
             },
@@ -1726,6 +1742,151 @@ def _tools() -> List[types.Tool]:
                 "required": [],
             },
             annotations=_DESTRUCTIVE,
+        ),
+
+        types.Tool(
+            name="sheet_insert_columns",
+            description="Insert empty columns before a 1-based column number.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                    "start_column": {"type": "integer", "default": 1},
+                    "count": {"type": "integer", "default": 1},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="sheet_delete_columns",
+            description="Delete columns starting at a 1-based column. Requires confirm=true.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                    "start_column": {"type": "integer", "default": 1},
+                    "count": {"type": "integer", "default": 1},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="sheet_sort_range",
+            description=(
+                "Sort a range by a 1-based column inside that range, ascending or "
+                "descending. The header row is sorted with the data unless excluded "
+                "from the range."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string"},
+                    "column": {"type": "integer", "default": 1},
+                    "ascending": {"type": "boolean", "default": True},
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_add_table",
+            description="Insert a native table onto a slide (size and position in pixels).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "slide_id": {"type": "string"},
+                    "rows": {"type": "integer"},
+                    "columns": {"type": "integer"},
+                    "left": {"type": "number", "default": 0},
+                    "top": {"type": "number", "default": 0},
+                    "width": {"type": "number", "default": 600},
+                    "height": {"type": "number", "default": 300},
+                },
+                "required": ["presentation_id", "slide_id", "rows", "columns"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="docs_insert_image",
+            description=(
+                "Insert an inline image from a public URL at the end of a document; "
+                "width/height are in points."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "document_id": {"type": "string"},
+                    "image_url": {"type": "string"},
+                    "width": {"type": "number"},
+                    "height": {"type": "number"},
+                },
+                "required": ["document_id", "image_url"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="calendar_list_calendars",
+            description="List calendars available to the account with access roles.",
+            inputSchema={"type": "object", "properties": {}, "required": []},
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="drive_transfer_ownership",
+            description=(
+                "Transfer file ownership to another account. Requires confirm=true; "
+                "you lose owner rights."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "email": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["file_id", "email"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="gmail_send_with_attachments",
+            description=(
+                "Send or draft an email with local file attachments (20 MB total). "
+                "Draft by default."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "to": {"type": "string"},
+                    "subject": {"type": "string"},
+                    "body_text": {"type": "string"},
+                    "attachments": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Local paths on the server machine",
+                    },
+                    "draft_mode": {"type": "boolean", "default": True},
+                },
+                "required": ["to", "subject", "body_text", "attachments"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="script_list_deployments",
+            description="List deployments of an Apps Script project.",
+            inputSchema={
+                "type": "object",
+                "properties": {"script_id": {"type": "string"}},
+                "required": ["script_id"],
+            },
+            annotations=_READ_ONLY,
         ),
     ]
 
@@ -2292,6 +2453,7 @@ def create_server(config: Config, logger) -> Server:
                     a.get("end_time"),
                     a.get("description", ""),
                     a.get("calendar_id", "primary"),
+                    a.get("recurrence"),
                 ),
                 "calendar_find_free_slots": lambda a: calendar_find_free_slots_handler(
                     config,
@@ -2481,6 +2643,74 @@ def create_server(config: Config, logger) -> Server:
                 ),
                 "drive_empty_trash": lambda a: empty_trash_handler(
                     config, logger, a.get("confirm", False)
+                ),
+                "sheet_insert_columns": lambda a: insert_columns_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("sheet_name"),
+                    a.get("start_column", 1),
+                    a.get("count", 1),
+                ),
+                "sheet_delete_columns": lambda a: delete_columns_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("sheet_name"),
+                    a.get("start_column", 1),
+                    a.get("count", 1),
+                    a.get("confirm", False),
+                ),
+                "sheet_sort_range": lambda a: sort_range_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("column", 1),
+                    a.get("ascending", True),
+                    a.get("sheet_name"),
+                ),
+                "slides_add_table": lambda a: add_table_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("slide_id"),
+                    a.get("rows"),
+                    a.get("columns"),
+                    a.get("left", 0),
+                    a.get("top", 0),
+                    a.get("width", 600),
+                    a.get("height", 300),
+                ),
+                "docs_insert_image": lambda a: insert_image_handler(
+                    config,
+                    logger,
+                    a.get("document_id"),
+                    a.get("image_url"),
+                    a.get("width"),
+                    a.get("height"),
+                ),
+                "calendar_list_calendars": lambda a: list_calendars_handler(
+                    config, logger
+                ),
+                "drive_transfer_ownership": lambda a: transfer_ownership_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("email"),
+                    a.get("confirm", False),
+                ),
+                "gmail_send_with_attachments": lambda a: send_with_attachments_handler(
+                    config,
+                    logger,
+                    a.get("to"),
+                    a.get("subject"),
+                    a.get("body_text"),
+                    a.get("attachments") or [],
+                    a.get("draft_mode", True),
+                ),
+                "script_list_deployments": lambda a: list_deployments_handler(
+                    config, logger, a.get("script_id")
                 ),
             }
 
