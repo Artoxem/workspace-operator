@@ -9,8 +9,9 @@ The package name is **`workspace-operator-mcp`** (checked free on PyPI on
 ## Before every release
 
 ```bash
-python -m unittest discover -s tests -v     # 241 tests, no network
+python -m unittest discover -s tests -v     # 266 tests, no network
 python tests/live_smoke.py                  # 51 checks, needs a Google account
+python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python -m build                             # sdist + wheel into dist/
 python -m twine check dist/*                # optional, needs twine
 ```

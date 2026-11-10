@@ -491,6 +491,10 @@ workspace_operator/
    ├─ compare.py             сравнение таблиц по ключевой колонке
    ├─ template.py            клон файла с заменой плейсхолдеров
    ├─ deck.py                таблица → презентация
+   ├─ drive_extra.py         метаданные, переименование, корзина, права
+   ├─ comments.py            комментарии Drive: чтение, создание, ответ, решение
+   ├─ doc_edit.py            поиск и замена внутри документа
+   ├─ sheets_extra.py        условное форматирование, графики
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       юнит-, живые и round-trip проверки
