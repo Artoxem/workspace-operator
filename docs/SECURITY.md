@@ -5,7 +5,9 @@ The server includes safeguards to reduce accidental destructive actions.
 ## Confirmations (confirm)
 - `delete_email`, `gmail_archive`, `calendar_create_meeting`,
   `drive_revoke_public` require `confirm=true`.
-- `doc_fill_template` requires confirmation to avoid mass replacements.
+- `doc_fill_template`, `doc_replace_text`, `docs_format_text` require confirmation
+  to avoid mass replacements.
+- The current confirm-gated list is the «Safety by default» table in the README.
 
 ## Dry-run
 - `batch_delete_emails` defaults to dry-run.

@@ -494,7 +494,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 | Guard | Applies to |
 |---|---|
-| `confirm=true` required | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash`, `sheet_delete_columns`, `drive_transfer_ownership`, `docs_format_text`, `gmail_delete_draft` |
+| `confirm=true` required | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash`, `sheet_delete_columns`, `drive_transfer_ownership`, `docs_format_text`, `gmail_delete_draft`, `calendar_delete_event`, `calendar_respond_to_invite` |
 | `dry_run=true` by default | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
 | Draft mode by default | `send_email`, `gmail_reply` |
 | Public sharing blocked | `share_file` refuses `type=anyone` without `allow_public=true` |

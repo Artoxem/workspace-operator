@@ -5,7 +5,9 @@
 ## Подтверждения (confirm)
 - `delete_email`, `gmail_archive`, `calendar_create_meeting`,
   `drive_revoke_public` требуют `confirm=true`.
-- `doc_fill_template` требует подтверждения, чтобы избежать массовой замены.
+- `doc_fill_template`, `doc_replace_text`, `docs_format_text` требуют подтверждения,
+  чтобы избежать массовой замены.
+- Актуальный список confirm-инструментов — таблица «Безопасность по умолчанию» в README.
 
 ## Dry-run
 - `batch_delete_emails` по умолчанию выполняется в dry-run.

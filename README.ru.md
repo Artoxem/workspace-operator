@@ -493,7 +493,7 @@ docker run -i --rm \
 
 | Защита | Инструменты |
 |---|---|
-| Требуется `confirm=true` | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash`, `sheet_delete_columns`, `drive_transfer_ownership`, `docs_format_text`, `gmail_delete_draft` |
+| Требуется `confirm=true` | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash`, `sheet_delete_columns`, `drive_transfer_ownership`, `docs_format_text`, `gmail_delete_draft`, `calendar_delete_event`, `calendar_respond_to_invite` |
 | `dry_run=true` по умолчанию | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
 | Режим черновика | `send_email`, `gmail_reply` |
 | Публичный шаринг заблокирован | `share_file` не даёт `type=anyone` без `allow_public=true` |
