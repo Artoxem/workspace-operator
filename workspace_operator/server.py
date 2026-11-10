@@ -23,6 +23,16 @@ from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .runtime import AuditLog, call_with_retry
 from .handlers import (
+    delete_rows_handler,
+    delete_sheet_handler,
+    empty_trash_handler,
+    insert_rows_handler,
+    list_labels_handler,
+    create_label_handler,
+    merge_cells_handler,
+    modify_messages_handler,
+    move_slide_handler,
+    set_notes_handler,
     add_chart_handler,
     conditional_format_handler,
     create_comment_handler,
@@ -1576,6 +1586,147 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_DESTRUCTIVE,
         ),
+
+        types.Tool(
+            name="sheet_delete_sheet",
+            description=(
+                "Delete a sheet (tab) and everything on it. Requires confirm=true; "
+                "the last remaining sheet cannot be deleted."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "sheet_name": {"type": "string", "description": "Tab to delete"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["spreadsheet_id", "sheet_name"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="sheet_insert_rows",
+            description="Insert empty rows before a 1-based row number.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                    "start_row": {"type": "integer", "default": 1},
+                    "count": {"type": "integer", "default": 1},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="sheet_delete_rows",
+            description=(
+                "Delete rows starting at a 1-based row number. Requires confirm=true."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                    "start_row": {"type": "integer", "default": 1},
+                    "count": {"type": "integer", "default": 1},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["spreadsheet_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="sheet_merge_cells",
+            description=(
+                "Merge a range (MERGE_ALL, MERGE_ROWS, MERGE_COLUMNS) or unmerge it."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string", "description": "A1 range"},
+                    "merge_type": {
+                        "type": "string",
+                        "enum": ["MERGE_ALL", "MERGE_COLUMNS", "MERGE_ROWS", "UNMERGE"],
+                        "default": "MERGE_ALL",
+                    },
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_move_slide",
+            description="Move a slide to a new 1-based position and report the new order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "slide_id": {"type": "string"},
+                    "position": {"type": "integer", "description": "1-based target position"},
+                },
+                "required": ["presentation_id", "slide_id", "position"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_set_notes",
+            description="Replace the speaker notes of a slide.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "slide_id": {"type": "string"},
+                    "notes": {"type": "string", "description": "New notes text"},
+                },
+                "required": ["presentation_id", "slide_id", "notes"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="gmail_list_labels",
+            description="List Gmail labels with their IDs, split into user and system labels.",
+            inputSchema={"type": "object", "properties": {}, "required": []},
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="gmail_create_label",
+            description="Create a Gmail label (a duplicate name is rejected by Gmail).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "label_list_visibility": {
+                        "type": "string",
+                        "enum": ["labelShow", "labelShowIfUnread", "labelHide"],
+                        "default": "labelShow",
+                    },
+                    "message_list_visibility": {
+                        "type": "string",
+                        "enum": ["show", "hide"],
+                        "default": "show",
+                    },
+                },
+                "required": ["name"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_empty_trash",
+            description=(
+                "Permanently delete everything in the Drive trash. Irreversible; "
+                "requires confirm=true."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {"confirm": {"type": "boolean", "default": False}},
+                "required": [],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
     ]
 
 
@@ -1764,11 +1915,9 @@ def create_server(config: Config, logger) -> Server:
     # Tools
     # ------------------------------------------------------------------
 
-    @server.list_tools()
     async def handle_list_tools() -> List[types.Tool]:
         return exposed_tools
 
-    @server.call_tool()
     async def handle_call_tool(
         name: str, arguments: dict | None
     ) -> types.CallToolResult:
@@ -1792,8 +1941,9 @@ def create_server(config: Config, logger) -> Server:
             )
 
         tool = tool_index.get(name)
-        annotations = getattr(tool, "annotations", None)
-        is_read_only = bool(getattr(annotations, "readOnlyHint", False))
+        from .profiles import is_read_only as _tool_is_read_only
+
+        is_read_only = bool(tool is not None and _tool_is_read_only(tool))
         argument_names = tuple((arguments or {}).keys())
         started = time.perf_counter()
 
@@ -2275,6 +2425,63 @@ def create_server(config: Config, logger) -> Server:
                     a.get("slide_id"),
                     a.get("confirm", False),
                 ),
+                "sheet_delete_sheet": lambda a: delete_sheet_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("sheet_name"),
+                    a.get("confirm", False),
+                ),
+                "sheet_insert_rows": lambda a: insert_rows_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("sheet_name"),
+                    a.get("start_row", 1),
+                    a.get("count", 1),
+                ),
+                "sheet_delete_rows": lambda a: delete_rows_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("sheet_name"),
+                    a.get("start_row", 1),
+                    a.get("count", 1),
+                    a.get("confirm", False),
+                ),
+                "sheet_merge_cells": lambda a: merge_cells_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("merge_type", "MERGE_ALL"),
+                    a.get("sheet_name"),
+                ),
+                "slides_move_slide": lambda a: move_slide_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("slide_id"),
+                    a.get("position"),
+                ),
+                "slides_set_notes": lambda a: set_notes_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("slide_id"),
+                    a.get("notes", ""),
+                ),
+                "gmail_list_labels": lambda a: list_labels_handler(config, logger),
+                "gmail_create_label": lambda a: create_label_handler(
+                    config,
+                    logger,
+                    a.get("name"),
+                    a.get("label_list_visibility", "labelShow"),
+                    a.get("message_list_visibility", "show"),
+                ),
+                "drive_empty_trash": lambda a: empty_trash_handler(
+                    config, logger, a.get("confirm", False)
+                ),
             }
 
             if name not in handlers:
@@ -2341,7 +2548,6 @@ def create_server(config: Config, logger) -> Server:
     # Resources
     # ------------------------------------------------------------------
 
-    @server.list_resources()
     async def handle_list_resources() -> List[types.Resource]:
         return [
             types.Resource(
@@ -2364,7 +2570,6 @@ def create_server(config: Config, logger) -> Server:
             ),
         ]
 
-    @server.list_resource_templates()
     async def handle_list_resource_templates() -> List[types.ResourceTemplate]:
         return [
             types.ResourceTemplate(
@@ -2390,7 +2595,6 @@ def create_server(config: Config, logger) -> Server:
             ),
         ]
 
-    @server.read_resource()
     async def handle_read_resource(uri: AnyUrl) -> Iterable[ReadResourceContents]:
         from .auth import get_creds
         from googleapiclient.discovery import build
@@ -2541,11 +2745,9 @@ def create_server(config: Config, logger) -> Server:
     # Prompts
     # ------------------------------------------------------------------
 
-    @server.list_prompts()
     async def handle_list_prompts() -> List[types.Prompt]:
         return _prompts()
 
-    @server.get_prompt()
     async def handle_get_prompt(
         name: str, arguments: dict[str, str] | None
     ) -> types.GetPromptResult:
@@ -2893,6 +3095,64 @@ def create_server(config: Config, logger) -> Server:
 
         else:
             raise ValueError(f"Unknown prompt: {name}")
+
+    # MCP SDK 2.x registers handlers explicitly; the decorator API is gone.
+    async def _list_tools(_context, _params):
+        return types.ListToolsResult(tools=await handle_list_tools())
+
+    async def _call_tool(_context, params):
+        return await handle_call_tool(params.name, params.arguments)
+
+    async def _list_resources(_context, _params):
+        return types.ListResourcesResult(resources=await handle_list_resources())
+
+    async def _list_resource_templates(_context, _params):
+        return types.ListResourceTemplatesResult(
+            resource_templates=await handle_list_resource_templates()
+        )
+
+    async def _read_resource(_context, params):
+        items = await handle_read_resource(params.uri)
+        return types.ReadResourceResult(
+            contents=[
+                types.TextResourceContents(
+                    uri=str(params.uri),
+                    mime_type=item.mime_type,
+                    text=item.content,
+                )
+                for item in items
+            ]
+        )
+
+    async def _list_prompts(_context, _params):
+        return types.ListPromptsResult(prompts=await handle_list_prompts())
+
+    async def _get_prompt(_context, params):
+        return await handle_get_prompt(params.name, params.arguments)
+
+    server.add_request_handler(
+        "tools/list", types.PaginatedRequestParams, _list_tools
+    )
+    server.add_request_handler(
+        "tools/call", types.CallToolRequestParams, _call_tool
+    )
+    server.add_request_handler(
+        "resources/list", types.PaginatedRequestParams, _list_resources
+    )
+    server.add_request_handler(
+        "resources/templates/list",
+        types.PaginatedRequestParams,
+        _list_resource_templates,
+    )
+    server.add_request_handler(
+        "resources/read", types.ReadResourceRequestParams, _read_resource
+    )
+    server.add_request_handler(
+        "prompts/list", types.PaginatedRequestParams, _list_prompts
+    )
+    server.add_request_handler(
+        "prompts/get", types.GetPromptRequestParams, _get_prompt
+    )
 
     return server
 

@@ -4,12 +4,12 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Slid
 license: MIT
 metadata:
   server: workspace-operator
-  version: "1.14.0"
+  version: "1.15.0"
 ---
 
 # Google Workspace automation
 
-You have an MCP server with 80 tools over Google Drive, Docs, Sheets, Slides,
+You have an MCP server with 89 tools over Google Drive, Docs, Sheets, Slides,
 Gmail, Calendar and Apps Script. Follow this order; it keeps context small and
 operations reversible.
 
@@ -53,7 +53,8 @@ Never guess an ID, sheet name or placeholder.
 * `delete_email`, `gmail_archive`, `clear_range`, `drive_revoke_public`,
   `calendar_create_meeting`, `doc_fill_template`, `slides_replace_text`,
   `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`,
-  `doc_replace_text`, `slides_delete_slide` need `confirm=true`.
+  `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`,
+  `sheet_delete_rows`, `drive_empty_trash` need `confirm=true`.
 * `share_file` refuses `type=anyone` unless `allow_public=true`.
 * `drive_download`, `drive_export`, `gmail_get_attachment` never overwrite without
   `overwrite=true`.

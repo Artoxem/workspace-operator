@@ -4,12 +4,17 @@ import logging
 import unittest
 
 from workspace_operator.handlers.doc_edit import _excerpt
+from workspace_operator.handlers.gmail_labels import modify_messages_handler
 from workspace_operator.handlers.sheets_extra import (
     CHART_TYPES,
     _condition,
     add_chart_handler,
 )
-from workspace_operator.profiles import resolve_profile
+from workspace_operator.handlers.sheets_structure import (
+    _dimension_request,
+    merge_cells_handler,
+)
+from workspace_operator.profiles import is_destructive, is_read_only, resolve_profile
 from workspace_operator.server import _tools
 
 LOGGER = logging.getLogger("test")
@@ -29,12 +34,21 @@ NEW_TOOLS = [
     "sheet_conditional_format",
     "sheet_add_chart",
     "slides_delete_slide",
+    "sheet_delete_sheet",
+    "sheet_insert_rows",
+    "sheet_delete_rows",
+    "sheet_merge_cells",
+    "slides_move_slide",
+    "slides_set_notes",
+    "gmail_list_labels",
+    "gmail_create_label",
+    "drive_empty_trash",
 ]
 
 
 class CatalogTests(unittest.TestCase):
     def test_new_tools_are_registered(self):
-        self.assertEqual(len(_tools()), 80)
+        self.assertEqual(len(_tools()), 89)
         for name in NEW_TOOLS:
             with self.subTest(tool=name):
                 self.assertIn(name, BY_NAME)
@@ -45,17 +59,21 @@ class CatalogTests(unittest.TestCase):
             "drive_remove_permission",
             "doc_replace_text",
             "slides_delete_slide",
+            "sheet_delete_sheet",
+            "sheet_delete_rows",
+            "drive_empty_trash",
         ):
             with self.subTest(tool=name):
-                self.assertTrue(BY_NAME[name].annotations.destructiveHint)
+                self.assertTrue(is_destructive(BY_NAME[name]))
 
     def test_read_tools_are_marked_read_only(self):
         for name in (
             "drive_get_metadata",
             "drive_list_comments",
+            "gmail_list_labels",
         ):
             with self.subTest(tool=name):
-                self.assertTrue(BY_NAME[name].annotations.readOnlyHint)
+                self.assertTrue(is_read_only(BY_NAME[name]))
 
     def test_profiles_hide_destructive_batch(self):
         read_write = {
@@ -64,12 +82,18 @@ class CatalogTests(unittest.TestCase):
         read_only = {
             tool.name for tool in resolve_profile("read-only").filter(_tools())
         }
-        for name in ("drive_delete_file", "doc_replace_text", "slides_delete_slide"):
+        for name in (
+            "drive_delete_file",
+            "doc_replace_text",
+            "slides_delete_slide",
+            "sheet_delete_sheet",
+            "drive_empty_trash",
+        ):
             self.assertNotIn(name, read_write)
             self.assertNotIn(name, read_only)
         self.assertIn("drive_get_metadata", read_only)
-        self.assertEqual(len(read_write), 68)
-        self.assertEqual(len(read_only), 23)
+        self.assertEqual(len(read_write), 74)
+        self.assertEqual(len(read_only), 24)
 
 
 class ConditionTests(unittest.TestCase):
@@ -119,6 +143,44 @@ class ChartTests(unittest.TestCase):
     def test_missing_range_is_rejected(self):
         message = add_chart_handler(
             config=None, logger=LOGGER, spreadsheet_id="id", range_name="", chart_type="LINE"
+        )
+        self.assertTrue(message.startswith("Error:"))
+
+
+class StructureTests(unittest.TestCase):
+    def test_dimension_request_shape(self):
+        insert = _dimension_request(7, "ROWS", 1, 3, insert=True)
+        self.assertEqual(
+            insert["insertDimension"]["range"],
+            {"sheetId": 7, "dimension": "ROWS", "startIndex": 1, "endIndex": 3},
+        )
+        delete = _dimension_request(7, "ROWS", 1, 3, insert=False)
+        self.assertIn("deleteDimension", delete)
+
+    def test_unknown_merge_type_is_rejected_before_the_api(self):
+        message = merge_cells_handler(
+            config=None,
+            logger=LOGGER,
+            spreadsheet_id="id",
+            range_name="A1:B2",
+            merge_type="SPLAT",
+        )
+        self.assertTrue(message.startswith("Error: merge_type"))
+
+    def test_modify_messages_dry_run_needs_no_api(self):
+        message = modify_messages_handler(
+            config=None,
+            logger=LOGGER,
+            message_ids=["m1", "m2"],
+            add_labels=["STARRED"],
+            dry_run=True,
+        )
+        self.assertIn("DRY RUN", message)
+        self.assertIn("2 message(s)", message)
+
+    def test_modify_messages_requires_a_change(self):
+        message = modify_messages_handler(
+            config=None, logger=LOGGER, message_ids=["m1"], dry_run=True
         )
         self.assertTrue(message.startswith("Error:"))
 

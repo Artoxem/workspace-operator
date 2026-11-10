@@ -31,16 +31,15 @@ class Check:
 
 
 def tool_catalog(profile: str = "full") -> List[Dict[str, Any]]:
-    from .profiles import resolve_profile
+    from .profiles import is_destructive, is_read_only, resolve_profile
     from .server import _tools
 
     tools = _tools()
     exposed = resolve_profile(profile).filter(tools)
     catalog: List[Dict[str, Any]] = []
     for tool in exposed:
-        annotations = getattr(tool, "annotations", None)
-        kind = "read" if getattr(annotations, "readOnlyHint", False) else "write"
-        if getattr(annotations, "destructiveHint", False):
+        kind = "read" if is_read_only(tool) else "write"
+        if is_destructive(tool):
             kind = "destructive"
         catalog.append(
             {

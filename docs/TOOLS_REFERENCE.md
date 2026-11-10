@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 80 | everything |
-| `read-write` | 68 | everything except `destructiveHint: true` |
-| `read-only` | 23 | only `readOnlyHint: true` |
+| `full` (default) | 89 | everything |
+| `read-write` | 74 | everything except `destructiveHint: true` |
+| `read-only` | 24 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -425,3 +425,17 @@ Conditions for `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
 `NUMBER_GREATER_THAN_EQ`, `NUMBER_LESS`, `NUMBER_LESS_THAN_EQ`, `NUMBER_EQ`,
 `NUMBER_NOT_EQ`, `NUMBER_BETWEEN` (needs `value` and `value2`), `IS_EMPTY`,
 `IS_NOT_EMPTY`. Short aliases such as `CONTAINS` or `GREATER` are accepted.
+
+## Structural editing (v1.15)
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `sheet_delete_sheet` | `spreadsheet_id`, `sheet_name`, `confirm` | Delete a tab; the last sheet is protected |
+| `sheet_insert_rows` | `spreadsheet_id`, `sheet_name`, `start_row`, `count` | Insert empty rows before a 1-based row |
+| `sheet_delete_rows` | `spreadsheet_id`, `sheet_name`, `start_row`, `count`, `confirm` | Delete rows after a preview |
+| `sheet_merge_cells` | `spreadsheet_id`, `range`, `merge_type`, `sheet_name` | `MERGE_ALL`, `MERGE_ROWS`, `MERGE_COLUMNS` or `UNMERGE` |
+| `slides_move_slide` | `presentation_id`, `slide_id`, `position` | Reorder a slide and report the new order |
+| `slides_set_notes` | `presentation_id`, `slide_id`, `notes` | Replace the speaker notes |
+| `gmail_list_labels` | — | Labels with IDs, user and system |
+| `gmail_create_label` | `name`, visibility args | Create a label (duplicates are rejected by Gmail) |
+| `drive_empty_trash` | `confirm` | Permanently delete the trash — irreversible |

@@ -45,14 +45,20 @@ def _annotations(tool: object) -> object:
     return getattr(tool, "annotations", None)
 
 
-def _is_read_only(tool: object) -> bool:
-    annotations = _annotations(tool)
-    return bool(getattr(annotations, "readOnlyHint", False))
+def _hint(annotations: object, snake: str, camel: str) -> bool:
+    """Read an annotation across MCP SDK 1.x (camelCase) and 2.x (snake_case)."""
+    value = getattr(annotations, snake, None)
+    if value is None:
+        value = getattr(annotations, camel, None)
+    return bool(value)
 
 
-def _is_destructive(tool: object) -> bool:
-    annotations = _annotations(tool)
-    return bool(getattr(annotations, "destructiveHint", False))
+def is_read_only(tool: object) -> bool:
+    return _hint(_annotations(tool), "read_only_hint", "readOnlyHint")
+
+
+def is_destructive(tool: object) -> bool:
+    return _hint(_annotations(tool), "destructive_hint", "destructiveHint")
 
 
 def _normalize(names: Optional[Sequence[str]]) -> Optional[frozenset]:
@@ -89,9 +95,9 @@ class ToolProfile:
             return False
 
         if self.name == PROFILE_READ_ONLY:
-            return _is_read_only(tool)
+            return is_read_only(tool)
         if self.name == PROFILE_READ_WRITE:
-            return not _is_destructive(tool)
+            return not is_destructive(tool)
         return True
 
     def filter(self, tools: Iterable[T]) -> List[T]:

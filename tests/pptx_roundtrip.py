@@ -109,7 +109,7 @@ async def run(deck: Path) -> int:
             presentation_id = match.group(1) if match else None
             record(
                 "upload pptx → Google Slides",
-                not upload.isError
+                not upload.is_error
                 and presentation_id is not None
                 and "presentation" in upload_text,
                 upload_text.splitlines()[0] if upload_text else "empty",

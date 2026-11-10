@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "workspace-operator-mcp"
-version = "1.14.0"
+version = "1.15.0"
 description = "Deep Google Workspace automation for AI agents — Apps Script execution, local file transfer, Slides, document templates, cross-product search, and tool profiles"
 readme = "README.md"
 license = { text = "MIT" }
@@ -30,7 +30,7 @@ dependencies = [
     "google-api-python-client>=2.100.0,<3",
     "google-auth-httplib2>=0.2.0",
     "google-auth-oauthlib>=1.2.0",
-    "mcp>=1.0.0,<2",
+    "mcp>=2.3.0,<3",
     "PyYAML>=6.0",
     "uvicorn>=0.30",
     "starlette>=0.40",

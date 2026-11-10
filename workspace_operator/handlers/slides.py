@@ -297,3 +297,131 @@ def delete_slide_handler(
     except Exception as e:
         return f"Error deleting slide: {str(e)}"
 
+
+def move_slide_handler(
+    config: Config,
+    logger: logging.Logger,
+    presentation_id: str,
+    slide_id: str,
+    position: int,
+) -> str:
+    try:
+        if not presentation_id or not slide_id:
+            return "Error: presentation_id and slide_id are required."
+
+        service = _service(config)
+        presentation = (
+            service.presentations()
+            .get(presentationId=presentation_id, fields="slides(objectId)")
+            .execute()
+        )
+        ids = [slide.get("objectId") for slide in presentation.get("slides", [])]
+        if slide_id not in ids:
+            return f"Error: slide {slide_id} not found in this presentation."
+        if not 1 <= position <= len(ids):
+            return f"Error: position must be between 1 and {len(ids)}."
+
+        service.presentations().batchUpdate(
+            presentationId=presentation_id,
+            body={
+                "requests": [
+                    {
+                        "updateSlidesPosition": {
+                            "slideObjectIds": [slide_id],
+                            "insertionIndex": position - 1,
+                        }
+                    }
+                ]
+            },
+        ).execute()
+
+        after = (
+            service.presentations()
+            .get(presentationId=presentation_id, fields="slides(objectId)")
+            .execute()
+        )
+        order = [
+            item.get("objectId") for item in after.get("slides", [])
+        ]
+        return (
+            f"Moved slide to position {order.index(slide_id) + 1} of {len(order)}."
+        )
+    except Exception as e:
+        return f"Error moving slide: {str(e)}"
+
+
+def set_notes_handler(
+    config: Config,
+    logger: logging.Logger,
+    presentation_id: str,
+    slide_id: str,
+    notes: str,
+) -> str:
+    try:
+        if not presentation_id or not slide_id:
+            return "Error: presentation_id and slide_id are required."
+
+        service = _service(config)
+        # Speaker notes live on the notes page: slides[].slideProperties.notesPage.
+        presentation = (
+            service.presentations()
+            .get(
+                presentationId=presentation_id,
+                fields=(
+                    "slides(objectId,slideProperties(notesPage(objectId,"
+                    "pageElements(objectId,shape(text(textElements(textRun(content))))),"
+                    "notesProperties(speakerNotesObjectId))))"
+                ),
+            )
+            .execute()
+        )
+        target = next(
+            (
+                slide
+                for slide in presentation.get("slides", [])
+                if slide.get("objectId") == slide_id
+            ),
+            None,
+        )
+        if target is None:
+            return f"Error: slide {slide_id} not found in this presentation."
+
+        notes_page = (target.get("slideProperties") or {}).get("notesPage") or {}
+        notes_id = (notes_page.get("notesProperties") or {}).get(
+            "speakerNotesObjectId"
+        )
+        if not notes_id:
+            return "Error: this slide has no speaker-notes shape."
+
+        current_text = ""
+        for element in notes_page.get("pageElements") or []:
+            if element.get("objectId") != notes_id:
+                continue
+            for run in (
+                ((element.get("shape") or {}).get("text") or {}).get("textElements")
+                or []
+            ):
+                current_text += (run.get("textRun") or {}).get("content") or ""
+
+        requests = []
+        if current_text:
+            requests.append(
+                {"deleteText": {"objectId": notes_id, "textRange": {"type": "ALL"}}}
+            )
+        if notes:
+            requests.append(
+                {
+                    "insertText": {
+                        "objectId": notes_id,
+                        "text": notes,
+                        "insertionIndex": 0,
+                    }
+                }
+            )
+        service.presentations().batchUpdate(
+            presentationId=presentation_id, body={"requests": requests}
+        ).execute()
+        logger.info("Set speaker notes on %s", slide_id)
+        return f"Speaker notes updated for slide {slide_id} ({len(notes)} chars)."
+    except Exception as e:
+        return f"Error setting speaker notes: {str(e)}"

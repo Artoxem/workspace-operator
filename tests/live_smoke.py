@@ -115,13 +115,14 @@ async def full_checks(session: ClientSession) -> None:
     init = await session.initialize()
     record(
         "initialize",
-        bool(init.serverInfo),
-        f"{init.serverInfo.name} v{init.serverInfo.version} / protocol {init.protocolVersion}",
+        bool(getattr(init, "server_info", None) or getattr(init, "serverInfo", None)),
+        f"{getattr(init, 'server_info', None).name} v{getattr(init, 'server_info', None).version} "
+            f"/ protocol {getattr(init, 'protocol_version', None) or getattr(init, 'protocolVersion', None)}",
     )
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 80, f"{len(names)} tools")
+    record("tools/list", len(names) == 89, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -146,15 +147,15 @@ async def full_checks(session: ClientSession) -> None:
     templates = await session.list_resource_templates()
     record(
         "resource templates",
-        len(templates.resourceTemplates) == 3,
-        f"{len(templates.resourceTemplates)} templates",
+        len(getattr(templates, "resource_templates", None) or getattr(templates, "resourceTemplates", [])) == 3,
+        f"{len(getattr(templates, 'resource_templates', None) or getattr(templates, 'resourceTemplates', []))} templates",
     )
 
     profile_result = await session.call_tool("get_gmail_profile", {})
     text = _text(profile_result)
     record(
         "call get_gmail_profile",
-        not profile_result.isError and "@" in text,
+        not profile_result.is_error and "@" in text,
         text.strip().splitlines()[0] if text.strip() else "empty",
     )
 
@@ -164,7 +165,7 @@ async def full_checks(session: ClientSession) -> None:
     search_text = _text(search)
     record(
         "call workspace_search (drive)",
-        not search.isError and "Workspace search" in search_text,
+        not search.is_error and "Workspace search" in search_text,
         search_text.splitlines()[0] if search_text else "empty",
     )
 
@@ -172,7 +173,7 @@ async def full_checks(session: ClientSession) -> None:
     files_text = _text(files)
     record(
         "call find_files",
-        not files.isError and ("Found files" in files_text or "No files found" in files_text),
+        not files.is_error and ("Found files" in files_text or "No files found" in files_text),
         files_text.splitlines()[0] if files_text else "empty",
     )
 
@@ -180,7 +181,7 @@ async def full_checks(session: ClientSession) -> None:
     mails_text = _text(mails)
     record(
         "call list_emails",
-        not mails.isError and "Messages (" in mails_text,
+        not mails.is_error and "Messages (" in mails_text,
         mails_text.splitlines()[1] if len(mails_text.splitlines()) > 1 else "empty",
     )
 
@@ -190,7 +191,7 @@ async def full_checks(session: ClientSession) -> None:
         mail_text = _text(mail)
         record(
             "call read_email (headers + body)",
-            not mail.isError
+            not mail.is_error
             and all(marker in mail_text for marker in ("From:", "To:", "Date:", "Subject:"))
             and len(mail_text) > 300,
             f"{len(mail_text)} chars",
@@ -208,7 +209,7 @@ async def full_checks(session: ClientSession) -> None:
         thread_text = _text(thread)
         record(
             "call gmail_get_thread",
-            not thread.isError and "Thread:" in thread_text and "messages:" in thread_text,
+            not thread.is_error and "Thread:" in thread_text and "messages:" in thread_text,
             thread_text.splitlines()[0] if thread_text else "empty",
         )
 
@@ -223,7 +224,7 @@ async def full_checks(session: ClientSession) -> None:
         reply_text = _text(reply)
         record(
             "call gmail_reply (draft)",
-            not reply.isError and "Draft reply created" in reply_text,
+            not reply.is_error and "Draft reply created" in reply_text,
             reply_text.splitlines()[0] if reply_text else "empty",
         )
         draft_id = re.search(r"Draft ID:\s*([A-Za-z0-9_-]+)", reply_text)
@@ -252,7 +253,7 @@ async def full_checks(session: ClientSession) -> None:
         attachment_text = _text(attachment)
         record(
             "call gmail_get_attachment",
-            not attachment.isError
+            not attachment.is_error
             and ("Saved" in attachment_text or "Available" in attachment_text),
             attachment_text.splitlines()[0][:90] if attachment_text else "empty",
         )
@@ -281,17 +282,18 @@ async def full_checks(session: ClientSession) -> None:
         doc_text = _text(doc)
         record(
             "call read_doc",
-            not doc.isError and len(doc_text) > 0,
+            not doc.is_error and len(doc_text) > 0,
             f"{len(doc_text)} chars from {doc_id[:12]}…",
         )
 
         pdf = await session.call_tool("doc_export_pdf", {"document_id": doc_id})
         block = pdf.content[0] if pdf.content else None
         kind = getattr(block, "type", "?")
-        mime = getattr(getattr(block, "resource", None), "mimeType", "")
+        resource = getattr(block, "resource", None)
+        mime = getattr(resource, "mime_type", "") or getattr(resource, "mimeType", "")
         record(
             "call doc_export_pdf (binary resource)",
-            not pdf.isError and kind == "resource" and mime == "application/pdf",
+            not pdf.is_error and kind == "resource" and mime == "application/pdf",
             f"{kind} {mime}",
         )
 
@@ -305,7 +307,7 @@ async def full_checks(session: ClientSession) -> None:
     uploaded_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", upload_text)
     record(
         "call drive_upload",
-        not upload.isError and uploaded_id is not None,
+        not upload.is_error and uploaded_id is not None,
         upload_text.splitlines()[0] if upload_text else "empty",
     )
 
@@ -318,7 +320,7 @@ async def full_checks(session: ClientSession) -> None:
         round_trip = target.exists() and target.read_text(
             encoding="utf-8"
         ) == sample.read_text(encoding="utf-8")
-        record("call drive_download (round-trip)", not download.isError and round_trip, target.name)
+        record("call drive_download (round-trip)", not download.is_error and round_trip, target.name)
 
     presentation = await session.call_tool(
         "slides_create", {"title": "Workspace Operator smoke"}
@@ -338,7 +340,7 @@ async def full_checks(session: ClientSession) -> None:
         presentation_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", presentation_text)
         record(
             "call slides_create",
-            not presentation.isError and presentation_id is not None,
+            not presentation.is_error and presentation_id is not None,
             presentation_text.splitlines()[0] if presentation_text else "empty",
         )
 
@@ -347,7 +349,7 @@ async def full_checks(session: ClientSession) -> None:
         summary = await session.call_tool("slides_get", {"presentation_id": pid})
         record(
             "call slides_get",
-            not summary.isError and "Slides:" in _text(summary),
+            not summary.is_error and "Slides:" in _text(summary),
             _text(summary).splitlines()[0] if _text(summary) else "empty",
         )
 
@@ -356,7 +358,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "call slides_add_slide",
-            not added.isError and "Slide added" in _text(added),
+            not added.is_error and "Slide added" in _text(added),
             _text(added).splitlines()[0] if _text(added) else "empty",
         )
 
@@ -366,7 +368,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "slides_replace_text preview (no write)",
-            not preview.isError and "CONFIRMATION REQUIRED" in _text(preview),
+            not preview.is_error and "CONFIRMATION REQUIRED" in _text(preview),
             "preview only",
         )
 
@@ -376,7 +378,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "slides_replace_text confirm=true",
-            not applied.isError and "occurrence" in _text(applied),
+            not applied.is_error and "occurrence" in _text(applied),
             _text(applied).splitlines()[0] if _text(applied) else "empty",
         )
 
@@ -396,7 +398,7 @@ async def full_checks(session: ClientSession) -> None:
             )
             record(
                 "call slides_insert_image",
-                not image.isError and "Image inserted" in _text(image),
+                not image.is_error and "Image inserted" in _text(image),
                 _text(image).splitlines()[0] if _text(image) else "empty",
             )
 
@@ -413,7 +415,7 @@ async def full_checks(session: ClientSession) -> None:
         pdf_size = pdf_target.stat().st_size if pdf_target.exists() else 0
         record(
             "call drive_export (pdf)",
-            not exported.isError and pdf_size > 1000,
+            not exported.is_error and pdf_size > 1000,
             f"{pdf_size} bytes",
         )
 
@@ -423,7 +425,7 @@ async def full_checks(session: ClientSession) -> None:
     sheet_match = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(created_sheet))
     record(
         "call create_spreadsheet",
-        not created_sheet.isError and sheet_match is not None,
+        not created_sheet.is_error and sheet_match is not None,
         _text(created_sheet).splitlines()[0] if _text(created_sheet) else "empty",
     )
 
@@ -443,7 +445,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "call sheet_format",
-            not formatted.isError and "Formatted" in _text(formatted),
+            not formatted.is_error and "Formatted" in _text(formatted),
             _text(formatted).splitlines()[0] if _text(formatted) else "empty",
         )
         try:
@@ -472,7 +474,7 @@ async def full_checks(session: ClientSession) -> None:
         report_text = _text(report)
         record(
             "call report_from_sheet",
-            not report.isError and "Report created" in report_text,
+            not report.is_error and "Report created" in report_text,
             report_text.splitlines()[0] if report_text else "empty",
         )
         doc_match = re.search(r"Document ID:\s*([A-Za-z0-9_-]{10,})", report_text)
@@ -495,7 +497,7 @@ async def full_checks(session: ClientSession) -> None:
     event_match = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", _text(created_event))
     record(
         "call create_event",
-        not created_event.isError and event_match is not None,
+        not created_event.is_error and event_match is not None,
         _text(created_event).splitlines()[0] if _text(created_event) else "empty",
     )
 
@@ -507,7 +509,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "call calendar_update_event",
-            not updated.isError and "Event updated" in _text(updated),
+            not updated.is_error and "Event updated" in _text(updated),
             _text(updated).splitlines()[0] if _text(updated) else "empty",
         )
 
@@ -517,7 +519,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "calendar_respond_to_invite on own event",
-            responded.isError and "not on the guest list" in _text(responded),
+            responded.is_error and "not on the guest list" in _text(responded),
             _text(responded).splitlines()[0][:80] if _text(responded) else "empty",
         )
 
@@ -526,7 +528,7 @@ async def full_checks(session: ClientSession) -> None:
         )
         record(
             "call calendar_delete_event",
-            not deleted.isError and "deleted" in _text(deleted),
+            not deleted.is_error and "deleted" in _text(deleted),
             _text(deleted).splitlines()[0] if _text(deleted) else "empty",
         )
 
@@ -568,7 +570,7 @@ async def full_checks(session: ClientSession) -> None:
         compared_text = _text(compared)
         record(
             "call compare_tables",
-            not compared.isError and "Compare by 'SKU'" in compared_text,
+            not compared.is_error and "Compare by 'SKU'" in compared_text,
             compared_text.splitlines()[1] if len(compared_text.splitlines()) > 1 else "empty",
         )
 
@@ -580,7 +582,7 @@ async def full_checks(session: ClientSession) -> None:
         native_doc = re.search(r"Document ID:\s*([A-Za-z0-9_-]{10,})", native_text)
         record(
             "report_from_sheet creates a native table doc",
-            not native_report.isError and native_doc is not None,
+            not native_report.is_error and native_doc is not None,
             native_text.splitlines()[0] if native_text else "empty",
         )
         if native_doc:
@@ -615,7 +617,7 @@ async def full_checks(session: ClientSession) -> None:
         text_report_value = _text(text_report)
         record(
             "report_from_sheet output=text (no file)",
-            not text_report.isError
+            not text_report.is_error
             and "Summary" in text_report_value
             and "text mode" in text_report_value,
             f"{len(text_report_value)} chars",
@@ -633,7 +635,7 @@ async def full_checks(session: ClientSession) -> None:
     digest_text = _text(digest)
     record(
         "call digest (text)",
-        not digest.isError and "## Email" in digest_text and "Total items" in digest_text,
+        not digest.is_error and "## Email" in digest_text and "Total items" in digest_text,
         digest_text.splitlines()[2] if len(digest_text.splitlines()) > 2 else "empty",
     )
 
@@ -657,7 +659,7 @@ async def full_checks(session: ClientSession) -> None:
         cloned_text = _text(cloned)
         record(
             "call clone_and_fill",
-            not cloned.isError and "Creat" in cloned_text and "occurrence" in cloned_text,
+            not cloned.is_error and "Creat" in cloned_text and "occurrence" in cloned_text,
             cloned_text.splitlines()[0] if cloned_text else "empty",
         )
         cloned_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", cloned_text)
@@ -699,7 +701,7 @@ async def full_checks(session: ClientSession) -> None:
         deck_id = re.search(r"ID:\s*([A-Za-z0-9_-]{10,})", deck_text)
         record(
             "call sheet_to_slides",
-            not deck.isError and deck_id is not None,
+            not deck.is_error and deck_id is not None,
             deck_text.splitlines()[0] if deck_text else "empty",
         )
         if deck_id:
@@ -726,7 +728,7 @@ async def full_checks(session: ClientSession) -> None:
     script_text = _text(script_run)
     record(
         "script_run_function error path",
-        script_run.isError and "Error" in script_text,
+        script_run.is_error and "Error" in script_text,
         script_text.splitlines()[0][:80] if script_text else "empty",
     )
 
@@ -744,7 +746,7 @@ async def full_checks(session: ClientSession) -> None:
     broken_text = _text(broken)
     record(
         "failed call is flagged isError",
-        broken.isError and "Error" in broken_text,
+        broken.is_error and "Error" in broken_text,
         broken_text.splitlines()[0][:80] if broken_text else "empty",
     )
 
@@ -752,7 +754,7 @@ async def full_checks(session: ClientSession) -> None:
     validation_text = _text(validation)
     record(
         "validation error is flagged isError",
-        validation.isError and "Query is required" in validation_text,
+        validation.is_error and "Query is required" in validation_text,
         validation_text.splitlines()[0][:80] if validation_text else "empty",
     )
 
@@ -760,7 +762,7 @@ async def full_checks(session: ClientSession) -> None:
 async def read_only_checks(session: ClientSession) -> None:
     await session.initialize()
     tools = await session.list_tools()
-    record("read-only profile tools/list", len(tools.tools) == 23, f"{len(tools.tools)} tools")
+    record("read-only profile tools/list", len(tools.tools) == 24, f"{len(tools.tools)} tools")
 
     blocked = await session.call_tool(
         "send_email", {"to": "nobody@example.com", "subject": "x", "body_text": "x"}
@@ -768,7 +770,7 @@ async def read_only_checks(session: ClientSession) -> None:
     text = _text(blocked)
     record(
         "write tool blocked by profile",
-        blocked.isError and "disabled by the active tool profile" in text,
+        blocked.is_error and "disabled by the active tool profile" in text,
         text.strip().splitlines()[0] if text.strip() else "empty",
     )
 

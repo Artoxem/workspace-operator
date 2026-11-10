@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 80 | всё |
-| `read-write` | 68 | всё, кроме `destructiveHint: true` |
-| `read-only` | 23 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 89 | всё |
+| `read-write` | 74 | всё, кроме `destructiveHint: true` |
+| `read-only` | 24 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -422,3 +422,17 @@ Prompts — это переиспользуемые шаблоны, которы
 `NUMBER_GREATER_THAN_EQ`, `NUMBER_LESS`, `NUMBER_LESS_THAN_EQ`, `NUMBER_EQ`,
 `NUMBER_NOT_EQ`, `NUMBER_BETWEEN` (нужны `value` и `value2`), `IS_EMPTY`,
 `IS_NOT_EMPTY`. Короткие псевдонимы вроде `CONTAINS` или `GREATER` тоже работают.
+
+## Структурное редактирование (v1.15)
+
+| Инструмент | Аргументы | Что делает |
+|---|---|---|
+| `sheet_delete_sheet` | `spreadsheet_id`, `sheet_name`, `confirm` | Удалить лист; последний лист защищён |
+| `sheet_insert_rows` | `spreadsheet_id`, `sheet_name`, `start_row`, `count` | Вставить пустые строки перед строкой (1-based) |
+| `sheet_delete_rows` | `spreadsheet_id`, `sheet_name`, `start_row`, `count`, `confirm` | Удалить строки после превью |
+| `sheet_merge_cells` | `spreadsheet_id`, `range`, `merge_type`, `sheet_name` | `MERGE_ALL`, `MERGE_ROWS`, `MERGE_COLUMNS` или `UNMERGE` |
+| `slides_move_slide` | `presentation_id`, `slide_id`, `position` | Переставить слайд и показать новый порядок |
+| `slides_set_notes` | `presentation_id`, `slide_id`, `notes` | Заменить заметки докладчика |
+| `gmail_list_labels` | — | Метки с ID, пользовательские и системные |
+| `gmail_create_label` | `name`, видимость | Создать метку (дубликат Gmail отклонит) |
+| `drive_empty_trash` | `confirm` | Полностью очистить корзину — необратимо |

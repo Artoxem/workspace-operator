@@ -42,12 +42,24 @@ from .comments import (
 from .doc_edit import replace_text_handler
 from .drive_extra import (
     delete_file_handler,
+    empty_trash_handler,
     get_metadata_handler,
     remove_permission_handler,
     rename_file_handler,
     restore_file_handler,
 )
 from .sheets_extra import add_chart_handler, conditional_format_handler
+from .sheets_structure import (
+    delete_rows_handler,
+    delete_sheet_handler,
+    insert_rows_handler,
+    merge_cells_handler,
+)
+from .gmail_labels import (
+    create_label_handler,
+    list_labels_handler,
+    modify_messages_handler,
+)
 from .drive import (
     create_folder_handler,
     drive_copy_file_handler,
@@ -94,6 +106,8 @@ from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
     delete_slide_handler,
+    move_slide_handler,
+    set_notes_handler,
     slides_add_slide_handler,
     slides_create_handler,
     slides_get_handler,
@@ -183,4 +197,14 @@ __all__ = [
     "replace_text_handler",
     "conditional_format_handler",
     "add_chart_handler",
+    "delete_sheet_handler",
+    "insert_rows_handler",
+    "delete_rows_handler",
+    "merge_cells_handler",
+    "move_slide_handler",
+    "set_notes_handler",
+    "list_labels_handler",
+    "create_label_handler",
+    "modify_messages_handler",
+    "empty_trash_handler",
 ]

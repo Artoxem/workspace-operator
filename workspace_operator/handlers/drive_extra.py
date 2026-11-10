@@ -148,3 +148,36 @@ def remove_permission_handler(
         return f"Permission {permission_id} removed from '{meta.get('name')}'."
     except Exception as e:
         return f"Error removing permission: {str(e)}"
+
+
+def empty_trash_handler(
+    config: Config, logger: logging.Logger, confirm: bool = False
+) -> str:
+    """Permanently delete everything in the trash. Irreversible."""
+    try:
+        drive = _drive(config)
+        if not confirm:
+            listing = (
+                drive.files()
+                .list(
+                    q="trashed = true",
+                    pageSize=10,
+                    fields="files(id,name,mimeType)",
+                )
+                .execute()
+            )
+            files = listing.get("files", [])
+            sample = "\n".join(f"- {item.get('name')}" for item in files[:10])
+            return (
+                "CONFIRMATION REQUIRED\n\n"
+                "Emptying the trash permanently deletes every trashed file in this "
+                "account. This cannot be undone.\n"
+                + (f"First items:\n{sample}\n" if sample else "")
+                + "\nCall again with confirm=true to proceed."
+            )
+
+        drive.files().emptyTrash().execute()
+        logger.warning("Trash emptied")
+        return "Trash emptied. Every trashed file is permanently gone."
+    except Exception as e:
+        return f"Error emptying trash: {str(e)}"

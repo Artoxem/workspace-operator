@@ -5,11 +5,11 @@
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — один локальный
-MCP-сервер с 80 инструментами, многошаговыми записями и профилями на стороне сервера.
+MCP-сервер с 89 инструментами, многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![MCP](https://img.shields.io/badge/MCP-1.x-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-80-informational)](#-каталог-инструментов)
+[![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
+[![Tools](https://img.shields.io/badge/tools-89-informational)](#-каталог-инструментов)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -26,7 +26,7 @@ Workspace Operator (ранее *yet-another-google-mcp*) работает на �
 стейджинг Apps Script, передача файлов в обе стороны, сборка презентаций,
 форматирование таблиц, ответы в тред и работа с вложениями.
 
-**80 инструментов · 3 ресурса · 3 шаблона ресурсов · 8 промптов**, у каждого инструмента
+**89 инструментов · 3 ресурса · 3 шаблона ресурсов · 8 промптов**, у каждого инструмента
 аннотации `readOnlyHint` / `destructiveHint`.
 
 Ничто здесь не привязано к конкретному аккаунту, таблице или документу: каждый
@@ -54,14 +54,14 @@ Workspace Operator — для «измени рабочее пространст
 | Группа | Инструментов | Ключевое |
 |---|---:|---|
 | 🔎 Кросс-поиск | 1 | Один запрос по Drive, Gmail и Calendar, сортировка по дате |
-| 📁 Drive | 13 | Поиск, метаданные, переименование, корзина, шаринг, права |
+| 📁 Drive | 14 | Поиск, метаданные, переименование, корзина, шаринг, права |
 | 💬 Комментарии | 4 | Треды у Docs, Sheets и Slides: чтение, создание, ответ, решение |
 | 💾 Файлы Drive | 3 | Загрузка, скачивание, экспорт, конвертация в нативные форматы |
-| 📊 Sheets | 14 | Чтение и запись, форматирование, условные правила, графики, фильтры, CSV |
+| 📊 Sheets | 18 | Чтение и запись, форматирование, условные правила, графики, фильтры, CSV |
 | 📄 Docs | 6 | Чтение (включая таблицы), дописывание, поиск и замена, шаблоны, PDF |
-| 🖼 Slides | 6 | Создание, добавление и удаление слайдов, замена текста, картинки |
+| 🖼 Slides | 8 | Создание, добавление и удаление слайдов, замена текста, картинки |
 | ⚙️ Apps Script | 7 | Стейджинг с бэкапами, откат, запуск функций |
-| 📧 Gmail | 14 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
+| 📧 Gmail | 16 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
 | 📅 Calendar | 7 | События, слоты, встречи, изменение/удаление, ответ на приглашения |
 | 🧩 Составные | 5 | отчёт, дайджест, сравнение, клон шаблона, таблица → колода |
 
@@ -176,9 +176,9 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 80 | своя машина, полное доверие |
-| `read-write` | 68 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 23 | разведка, демо, общие машины, недоверенные агенты |
+| `full` | 89 | своя машина, полное доверие |
+| `read-write` | 74 | ежедневная работа — деструктивные скрыты |
+| `read-only` | 24 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-write"
@@ -267,7 +267,7 @@ docker run -i --rm \
 </details>
 
 <details>
-<summary>📁 Drive (13)</summary>
+<summary>📁 Drive (14)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
@@ -284,6 +284,7 @@ docker run -i --rm \
 | `drive_delete_file` | destructive | В корзину (`confirm=true`) |
 | `drive_restore_file` | write | Восстановить из корзины |
 | `drive_remove_permission` | destructive | Отозвать одно право (`confirm=true`) |
+| `drive_empty_trash` | destructive | Очистить корзину навсегда (`confirm=true`) |
 
 </details>
 
@@ -311,7 +312,7 @@ docker run -i --rm \
 </details>
 
 <details>
-<summary>📊 Sheets (14)</summary>
+<summary>📊 Sheets (18)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
@@ -329,6 +330,10 @@ docker run -i --rm \
 | `clear_range` | destructive | Очистить диапазон (авто dry-run для больших) |
 | `sheet_conditional_format` | write | Закрасить ячейки по условию |
 | `sheet_add_chart` | write | Вставить график COLUMN/BAR/LINE/AREA/PIE по диапазону |
+| `sheet_delete_sheet` | destructive | Удалить лист (`confirm=true`) |
+| `sheet_insert_rows` | write | Вставить пустые строки перед номером |
+| `sheet_delete_rows` | destructive | Удалить строки (`confirm=true`) |
+| `sheet_merge_cells` | write | Объединить или разъединить диапазон |
 
 </details>
 
@@ -347,7 +352,7 @@ docker run -i --rm \
 </details>
 
 <details>
-<summary>🖼 Slides (6)</summary>
+<summary>🖼 Slides (8)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
@@ -357,6 +362,8 @@ docker run -i --rm \
 | `slides_replace_text` | destructive | Замена плейсхолдеров (`confirm=true`) |
 | `slides_insert_image` | write | Вставить картинку по публичному URL |
 | `slides_delete_slide` | destructive | Удалить слайд (`confirm=true`) |
+| `slides_move_slide` | write | Переместить слайд на другую позицию |
+| `slides_set_notes` | write | Заменить заметки докладчика |
 
 </details>
 
@@ -376,7 +383,7 @@ docker run -i --rm \
 </details>
 
 <details>
-<summary>📧 Gmail (14)</summary>
+<summary>📧 Gmail (16)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|
@@ -394,6 +401,8 @@ docker run -i --rm \
 | `gmail_archive` | write | Архивировать (`confirm=true`) |
 | `delete_email` | destructive | Удалить письмо (`confirm=true`) |
 | `batch_delete_emails` | destructive | Удалить несколько (`dry_run=true`) |
+| `gmail_list_labels` | read | Метки с ID, пользовательские и системные |
+| `gmail_create_label` | write | Создать метку |
 
 </details>
 
@@ -454,7 +463,7 @@ docker run -i --rm \
 
 | Защита | Инструменты |
 |---|---|
-| Требуется `confirm=true` | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide` |
+| Требуется `confirm=true` | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash` |
 | `dry_run=true` по умолчанию | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
 | Режим черновика | `send_email`, `gmail_reply` |
 | Публичный шаринг заблокирован | `share_file` не даёт `type=anyone` без `allow_public=true` |
@@ -469,7 +478,7 @@ docker run -i --rm \
 ## Как устроено
 
 ```
-server.py                    MCP-сервер: 80 инструментов, ресурсы, промпты, профили
+server.py                    MCP-сервер: 89 инструментов, ресурсы, промпты, профили
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny
 ├─ config.py                 конфиг + переменные окружения
@@ -495,6 +504,8 @@ workspace_operator/
    ├─ comments.py            комментарии Drive: чтение, создание, ответ, решение
    ├─ doc_edit.py            поиск и замена внутри документа
    ├─ sheets_extra.py        условное форматирование, графики
+   ├─ sheets_structure.py    листы, строки, объединение ячеек
+   ├─ gmail_labels.py        метки и массовые флаги писем
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
 tests/                       юнит-, живые и round-trip проверки
@@ -512,9 +523,10 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 266 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 270 юнит-тестов, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/live_new_tools.py              # 15 проверок партии v1.14
+python tests/live_phase2.py                 # 8 проверок партии v1.15
 python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
 
@@ -549,13 +561,14 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 
 Границы возможностей — часть контракта:
 
-- **Drive**: удаление — это «в корзину»; окончательное удаление и передача
-  владения остаются в интерфейсе Drive.
-- **Sheets**: условное форматирование задаётся одним правилом за вызов, графики —
-  базовых типов; сводных таблиц нет.
+- **Drive**: удаление — это «в корзину»; `drive_empty_trash` — единственный
+  необратимый путь, требует `confirm=true`. Передача владения остаётся в интерфейсе.
+- **Sheets**: листы, строки и объединение ячеек поддержаны, но сводных таблиц нет;
+  условное форматирование — одно правило за вызов, графики базовых типов.
 - **Docs**: таблицы создаёт инструмент отчёта, но редактировать их по ячейкам
-  потом нельзя; комментарии поддерживаются через Drive API.
-- **Slides**: слайды можно добавлять, заполнять и удалять, но не менять порядок.
+  потом нельзя; комментарии — через Drive API.
+- **Slides**: порядок слайдов и заметки докладчика работают; нативных таблиц и
+  фигур нет.
 - **Один аккаунт на сервер**: один OAuth-токен, мультиаккаунтности нет.
 
 ## План
