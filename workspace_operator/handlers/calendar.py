@@ -317,3 +317,33 @@ def move_event_handler(
         )
     except Exception as e:
         return f"Error moving event: {str(e)}"
+
+
+def set_event_color_handler(
+    config: Config,
+    logger: logging.Logger,
+    event_id: str,
+    color_id: str,
+    calendar_id: str = "primary",
+) -> str:
+    """Set the event colour by Google Calendar colour id ("1".."11")."""
+    try:
+        if not event_id:
+            return "Error: event_id is required."
+        value = str(color_id).strip()
+        if not value.isdigit() or not 1 <= int(value) <= 11:
+            return "Error: color_id must be a string from 1 to 11."
+
+        service = build("calendar", "v3", credentials=get_creds(config))
+        event = (
+            service.events()
+            .patch(calendarId=calendar_id, eventId=event_id, body={"colorId": value})
+            .execute()
+        )
+        logger.info("Event %s colour set to %s", event_id, value)
+        return (
+            f"Event colour set to {value}: "
+            f"{clean_text(event.get('summary')) or event_id}"
+        )
+    except Exception as e:
+        return f"Error setting event colour: {str(e)}"

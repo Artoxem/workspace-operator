@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 106 | всё |
-| `read-write` | 87 | всё, кроме `destructiveHint: true` |
-| `read-only` | 28 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 115 | всё |
+| `read-write` | 96 | всё, кроме `destructiveHint: true` |
+| `read-only` | 29 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -466,3 +466,17 @@ Prompts — это переиспользуемые шаблоны, которы
 | `slides_list_layouts` | `presentation_id` | Названия макетов и их ID |
 | `script_create_deployment` | `script_id`, `description`, `version_number` | Задеплоить версию (по умолчанию последнюю) |
 | `drive_create_shortcut` | `target_id`, `name`, `parent_id` | Ярлык на другой файл |
+
+## Валидация, фильтры и фигуры (v1.18)
+
+| Инструмент | Аргументы | Что делает |
+|---|---|---|
+| `sheet_set_data_validation` | `spreadsheet_id`, `range`, `values` или `minimum`+`maximum`, `strict` | Проверка по списку или диапазону |
+| `sheet_protect_range` | `spreadsheet_id`, `range`, `warning_only`, `editors` | Предупреждение или блокировка |
+| `sheet_set_borders` | `spreadsheet_id`, `range`, `style`, `color`, `sides` | Границы диапазона |
+| `gmail_list_filters` | — | Фильтры с условиями и действиями |
+| `gmail_create_filter` | `from_address` / `subject` / `query`, `add_labels`, `remove_labels` | Создать фильтр (ID меток) |
+| `gmail_update_draft` | `draft_id`, `to`, `subject`, `body_text` | Заменить содержимое черновика |
+| `slides_add_shape` | `presentation_id`, `slide_id`, `shape_type`, `text`, геометрия | Фигуры и текстовые поля |
+| `calendar_set_event_color` | `event_id`, `color_id` | Цвет события (`1`–`11`) |
+| `script_update_deployment` | `script_id`, `deployment_id`, `version_number` | Перевести деплой на версию |

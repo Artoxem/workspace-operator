@@ -511,3 +511,58 @@ def list_layouts_handler(
         return "\n".join(lines)
     except Exception as e:
         return f"Error listing layouts: {str(e)}"
+
+
+def add_shape_handler(
+    config: Config,
+    logger: logging.Logger,
+    presentation_id: str,
+    slide_id: str,
+    shape_type: str = "RECTANGLE",
+    text: str = "",
+    left: float = 0,
+    top: float = 0,
+    width: float = 300,
+    height: float = 120,
+) -> str:
+    try:
+        if not presentation_id or not slide_id:
+            return "Error: presentation_id and slide_id are required."
+
+        kind = shape_type.upper()
+        allowed = {"RECTANGLE", "ROUND_RECTANGLE", "ELLIPSE", "TEXT_BOX", "TRIANGLE"}
+        if kind not in allowed:
+            return "Error: shape_type must be one of " + ", ".join(sorted(allowed))
+
+        shape_id = f"shape_{abs(hash((presentation_id, slide_id, kind, text))) % 10**10}"
+        requests = [
+            {
+                "createShape": {
+                    "objectId": shape_id,
+                    "shapeType": kind,
+                    "elementProperties": {
+                        "pageObjectId": slide_id,
+                        "size": {"width": _emu(width), "height": _emu(height)},
+                        "transform": {
+                            "scaleX": 1,
+                            "scaleY": 1,
+                            "translateX": int(round(float(left) * EMU_PER_PIXEL)),
+                            "translateY": int(round(float(top) * EMU_PER_PIXEL)),
+                            "unit": "EMU",
+                        },
+                    },
+                }
+            }
+        ]
+        if text:
+            requests.append(
+                {"insertText": {"objectId": shape_id, "text": text, "insertionIndex": 0}}
+            )
+
+        _service(config).presentations().batchUpdate(
+            presentationId=presentation_id, body={"requests": requests}
+        ).execute()
+        logger.info("Shape %s added to %s", kind, slide_id)
+        return f"Shape added: {kind} on slide {slide_id} (ID: {shape_id})."
+    except Exception as e:
+        return f"Error adding shape: {str(e)}"

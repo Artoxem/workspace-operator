@@ -23,6 +23,15 @@ from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .runtime import AuditLog, call_with_retry
 from .handlers import (
+    add_shape_handler,
+    create_filter_handler,
+    list_filters_handler,
+    protect_range_handler,
+    set_borders_handler,
+    set_data_validation_handler,
+    set_event_color_handler,
+    update_deployment_handler,
+    update_draft_handler,
     add_pivot_table_handler,
     create_deployment_handler,
     create_shortcut_handler,
@@ -2026,6 +2035,167 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+
+        types.Tool(
+            name="sheet_set_data_validation",
+            description=(
+                "Add a data validation rule to a range: one of a list of values, or a "
+                "number between two bounds."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string"},
+                    "values": {"type": "array", "items": {"type": "string"}},
+                    "minimum": {"type": "number"},
+                    "maximum": {"type": "number"},
+                    "strict": {"type": "boolean", "default": True},
+                    "input_message": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="sheet_protect_range",
+            description=(
+                "Protect a range: warning-only by default, or locked for everyone "
+                "except the listed editors."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string"},
+                    "description": {"type": "string"},
+                    "warning_only": {"type": "boolean", "default": True},
+                    "editors": {"type": "array", "items": {"type": "string"}},
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="sheet_set_borders",
+            description=(
+                "Draw borders around and inside a range: SOLID, DOTTED, DASHED, "
+                "SOLID_MEDIUM, SOLID_THICK or NONE."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string"},
+                    "style": {
+                        "type": "string",
+                        "enum": [
+                            "SOLID", "DOTTED", "DASHED",
+                            "SOLID_MEDIUM", "SOLID_THICK", "NONE",
+                        ],
+                        "default": "SOLID",
+                    },
+                    "color": {"type": "string", "default": "#000000"},
+                    "sides": {"type": "array", "items": {"type": "string"}},
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="gmail_list_filters",
+            description="List Gmail filters with their criteria and actions.",
+            inputSchema={"type": "object", "properties": {}, "required": []},
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="gmail_create_filter",
+            description=(
+                "Create a Gmail filter: match from/subject/query, then add or remove "
+                "labels (use label IDs)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "from_address": {"type": "string"},
+                    "subject": {"type": "string"},
+                    "query": {"type": "string"},
+                    "add_labels": {"type": "array", "items": {"type": "string"}},
+                    "remove_labels": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": [],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="gmail_update_draft",
+            description="Replace the content of an existing draft.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "draft_id": {"type": "string"},
+                    "to": {"type": "string"},
+                    "subject": {"type": "string"},
+                    "body_text": {"type": "string"},
+                },
+                "required": ["draft_id", "to", "subject", "body_text"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_add_shape",
+            description=(
+                "Add a shape to a slide: RECTANGLE, ROUND_RECTANGLE, ELLIPSE, "
+                "TEXT_BOX or TRIANGLE, with optional text."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "slide_id": {"type": "string"},
+                    "shape_type": {"type": "string", "default": "RECTANGLE"},
+                    "text": {"type": "string"},
+                    "left": {"type": "number", "default": 0},
+                    "top": {"type": "number", "default": 0},
+                    "width": {"type": "number", "default": 300},
+                    "height": {"type": "number", "default": 120},
+                },
+                "required": ["presentation_id", "slide_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="calendar_set_event_color",
+            description='Set an event colour by Google Calendar colour id ("1"–"11").',
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "event_id": {"type": "string"},
+                    "color_id": {"type": "string"},
+                    "calendar_id": {"type": "string", "default": "primary"},
+                },
+                "required": ["event_id", "color_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="script_update_deployment",
+            description="Point an Apps Script deployment at a newer version.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "script_id": {"type": "string"},
+                    "deployment_id": {"type": "string"},
+                    "version_number": {"type": "integer", "default": 0},
+                    "description": {"type": "string"},
+                },
+                "required": ["script_id", "deployment_id"],
+            },
+            annotations=_WRITE,
+        ),
     ]
 
 
@@ -2903,6 +3073,83 @@ def create_server(config: Config, logger) -> Server:
                     a.get("target_id"),
                     a.get("name", ""),
                     a.get("parent_id"),
+                ),
+                "sheet_set_data_validation": lambda a: set_data_validation_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("values"),
+                    a.get("minimum"),
+                    a.get("maximum"),
+                    a.get("strict", True),
+                    a.get("input_message", ""),
+                    a.get("sheet_name"),
+                ),
+                "sheet_protect_range": lambda a: protect_range_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("description", ""),
+                    a.get("warning_only", True),
+                    a.get("editors"),
+                    a.get("sheet_name"),
+                ),
+                "sheet_set_borders": lambda a: set_borders_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("style", "SOLID"),
+                    a.get("color", "#000000"),
+                    a.get("sides"),
+                    a.get("sheet_name"),
+                ),
+                "gmail_list_filters": lambda a: list_filters_handler(config, logger),
+                "gmail_create_filter": lambda a: create_filter_handler(
+                    config,
+                    logger,
+                    a.get("from_address", ""),
+                    a.get("subject", ""),
+                    a.get("query", ""),
+                    a.get("add_labels"),
+                    a.get("remove_labels"),
+                ),
+                "gmail_update_draft": lambda a: update_draft_handler(
+                    config,
+                    logger,
+                    a.get("draft_id"),
+                    a.get("to"),
+                    a.get("subject"),
+                    a.get("body_text"),
+                ),
+                "slides_add_shape": lambda a: add_shape_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("slide_id"),
+                    a.get("shape_type", "RECTANGLE"),
+                    a.get("text", ""),
+                    a.get("left", 0),
+                    a.get("top", 0),
+                    a.get("width", 300),
+                    a.get("height", 120),
+                ),
+                "calendar_set_event_color": lambda a: set_event_color_handler(
+                    config,
+                    logger,
+                    a.get("event_id"),
+                    a.get("color_id"),
+                    a.get("calendar_id", "primary"),
+                ),
+                "script_update_deployment": lambda a: update_deployment_handler(
+                    config,
+                    logger,
+                    a.get("script_id"),
+                    a.get("deployment_id"),
+                    a.get("version_number", 0),
+                    a.get("description", ""),
                 ),
             }
 

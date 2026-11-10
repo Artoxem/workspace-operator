@@ -23,9 +23,9 @@ anything outside the profile with an explicit error.
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 106 | your own machine, full trust |
-| `read-write` | 87 | daily work — destructive tools hidden |
-| `read-only` | 28 | exploration, demos, shared machines, untrusted agents |
+| `full` | 115 | your own machine, full trust |
+| `read-write` | 96 | daily work — destructive tools hidden |
+| `read-only` | 29 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-only"
@@ -84,6 +84,7 @@ scopes:
   - "https://www.googleapis.com/auth/drive"                   # Full Drive access
   - "https://www.googleapis.com/auth/documents"               # Read/write docs
   - "https://www.googleapis.com/auth/gmail.modify"            # Read/send/delete emails (includes read)
+  - "https://www.googleapis.com/auth/gmail.settings.basic"    # Gmail filters
   - "https://www.googleapis.com/auth/calendar"                # Manage calendar
   - "https://www.googleapis.com/auth/script.projects"         # Apps Script access
   - "https://www.googleapis.com/auth/script.deployments"      # Apps Script deployments

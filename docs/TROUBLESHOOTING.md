@@ -35,6 +35,7 @@ Full setup: [AUTH_SETUP.md](AUTH_SETUP.md).
 | `FileNotFoundError: oauth.keys.json` | wrong `client_secrets_file` | fix the path in `config.yaml` or `GOOGLE_CLIENT_SECRETS_FILE` |
 | browser does not open | headless/remote session | copy the printed URL into a browser, paste the code back |
 | checks pass but a tool returns `404` | file belongs to another account, or the ID is wrong | verify the ID and that the account has access |
+| `403: Request had insufficient authentication scopes` | the token predates a scope (Gmail filters need `gmail.settings.basic`) | delete `token.json`, run once, sign in again |
 
 ## HTTP transport
 

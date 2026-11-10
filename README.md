@@ -5,11 +5,11 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
-with 106 tools, staged writes and server-side tool profiles.
+with 115 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-106-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-115-informational)](#-tool-catalog)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -26,7 +26,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**106 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
+**115 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -57,12 +57,12 @@ Operator is for "change the workspace and be able to roll it back".
 | 📁 Drive | 16 | Search, metadata, rename, trash/restore, share, permissions |
 | 💬 Comments | 4 | Threads on Docs, Sheets and Slides: read, write, reply, resolve |
 | 💾 Drive files | 3 | Upload/download/export, conversion to native Google formats |
-| 📊 Sheets | 22 | Read/write, formatting, conditional rules, charts, filter views, CSV |
+| 📊 Sheets | 25 | Read/write, formatting, conditional rules, charts, filter views, CSV |
 | 📄 Docs | 8 | Read (tables included), append, find & replace, templates, PDF export |
-| 🖼 Slides | 10 | Create decks, add/delete slides, replace text, insert images |
-| ⚙️ Apps Script | 9 | Staged updates with backups, rollback, run functions |
-| 📧 Gmail | 19 | Threads, attachments, replies, drafts, labels, batch delete |
-| 📅 Calendar | 9 | Events, free slots, meetings, update/delete, invite responses |
+| 🖼 Slides | 11 | Create decks, add/delete slides, replace text, insert images |
+| ⚙️ Apps Script | 10 | Staged updates with backups, rollback, run functions |
+| 📧 Gmail | 22 | Threads, attachments, replies, drafts, labels, batch delete |
+| 📅 Calendar | 10 | Events, free slots, meetings, update/delete, invite responses |
 | 🧩 Composite | 5 | report from sheet, digest, table diff, template clone, table → deck |
 
 Plus 3 resources, 3 resource templates and 8 prompts — see the
@@ -177,9 +177,9 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 106 | your own machine, full trust |
-| `read-write` | 87 | daily work — destructive tools hidden |
-| `read-only` | 28 | exploration, demos, shared machines, untrusted agents |
+| `full` | 115 | your own machine, full trust |
+| `read-write` | 96 | daily work — destructive tools hidden |
+| `read-only` | 29 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-write"
@@ -315,7 +315,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 </details>
 
 <details>
-<summary>📊 Sheets (22)</summary>
+<summary>📊 Sheets (25)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -341,6 +341,9 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `sheet_delete_columns` | destructive | Delete columns (`confirm=true`) |
 | `sheet_sort_range` | write | Sort a range by one column |
 | `sheet_add_pivot_table` | write | Pivot table from a range onto a new sheet |
+| `sheet_set_data_validation` | write | List or number-range validation |
+| `sheet_protect_range` | write | Warning or locked protection |
+| `sheet_set_borders` | write | Solid/dotted/dashed borders |
 
 </details>
 
@@ -361,7 +364,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 </details>
 
 <details>
-<summary>🖼 Slides (10)</summary>
+<summary>🖼 Slides (11)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -375,11 +378,12 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `slides_set_notes` | write | Replace the speaker notes |
 | `slides_add_table` | write | Insert a native table onto a slide |
 | `slides_list_layouts` | read | Layouts available in a presentation |
+| `slides_add_shape` | write | Rectangle/ellipse/text box with optional text |
 
 </details>
 
 <details>
-<summary>⚙️ Apps Script (9)</summary>
+<summary>⚙️ Apps Script (10)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -392,11 +396,12 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `script_run_function` | destructive | Run a function from an API-executable deployment |
 | `script_list_deployments` | read | Deployments of a project |
 | `script_create_deployment` | write | Deploy a saved version |
+| `script_update_deployment` | write | Point a deployment at a newer version |
 
 </details>
 
 <details>
-<summary>📧 Gmail (19)</summary>
+<summary>📧 Gmail (22)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -419,6 +424,9 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `gmail_send_with_attachments` | write | Draft or send with local files (20 MB) |
 | `gmail_list_drafts` | read | Drafts with recipient and subject |
 | `gmail_delete_draft` | destructive | Delete a draft (`confirm=true`) |
+| `gmail_list_filters` | read | Filters with criteria and actions |
+| `gmail_create_filter` | write | Filter: match from/subject/query, add or remove labels |
+| `gmail_update_draft` | write | Replace draft content |
 
 </details>
 
@@ -436,7 +444,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 </details>
 
 <details>
-<summary>📅 Calendar (9)</summary>
+<summary>📅 Calendar (10)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
@@ -449,6 +457,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `calendar_respond_to_invite` | write | Accept / decline / tentative (`confirm=true`) |
 | `calendar_list_calendars` | read | Calendars with access roles |
 | `calendar_move_event` | write | Move an event to another calendar |
+| `calendar_set_event_color` | write | Colour an event (`1`–`11`) |
 
 </details>
 
@@ -496,7 +505,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 ## How it works
 
 ```
-server.py                    MCP server: 106 tool definitions, resources, prompts, profiles
+server.py                    MCP server: 115 tool definitions, resources, prompts, profiles
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny lists
 ├─ config.py                 config file + environment overrides
@@ -527,7 +536,9 @@ workspace_operator/
    ├─ doc_media.py           inline images in documents
    ├─ doc_format.py          bold/italic/heading for matched text
    ├─ sheets_pivot.py        pivot tables
-   ├─ gmail_drafts.py        draft list and cleanup
+   ├─ gmail_drafts.py        draft list, update and cleanup
+   ├─ gmail_filters.py       filters: list and create
+   ├─ sheets_validate.py     validation, protection, borders
    ├─ gmail_labels.py        labels and bulk message flags
    ├─ drive.py  sheets.py  docs.py
    ├─ gmail.py  calendar.py  apps_script.py
@@ -546,12 +557,13 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 279 unit tests, no network
+python -m unittest discover -s tests -v     # 284 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch
 python tests/live_phase3.py                 # 8 checks for the v1.16 batch
 python tests/live_phase4.py                 # 5 checks for the v1.17 batch
+python tests/live_phase5.py                 # 7 checks for the v1.18 batch
 python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 
@@ -587,9 +599,9 @@ Knowing the edges is part of the contract:
 
 - **Drive**: deleting means "move to trash"; `drive_empty_trash` is the only
   permanent path and needs `confirm=true`.
-- **Sheets**: tabs, rows, columns, merges, sorting and basic pivot tables are
-  handled; charts cover the basic types and conditional formatting takes one rule
-  per call.
+- **Sheets**: tabs, rows, columns, merges, sorting, pivot tables, validation,
+  protection and borders are handled; charts cover the basic types and conditional
+  formatting takes one rule per call.
 - **Docs**: text styling works on matched text; tables are created by the report
   tool but not edited cell by cell afterwards.
 - **Slides**: slides, speaker notes and native tables work; shapes, diagrams and

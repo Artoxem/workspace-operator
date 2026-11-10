@@ -23,9 +23,9 @@
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 106 | своя машина, полное доверие |
-| `read-write` | 87 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 28 | разведка, демо, общие машины, недоверенные агенты |
+| `full` | 115 | своя машина, полное доверие |
+| `read-write` | 96 | ежедневная работа — деструктивные скрыты |
+| `read-only` | 29 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-only"
@@ -83,6 +83,7 @@ scopes:
   - "https://www.googleapis.com/auth/drive"                   # Полный доступ к Drive
   - "https://www.googleapis.com/auth/documents"               # Чтение/запись документов
   - "https://www.googleapis.com/auth/gmail.modify"            # Чтение/отправка/удаление писем (включает чтение)
+  - "https://www.googleapis.com/auth/gmail.settings.basic"    # Фильтры Gmail
   - "https://www.googleapis.com/auth/calendar"                # Управление календарём
   - "https://www.googleapis.com/auth/script.projects"         # Доступ к Apps Script
   - "https://www.googleapis.com/auth/script.deployments"      # Деплои Apps Script

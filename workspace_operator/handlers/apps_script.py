@@ -357,3 +357,54 @@ def create_deployment_handler(
         )
     except Exception as e:
         return f"Error creating deployment: {str(e)}"
+
+
+def update_deployment_handler(
+    config: Config,
+    logger: logging.Logger,
+    script_id: str,
+    deployment_id: str,
+    version_number: int = 0,
+    description: str = "",
+) -> str:
+    try:
+        if not script_id or not deployment_id:
+            return "Error: script_id and deployment_id are required."
+
+        service = build("script", "v1", credentials=get_creds(config))
+        version = int(version_number or 0)
+        if not version:
+            versions = (
+                service.projects()
+                .versions()
+                .list(scriptId=script_id, pageSize=1)
+                .execute()
+                .get("versions", [])
+            )
+            if not versions:
+                return "Error: this project has no saved versions yet."
+            version = int(versions[0].get("versionNumber", 0))
+
+        updated = (
+            service.projects()
+            .deployments()
+            .update(
+                scriptId=script_id,
+                deploymentId=deployment_id,
+                body={
+                    "deploymentConfig": {
+                        "scriptId": script_id,
+                        "versionNumber": version,
+                        "manifestFileName": "appsscript",
+                        "description": description,
+                    }
+                },
+            )
+            .execute()
+        )
+        logger.info("Deployment %s updated to version %s", deployment_id, version)
+        return (
+            f"Deployment {updated.get('deploymentId')} updated to version {version}."
+        )
+    except Exception as e:
+        return f"Error updating deployment: {str(e)}"

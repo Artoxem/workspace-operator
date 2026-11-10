@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 106 | everything |
-| `read-write` | 87 | everything except `destructiveHint: true` |
-| `read-only` | 28 | only `readOnlyHint: true` |
+| `full` (default) | 115 | everything |
+| `read-write` | 96 | everything except `destructiveHint: true` |
+| `read-only` | 29 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -469,3 +469,17 @@ Conditions for `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
 | `slides_list_layouts` | `presentation_id` | Layout names and object IDs |
 | `script_create_deployment` | `script_id`, `description`, `version_number` | Deploy a saved version (latest by default) |
 | `drive_create_shortcut` | `target_id`, `name`, `parent_id` | Shortcut to another file |
+
+## Validation, filters and shapes (v1.18)
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `sheet_set_data_validation` | `spreadsheet_id`, `range`, `values` or `minimum`+`maximum`, `strict` | List or number-range validation |
+| `sheet_protect_range` | `spreadsheet_id`, `range`, `warning_only`, `editors` | Warning or locked protection |
+| `sheet_set_borders` | `spreadsheet_id`, `range`, `style`, `color`, `sides` | Draw borders |
+| `gmail_list_filters` | — | Filters with criteria and actions |
+| `gmail_create_filter` | `from_address` / `subject` / `query`, `add_labels`, `remove_labels` | Create a filter (label IDs) |
+| `gmail_update_draft` | `draft_id`, `to`, `subject`, `body_text` | Replace draft content |
+| `slides_add_shape` | `presentation_id`, `slide_id`, `shape_type`, `text`, geometry | Shapes and text boxes |
+| `calendar_set_event_color` | `event_id`, `color_id` | Colour an event (`1`–`11`) |
+| `script_update_deployment` | `script_id`, `deployment_id`, `version_number` | Repoint a deployment |

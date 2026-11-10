@@ -2,6 +2,7 @@
 
 from .apps_script import (
     cancel_operation_handler,
+    update_deployment_handler,
     create_deployment_handler,
     list_deployments_handler,
     execute_operation_handler,
@@ -23,6 +24,7 @@ from .template import clone_and_fill_handler
 from .deck import sheet_to_slides_handler
 from .calendar import (
     calendar_create_meeting_handler,
+    set_event_color_handler,
     list_calendars_handler,
     move_event_handler,
     calendar_find_free_slots_handler,
@@ -56,8 +58,18 @@ from .drive_extra import (
 )
 from .sheets_extra import add_chart_handler, conditional_format_handler
 from .sheets_pivot import add_pivot_table_handler
+from .sheets_validate import (
+    protect_range_handler,
+    set_borders_handler,
+    set_data_validation_handler,
+)
+from .gmail_filters import create_filter_handler, list_filters_handler
 from .doc_format import format_text_handler
-from .gmail_drafts import delete_draft_handler as delete_draft_tool, list_drafts_handler
+from .gmail_drafts import (
+    delete_draft_handler as delete_draft_tool,
+    list_drafts_handler,
+    update_draft_handler,
+)
 from .sheets_more import (
     delete_columns_handler,
     insert_columns_handler,
@@ -121,6 +133,7 @@ from .gmail_threads import (
 from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
+    add_shape_handler,
     add_table_handler,
     list_layouts_handler,
     delete_slide_handler,
@@ -242,4 +255,13 @@ __all__ = [
     "slides_list_layouts_handler",
     "create_deployment_handler",
     "create_shortcut_handler",
+    "set_data_validation_handler",
+    "protect_range_handler",
+    "set_borders_handler",
+    "list_filters_handler",
+    "create_filter_handler",
+    "update_draft_handler",
+    "add_shape_handler",
+    "set_event_color_handler",
+    "update_deployment_handler",
 ]

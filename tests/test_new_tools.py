@@ -60,12 +60,21 @@ NEW_TOOLS = [
     "slides_list_layouts",
     "script_create_deployment",
     "drive_create_shortcut",
+    "sheet_set_data_validation",
+    "sheet_protect_range",
+    "sheet_set_borders",
+    "gmail_list_filters",
+    "gmail_create_filter",
+    "gmail_update_draft",
+    "slides_add_shape",
+    "calendar_set_event_color",
+    "script_update_deployment",
 ]
 
 
 class CatalogTests(unittest.TestCase):
     def test_new_tools_are_registered(self):
-        self.assertEqual(len(_tools()), 106)
+        self.assertEqual(len(_tools()), 115)
         for name in NEW_TOOLS:
             with self.subTest(tool=name):
                 self.assertIn(name, BY_NAME)
@@ -96,6 +105,7 @@ class CatalogTests(unittest.TestCase):
             "script_list_deployments",
             "gmail_list_drafts",
             "slides_list_layouts",
+            "gmail_list_filters",
         ):
             with self.subTest(tool=name):
                 self.assertTrue(is_read_only(BY_NAME[name]))
@@ -121,8 +131,8 @@ class CatalogTests(unittest.TestCase):
             self.assertNotIn(name, read_write)
             self.assertNotIn(name, read_only)
         self.assertIn("drive_get_metadata", read_only)
-        self.assertEqual(len(read_write), 87)
-        self.assertEqual(len(read_only), 28)
+        self.assertEqual(len(read_write), 96)
+        self.assertEqual(len(read_only), 29)
 
 
 class ConditionTests(unittest.TestCase):
@@ -307,6 +317,52 @@ class BatchFourTests(unittest.TestCase):
             rows=[], values=[2],
         )
         self.assertTrue(message.startswith("Error: rows"))
+
+
+class BatchFiveTests(unittest.TestCase):
+    def test_borders_style_is_validated(self):
+        from workspace_operator.handlers.sheets_validate import set_borders_handler
+
+        message = set_borders_handler(
+            config=None, logger=LOGGER, spreadsheet_id="id", range_name="A1:B2", style="WAVY"
+        )
+        self.assertTrue(message.startswith("Error: style"))
+
+    def test_validation_needs_values_or_bounds(self):
+        from workspace_operator.handlers.sheets_validate import set_data_validation_handler
+
+        message = set_data_validation_handler(
+            config=None, logger=LOGGER, spreadsheet_id="id", range_name="A1:A5"
+        )
+        self.assertTrue(message.startswith("Error: pass values"))
+
+    def test_filter_requires_criteria(self):
+        from workspace_operator.handlers.gmail_filters import create_filter_handler
+
+        message = create_filter_handler(
+            config=None, logger=LOGGER, add_labels=["Label_1"]
+        )
+        self.assertTrue(message.startswith("Error: pass at least one"))
+
+    def test_event_color_range(self):
+        from workspace_operator.handlers.calendar import set_event_color_handler
+
+        message = set_event_color_handler(
+            config=None, logger=LOGGER, event_id="id", color_id="42"
+        )
+        self.assertTrue(message.startswith("Error: color_id"))
+
+    def test_shape_type_is_validated(self):
+        from workspace_operator.handlers.slides import add_shape_handler
+
+        message = add_shape_handler(
+            config=None,
+            logger=LOGGER,
+            presentation_id="id",
+            slide_id="slide",
+            shape_type="STAR",
+        )
+        self.assertTrue(message.startswith("Error: shape_type"))
 
 
 class ExcerptTests(unittest.TestCase):

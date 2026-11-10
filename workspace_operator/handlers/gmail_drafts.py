@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from ..auth import get_creds
 from ..config import Config
 from ..text import clean_text
+from .gmail import _create_message
 
 
 def _gmail(config: Config):
@@ -80,3 +81,35 @@ def delete_draft_handler(
         return f"Draft {draft_id} deleted."
     except Exception as e:
         return f"Error deleting draft: {str(e)}"
+
+
+def update_draft_handler(
+    config: Config,
+    logger: logging.Logger,
+    draft_id: str,
+    to: str,
+    subject: str,
+    body_text: str,
+) -> str:
+    """Replace the content of an existing draft."""
+    try:
+        if not draft_id:
+            return "Error: draft_id is required."
+        if not to or not subject:
+            return "Error: to and subject are required."
+
+        message = _create_message(to, subject, body_text)
+        updated = (
+            _gmail(config)
+            .users()
+            .drafts()
+            .update(userId="me", id=draft_id, body={"message": message})
+            .execute()
+        )
+        logger.info("Draft updated: %s", draft_id)
+        return (
+            f"Draft {updated.get('id')} updated.\n"
+            f"To: {to}\nSubject: {subject}"
+        )
+    except Exception as e:
+        return f"Error updating draft: {str(e)}"

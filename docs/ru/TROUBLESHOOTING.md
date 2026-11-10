@@ -35,6 +35,7 @@ workspace-operator doctor --offline  # то же, но без обновлени
 | `FileNotFoundError: oauth.keys.json` | неверный `client_secrets_file` | поправить путь в `config.yaml` или `GOOGLE_CLIENT_SECRETS_FILE` |
 | браузер не открывается | headless/удалённая сессия | скопировать напечатанный URL в браузер, код вставить обратно |
 | проверки проходят, инструмент отдаёт `404` | файл у другого аккаунта или неверный ID | проверить ID и доступ у аккаунта |
+| `403: Request had insufficient authentication scopes` | токен выдан до добавления скоупа (фильтрам нужен `gmail.settings.basic`) | удалить `token.json` и авторизоваться заново |
 
 ## HTTP-транспорт
 
