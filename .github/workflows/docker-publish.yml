@@ -38,6 +38,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
+          labels: |
+            org.opencontainers.image.description=Google Workspace automation over MCP: Drive, Docs, Sheets, Slides, Gmail, Calendar and Apps Script
 
       - name: Build and push
         uses: docker/build-push-action@v6
