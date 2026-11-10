@@ -23,6 +23,19 @@ from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .runtime import AuditLog, call_with_retry
 from .handlers import (
+    add_chart_handler,
+    conditional_format_handler,
+    create_comment_handler,
+    delete_file_handler,
+    delete_slide_handler,
+    get_metadata_handler,
+    list_comments_handler,
+    remove_permission_handler,
+    rename_file_handler,
+    reply_comment_handler,
+    replace_text_handler,
+    resolve_comment_handler,
+    restore_file_handler,
     add_sheet_handler,
     append_row_handler,
     append_to_doc_handler,
@@ -1323,6 +1336,246 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+
+        types.Tool(
+            name="drive_get_metadata",
+            description=(
+                "Read file metadata: name, type, size, owner, parents, created and "
+                "modified time, sharing state and link."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string", "description": "The Drive file ID"},
+                },
+                "required": ["file_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="drive_rename_file",
+            description="Rename a Drive file without moving or copying it.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "name": {"type": "string", "description": "New file name"},
+                },
+                "required": ["file_id", "name"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_delete_file",
+            description=(
+                "Move a file to the trash. Requires confirm=true; the file stays "
+                "recoverable for 30 days. Permanent deletion is not exposed."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["file_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="drive_restore_file",
+            description="Restore a file from the Drive trash (trashed=false).",
+            inputSchema={
+                "type": "object",
+                "properties": {"file_id": {"type": "string"}},
+                "required": ["file_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_remove_permission",
+            description=(
+                "Remove one permission from a file (revoke a person, group or public "
+                "link). Requires confirm=true."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "permission_id": {
+                        "type": "string",
+                        "description": "Permission ID from drive_list_permissions",
+                    },
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["file_id", "permission_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="drive_list_comments",
+            description=(
+                "List comments and replies on a Google Doc, Sheet or Slide."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "include_resolved": {
+                        "type": "boolean",
+                        "description": "Include resolved threads (default: true)",
+                        "default": True,
+                    },
+                },
+                "required": ["file_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="drive_create_comment",
+            description=(
+                "Add a comment to a Google Doc, Sheet or Slide, optionally quoting "
+                "text from the document."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "content": {"type": "string", "description": "Comment text"},
+                    "quoted_text": {
+                        "type": "string",
+                        "description": "Optional text to quote in the comment",
+                    },
+                },
+                "required": ["file_id", "content"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_reply_comment",
+            description="Reply to an existing comment thread.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "comment_id": {"type": "string"},
+                    "content": {"type": "string"},
+                },
+                "required": ["file_id", "comment_id", "content"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="drive_resolve_comment",
+            description="Mark a comment thread as resolved. Requires confirm=true.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {"type": "string"},
+                    "comment_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["file_id", "comment_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="doc_replace_text",
+            description=(
+                "Find and replace text in a Google Doc. Without confirm=true it "
+                "returns a preview with the number of occurrences."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "document_id": {"type": "string"},
+                    "find": {"type": "string", "description": "Text to search for"},
+                    "replace": {"type": "string", "description": "Replacement text"},
+                    "match_case": {"type": "boolean", "default": False},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["document_id", "find", "replace"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
+        types.Tool(
+            name="sheet_conditional_format",
+            description=(
+                "Add a conditional formatting rule to a range: colour cells when the "
+                "condition matches (text, number or emptiness)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string", "description": "A1 range, e.g. A2:C100"},
+                    "condition": {
+                        "type": "string",
+                        "description": (
+                            "TEXT_CONTAINS, TEXT_EQ, NUMBER_GREATER, NUMBER_LESS, "
+                            "NUMBER_BETWEEN, IS_EMPTY, IS_NOT_EMPTY, …"
+                        ),
+                    },
+                    "value": {"type": "string", "description": "Comparison value"},
+                    "value2": {
+                        "type": "string",
+                        "description": "Upper bound for NUMBER_BETWEEN",
+                    },
+                    "background_color": {"type": "string", "default": "#FFF2CC"},
+                    "text_color": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                },
+                "required": ["spreadsheet_id", "range", "condition"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="sheet_add_chart",
+            description=(
+                "Insert a chart from a range: COLUMN, BAR, LINE, AREA, SCATTER, "
+                "COMBO, STEPPED_AREA or PIE. The first column is the domain."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "spreadsheet_id": {"type": "string"},
+                    "range": {"type": "string", "description": "A1 range with headers"},
+                    "chart_type": {
+                        "type": "string",
+                        "enum": [
+                            "COLUMN", "BAR", "LINE", "AREA", "SCATTER",
+                            "COMBO", "STEPPED_AREA", "PIE",
+                        ],
+                        "default": "COLUMN",
+                    },
+                    "title": {"type": "string"},
+                    "sheet_name": {"type": "string"},
+                    "header": {"type": "boolean", "default": True},
+                    "anchor_row": {"type": "integer", "default": 0},
+                    "anchor_col": {"type": "integer", "default": 0},
+                    "width": {"type": "integer", "default": 600},
+                    "height": {"type": "integer", "default": 371},
+                },
+                "required": ["spreadsheet_id", "range"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="slides_delete_slide",
+            description=(
+                "Delete a slide from a presentation. Requires confirm=true; without "
+                "it returns which slide would be removed."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "presentation_id": {"type": "string"},
+                    "slide_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["presentation_id", "slide_id"],
+            },
+            annotations=_DESTRUCTIVE,
+        ),
     ]
 
 
@@ -1936,6 +2189,91 @@ def create_server(config: Config, logger) -> Server:
                 ),
                 "drive_copy_file": lambda a: drive_copy_file_handler(
                     config, logger, a.get("file_id"), a.get("name"), a.get("parent_id")
+                ),
+                "drive_get_metadata": lambda a: get_metadata_handler(
+                    config, logger, a.get("file_id")
+                ),
+                "drive_rename_file": lambda a: rename_file_handler(
+                    config, logger, a.get("file_id"), a.get("name")
+                ),
+                "drive_delete_file": lambda a: delete_file_handler(
+                    config, logger, a.get("file_id"), a.get("confirm", False)
+                ),
+                "drive_restore_file": lambda a: restore_file_handler(
+                    config, logger, a.get("file_id")
+                ),
+                "drive_remove_permission": lambda a: remove_permission_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("permission_id"),
+                    a.get("confirm", False),
+                ),
+                "drive_list_comments": lambda a: list_comments_handler(
+                    config, logger, a.get("file_id"), a.get("include_resolved", True)
+                ),
+                "drive_create_comment": lambda a: create_comment_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("content"),
+                    a.get("quoted_text"),
+                ),
+                "drive_reply_comment": lambda a: reply_comment_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("comment_id"),
+                    a.get("content"),
+                ),
+                "drive_resolve_comment": lambda a: resolve_comment_handler(
+                    config,
+                    logger,
+                    a.get("file_id"),
+                    a.get("comment_id"),
+                    a.get("confirm", False),
+                ),
+                "doc_replace_text": lambda a: replace_text_handler(
+                    config,
+                    logger,
+                    a.get("document_id"),
+                    a.get("find"),
+                    a.get("replace"),
+                    a.get("match_case", False),
+                    a.get("confirm", False),
+                ),
+                "sheet_conditional_format": lambda a: conditional_format_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("condition"),
+                    a.get("value"),
+                    a.get("value2"),
+                    a.get("background_color", "#FFF2CC"),
+                    a.get("text_color"),
+                    a.get("sheet_name"),
+                ),
+                "sheet_add_chart": lambda a: add_chart_handler(
+                    config,
+                    logger,
+                    a.get("spreadsheet_id"),
+                    a.get("range"),
+                    a.get("chart_type", "COLUMN"),
+                    a.get("title"),
+                    a.get("sheet_name"),
+                    a.get("header", True),
+                    a.get("anchor_row", 0),
+                    a.get("anchor_col", 0),
+                    a.get("width", 600),
+                    a.get("height", 371),
+                ),
+                "slides_delete_slide": lambda a: delete_slide_handler(
+                    config,
+                    logger,
+                    a.get("presentation_id"),
+                    a.get("slide_id"),
+                    a.get("confirm", False),
                 ),
             }
 

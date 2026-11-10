@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 67 | everything |
-| `read-write` | 59 | everything except `destructiveHint: true` |
-| `read-only` | 21 | only `readOnlyHint: true` |
+| `full` (default) | 80 | everything |
+| `read-write` | 68 | everything except `destructiveHint: true` |
+| `read-only` | 23 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -401,3 +401,27 @@ Diff of two ranges by a key column, prepared as a reconciliation report.
 | `range_a` | Yes | — | Baseline range |
 | `range_b` | Yes | — | New range |
 | `key_column` | No | `1` | Column name or 1-based index |
+
+## Drive extras, comments and advanced editing (v1.14)
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `drive_get_metadata` | `file_id` | Name, type, size, owner, parents, timestamps, sharing state, link |
+| `drive_rename_file` | `file_id`, `name` | Rename in place |
+| `drive_delete_file` | `file_id`, `confirm` | Move to trash; recoverable for 30 days |
+| `drive_restore_file` | `file_id` | Bring a file back from the trash |
+| `drive_remove_permission` | `file_id`, `permission_id`, `confirm` | Revoke one permission |
+| `drive_list_comments` | `file_id`, `include_resolved` | Threads with replies on a Doc, Sheet or Slide |
+| `drive_create_comment` | `file_id`, `content`, `quoted_text` | Start a thread, optionally quoting text |
+| `drive_reply_comment` | `file_id`, `comment_id`, `content` | Reply inside a thread |
+| `drive_resolve_comment` | `file_id`, `comment_id`, `confirm` | Mark the thread resolved |
+| `doc_replace_text` | `document_id`, `find`, `replace`, `match_case`, `confirm` | Replace all matches; without `confirm` returns a preview with the occurrence count |
+| `sheet_conditional_format` | `spreadsheet_id`, `range`, `condition`, `value`, `value2`, `background_color`, `text_color`, `sheet_name` | Add a colour rule (text, number, emptiness) |
+| `sheet_add_chart` | `spreadsheet_id`, `range`, `chart_type`, `title`, `anchor_row`, `anchor_col`, `width`, `height` | Insert COLUMN/BAR/LINE/AREA/SCATTER/COMBO/STEPPED_AREA/PIE |
+| `slides_delete_slide` | `presentation_id`, `slide_id`, `confirm` | Delete a slide after a preview |
+
+Conditions for `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
+`TEXT_STARTS_WITH`, `TEXT_ENDS_WITH`, `TEXT_EQ`, `NUMBER_GREATER`,
+`NUMBER_GREATER_THAN_EQ`, `NUMBER_LESS`, `NUMBER_LESS_THAN_EQ`, `NUMBER_EQ`,
+`NUMBER_NOT_EQ`, `NUMBER_BETWEEN` (needs `value` and `value2`), `IS_EMPTY`,
+`IS_NOT_EMPTY`. Short aliases such as `CONTAINS` or `GREATER` are accepted.

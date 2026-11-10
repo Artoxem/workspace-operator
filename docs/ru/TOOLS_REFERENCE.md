@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 67 | всё |
-| `read-write` | 59 | всё, кроме `destructiveHint: true` |
-| `read-only` | 21 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 80 | всё |
+| `read-write` | 68 | всё, кроме `destructiveHint: true` |
+| `read-only` | 23 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -398,3 +398,27 @@ Prompts — это переиспользуемые шаблоны, которы
 | `range_a` | Да | — | Базовый диапазон |
 | `range_b` | Да | — | Новый диапазон |
 | `key_column` | Нет | `1` | Имя колонки или индекс с 1 |
+
+## Drive-операции, комментарии и продвинутое редактирование (v1.14)
+
+| Инструмент | Аргументы | Что делает |
+|---|---|---|
+| `drive_get_metadata` | `file_id` | Имя, тип, размер, владелец, родители, даты, доступ, ссылка |
+| `drive_rename_file` | `file_id`, `name` | Переименовать на месте |
+| `drive_delete_file` | `file_id`, `confirm` | В корзину; восстановимо 30 дней |
+| `drive_restore_file` | `file_id` | Вернуть файл из корзины |
+| `drive_remove_permission` | `file_id`, `permission_id`, `confirm` | Отозвать одно право |
+| `drive_list_comments` | `file_id`, `include_resolved` | Треды с ответами у Doc, Sheet или Slide |
+| `drive_create_comment` | `file_id`, `content`, `quoted_text` | Начать тред, можно с цитатой |
+| `drive_reply_comment` | `file_id`, `comment_id`, `content` | Ответить в треде |
+| `drive_resolve_comment` | `file_id`, `comment_id`, `confirm` | Пометить тред решённым |
+| `doc_replace_text` | `document_id`, `find`, `replace`, `match_case`, `confirm` | Заменить все вхождения; без `confirm` — превью с количеством |
+| `sheet_conditional_format` | `spreadsheet_id`, `range`, `condition`, `value`, `value2`, `background_color`, `text_color`, `sheet_name` | Правило закраски (текст, число, пустота) |
+| `sheet_add_chart` | `spreadsheet_id`, `range`, `chart_type`, `title`, `anchor_row`, `anchor_col`, `width`, `height` | График COLUMN/BAR/LINE/AREA/SCATTER/COMBO/STEPPED_AREA/PIE |
+| `slides_delete_slide` | `presentation_id`, `slide_id`, `confirm` | Удалить слайд после превью |
+
+Условия для `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
+`TEXT_STARTS_WITH`, `TEXT_ENDS_WITH`, `TEXT_EQ`, `NUMBER_GREATER`,
+`NUMBER_GREATER_THAN_EQ`, `NUMBER_LESS`, `NUMBER_LESS_THAN_EQ`, `NUMBER_EQ`,
+`NUMBER_NOT_EQ`, `NUMBER_BETWEEN` (нужны `value` и `value2`), `IS_EMPTY`,
+`IS_NOT_EMPTY`. Короткие псевдонимы вроде `CONTAINS` или `GREATER` тоже работают.

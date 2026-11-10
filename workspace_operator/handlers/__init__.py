@@ -33,6 +33,21 @@ from .docs import (
     document_to_text,
     read_doc_handler,
 )
+from .comments import (
+    create_comment_handler,
+    list_comments_handler,
+    reply_comment_handler,
+    resolve_comment_handler,
+)
+from .doc_edit import replace_text_handler
+from .drive_extra import (
+    delete_file_handler,
+    get_metadata_handler,
+    remove_permission_handler,
+    rename_file_handler,
+    restore_file_handler,
+)
+from .sheets_extra import add_chart_handler, conditional_format_handler
 from .drive import (
     create_folder_handler,
     drive_copy_file_handler,
@@ -78,6 +93,7 @@ from .gmail_threads import (
 from .formatting import format_sheet_handler
 from .search import workspace_search_handler
 from .slides import (
+    delete_slide_handler,
     slides_add_slide_handler,
     slides_create_handler,
     slides_get_handler,
@@ -142,6 +158,7 @@ __all__ = [
     "slides_add_slide_handler",
     "slides_replace_text_handler",
     "slides_insert_image_handler",
+    "delete_slide_handler",
     "format_sheet_handler",
     "gmail_get_attachment_handler",
     "gmail_get_thread_handler",
@@ -154,4 +171,16 @@ __all__ = [
     "compare_tables_handler",
     "clone_and_fill_handler",
     "sheet_to_slides_handler",
+    "get_metadata_handler",
+    "rename_file_handler",
+    "delete_file_handler",
+    "restore_file_handler",
+    "remove_permission_handler",
+    "list_comments_handler",
+    "create_comment_handler",
+    "reply_comment_handler",
+    "resolve_comment_handler",
+    "replace_text_handler",
+    "conditional_format_handler",
+    "add_chart_handler",
 ]

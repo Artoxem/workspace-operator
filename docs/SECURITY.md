@@ -23,9 +23,9 @@ anything outside the profile with an explicit error.
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 67 | your own machine, full trust |
-| `read-write` | 59 | daily work — destructive tools hidden |
-| `read-only` | 21 | exploration, demos, shared machines, untrusted agents |
+| `full` | 80 | your own machine, full trust |
+| `read-write` | 68 | daily work — destructive tools hidden |
+| `read-only` | 23 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-only"

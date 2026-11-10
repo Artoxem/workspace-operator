@@ -249,3 +249,51 @@ def slides_insert_image_handler(
         return f"Image inserted on slide {slide_id} (ID: {reply.get('objectId')})."
     except Exception as e:
         return f"Error inserting image: {str(e)}"
+
+
+def delete_slide_handler(
+    config: Config,
+    logger: logging.Logger,
+    presentation_id: str,
+    slide_id: str,
+    confirm: bool = False,
+) -> str:
+    try:
+        if not presentation_id or not slide_id:
+            return "Error: presentation_id and slide_id are required."
+
+        service = _service(config)
+        if not confirm:
+            presentation = (
+                service.presentations().get(presentationId=presentation_id).execute()
+            )
+            slides = presentation.get("slides", [])
+            index = next(
+                (
+                    position
+                    for position, slide in enumerate(slides, start=1)
+                    if slide.get("objectId") == slide_id
+                ),
+                None,
+            )
+            if index is None:
+                return f"Error: slide {slide_id} not found in this presentation."
+
+            title = _slide_text(slides[index - 1])[:120] or "(no text)"
+            return (
+                "CONFIRMATION REQUIRED\n\n"
+                f"Delete slide {index} of {len(slides)}: {title}\n"
+                f"ID: {slide_id}\n\n"
+                "Deletion cannot be undone from the API.\n"
+                "Call again with confirm=true to proceed."
+            )
+
+        service.presentations().batchUpdate(
+            presentationId=presentation_id,
+            body={"requests": [{"deleteObject": {"objectId": slide_id}}]},
+        ).execute()
+        logger.info("Deleted slide %s from %s", slide_id, presentation_id)
+        return f"Slide {slide_id} deleted from presentation {presentation_id}."
+    except Exception as e:
+        return f"Error deleting slide: {str(e)}"
+
