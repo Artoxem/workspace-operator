@@ -76,6 +76,10 @@ Plus 3 resources, 3 resource templates and 8 prompts — see the
 pip install workspace-operator-mcp
 ```
 
+PyPI mirrors the latest GitHub release. If `workspace-operator version` reports an
+older version than this README describes, install from source or use the container
+below until the next release is published.
+
 From source (development):
 
 ```bash

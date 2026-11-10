@@ -40,6 +40,7 @@ scopes:
   - "https://www.googleapis.com/auth/script.deployments"      # Apps Script deployments
   - "https://www.googleapis.com/auth/documents"               # Read/write Google Docs
   - "https://www.googleapis.com/auth/gmail.modify"            # Read/send/delete emails (includes read)
+  - "https://www.googleapis.com/auth/gmail.settings.basic"    # Gmail filters
   - "https://www.googleapis.com/auth/calendar"                # Manage calendar events
   - "https://www.googleapis.com/auth/presentations"           # Google Slides
 
