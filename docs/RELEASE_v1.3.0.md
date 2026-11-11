@@ -1,20 +1,18 @@
 # Release v1.3.0 — renamed to Workspace Operator
 
-The project is no longer «yet another» Google MCP server. Same code, same
-behaviour, new identity — done now, before the first PyPI publication, so nobody
-ever has to migrate an import.
+The project outgrew its working title. Same code, same behaviour, new identity —
+done before the first PyPI publication, so nobody ever has to migrate an import.
 
 ## What changed
 
 | Layer | Before | After |
 |---|---|---|
-| Product name | MCP Google Tools / yet-another-google-mcp | **Workspace Operator** |
+| Product name | MCP Google Tools (working title) | **Workspace Operator** |
 | Python package | `mcp_google/` | `workspace_operator/` |
-| Distribution name | `yet-another-google-mcp` | `workspace-operator-mcp` |
 | MCP server name | `My Google Tools` | `Workspace Operator` |
 | Server version reported to clients | SDK version (`1.22.0`) | `1.3.0` — the actual release |
 | Antigravity server key | `google-workspace` | `workspace-operator` |
-| Local checkout | `D:\DEV\yet-another-google-mcp` | `D:\DEV\workspace-operator` |
+| Local checkout | old directory | `D:\DEV\workspace-operator` |
 
 ## Protocol metadata
 

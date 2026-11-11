@@ -7,11 +7,11 @@ rewritten from scratch, and a test now prevents this kind of drift.
 
 | Problem | Where | Fixed |
 |---|---|---|
-| README still described the 1.2 state, had a duplicated OAuth paragraph and `cd yet-another-google-mcp` | `README.md` | rewritten |
+| README still described the 1.2 state, had a duplicated OAuth paragraph and `cd <old-directory>` | `README.md` | rewritten |
 | Russian README was a patchwork of five versions | `README.ru.md` | rewritten |
 | Antigravity server key left as `google-workspace` in examples | `README.md`, `README.ru.md` | `workspace-operator` |
 | Profile table said 46 / 41 / 16 | `README`, `antigravity/README.md`, `SECURITY`, `TOOLS_REFERENCE` (EN + RU) | 59 / 52 / 21 |
-| Agent Skill claimed 46 tools and `server: yet-another-google-mcp` | `skills/google-workspace/SKILL.md` | 59 tools, new capabilities documented |
+| Agent Skill claimed 46 tools and the old server key | `skills/google-workspace/SKILL.md` | 59 tools, new capabilities documented |
 | Russian IDE guide linked `../antigravity/…` (resolves inside `docs/`) | `docs/ru/IDE_SETUP.md` | `../../antigravity/…` |
 | OAuth guide did not mention the Slides API or the `presentations` scope | `docs/AUTH_SETUP.md` (EN + RU) | added, with re-auth note |
 | Skill path mangled by a bulk rename (`skills/workspace-operator/…`) | `antigravity/README.md` | restored |

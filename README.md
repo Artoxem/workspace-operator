@@ -20,7 +20,7 @@ with 115 tools, staged writes and server-side tool profiles.
 
 ---
 
-Workspace Operator (formerly *yet-another-google-mcp*) runs on your machine, talks to
+Workspace Operator runs on your machine, talks to
 Google over your own OAuth client, and gives an AI agent the operations that turn
 "read my inbox" into "do the work and let me undo it": staged Apps Script updates,
 file transfer in both directions, presentation assembly, sheet formatting, threaded
