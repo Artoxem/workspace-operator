@@ -24,8 +24,9 @@ import uvicorn
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
 from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 
 from .runtime import current_client
 
@@ -131,27 +132,37 @@ def build_asgi_app(server, options: HttpOptions, version: str) -> Starlette:
             }
         )
 
-    async def mcp_endpoint(request):
-        client = authenticate(request.headers.get("authorization"), options.tokens)
-        if client is None:
-            return JSONResponse(
-                {"error": "unauthorized", "hint": "Authorization: Bearer <token>"},
-                status_code=401,
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+    class McpEndpoint:
+        """Raw ASGI endpoint: the session manager writes its own response."""
 
-        token = current_client.set(client)
-        try:
-            await manager.handle_request(request.scope, request.receive, request._send)
-        finally:
-            current_client.reset(token)
-        # handle_request writes the response itself.
-        return None
+        async def __call__(self, scope, receive, send):
+            path = scope.get("path", "")
+            if path not in ("/mcp", "/mcp/"):
+                response = JSONResponse({"error": "not found"}, status_code=404)
+                await response(scope, receive, send)
+                return
+
+            headers = Headers(scope=scope)
+            client = authenticate(headers.get("authorization"), options.tokens)
+            if client is None:
+                response = JSONResponse(
+                    {"error": "unauthorized", "hint": "Authorization: Bearer <token>"},
+                    status_code=401,
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+                await response(scope, receive, send)
+                return
+
+            token = current_client.set(client)
+            try:
+                await manager.handle_request(scope, receive, send)
+            finally:
+                current_client.reset(token)
 
     app = Starlette(
         routes=[
             Route("/healthz", healthz, methods=["GET"]),
-            Route("/mcp", mcp_endpoint, methods=["GET", "POST", "DELETE"]),
+            Mount("/", app=McpEndpoint()),
         ],
         lifespan=lambda app: manager.run(),
     )
