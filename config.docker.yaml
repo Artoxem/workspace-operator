@@ -11,7 +11,7 @@ log_file: "/home/app/data/mcp_operations.log"
 # Override at runtime with -e MCP_AUTH_TOKEN=... (required by the HTTP transport).
 mcp_auth_token: "change_me"
 
-tool_profile: "read-write"
+tool_profile: "full"
 
 scopes:
   - "https://www.googleapis.com/auth/spreadsheets"
