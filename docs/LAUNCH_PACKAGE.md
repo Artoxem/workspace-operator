@@ -1,7 +1,7 @@
 # Launch package
 
 Copy-paste material for directories and launch posts. Everything here is written
-for the current release, 1.22.4. Update the version in install lines before
+for the current release, 1.22.5. Update the version in install lines before
 posting a newer release.
 
 ## One-liners
@@ -32,7 +32,7 @@ posting a newer release.
 
 - GitHub: https://github.com/Artoxem/workspace-operator
 - PyPI: https://pypi.org/project/workspace-operator-mcp/
-- Release: https://github.com/Artoxem/workspace-operator/releases/tag/v1.22.4
+- Release: https://github.com/Artoxem/workspace-operator/releases/tag/v1.22.5
 - Registry: https://registry.modelcontextprotocol.io/v0/servers?search=workspace-operator
 - Security / deployment: https://github.com/Artoxem/workspace-operator/blob/master/docs/SECURITY.md
 
@@ -40,7 +40,7 @@ Install lines:
 
 ```bash
 pip install workspace-operator-mcp
-docker pull ghcr.io/artoxem/workspace-operator:1.22.4
+docker pull ghcr.io/artoxem/workspace-operator:1.22.5
 ```
 
 
