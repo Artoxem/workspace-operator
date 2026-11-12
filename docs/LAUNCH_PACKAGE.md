@@ -1,7 +1,7 @@
 # Launch package
 
 Copy-paste material for directories and launch posts. Everything here is written
-for the current release, 1.22.2. Update the version in install lines before
+for the current release, 1.22.4. Update the version in install lines before
 posting a newer release.
 
 ## One-liners
@@ -32,7 +32,7 @@ posting a newer release.
 
 - GitHub: https://github.com/Artoxem/workspace-operator
 - PyPI: https://pypi.org/project/workspace-operator-mcp/
-- Release: https://github.com/Artoxem/workspace-operator/releases/tag/v1.22.2
+- Release: https://github.com/Artoxem/workspace-operator/releases/tag/v1.22.4
 - Registry: https://registry.modelcontextprotocol.io/v0/servers?search=workspace-operator
 - Security / deployment: https://github.com/Artoxem/workspace-operator/blob/master/docs/SECURITY.md
 
@@ -40,8 +40,23 @@ Install lines:
 
 ```bash
 pip install workspace-operator-mcp
-docker pull ghcr.io/artoxem/workspace-operator:1.22.2
+docker pull ghcr.io/artoxem/workspace-operator:1.22.4
 ```
+
+
+## Assets
+
+Use absolute URLs so the same asset works on GitHub, PyPI and directory pages.
+
+| Asset | URL | Use |
+|---|---|---|
+| Banner | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/workspace-operator.png | Social preview, directory cards |
+| Gmail demo GIF | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif | Show HN/Reddit/X, Glama |
+| Doctor screenshot | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/doctor.png | AUTH_SETUP, PulseMCP |
+| Docker health | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/docker-health.png | Docker section, mcp.so |
+
+The repository also has `docs/images/mcp-manager.png` (a DSH-local manager view,
+useful as a "connected" reference, not as a product hero).
 
 ## Directory submissions
 
@@ -53,7 +68,8 @@ docker pull ghcr.io/artoxem/workspace-operator:1.22.2
 - Description: use the **long** copy above.
 - Categories/tags: `google-workspace`, `gmail`, `google-drive`, `google-sheets`,
   `productivity`, `automation`, `mcp`.
-- Add the two screenshots from `docs/images/` and the install command.
+- Add the banner, the Gmail demo GIF and the terminal screenshots from
+  `docs/images/` (see Assets above).
 - Note: Glama may already index the repository; search by name before creating a
   duplicate.
 
@@ -134,7 +150,7 @@ Body:
 > audit log, and 132 tools across Drive, Docs, Sheets, Slides, Gmail, Calendar,
 > Tasks, Forms, Apps Script and Postmaster.
 >
-> MIT, Python, 328 tests. Source: https://github.com/Artoxem/workspace-operator
+> MIT, Python, 332 tests. Source: https://github.com/Artoxem/workspace-operator
 
 Post Tuesday–Thursday, 08:00–10:00 US Eastern. Reply to every comment for the
 first three hours.
@@ -163,6 +179,8 @@ Body:
 > Install: `pip install workspace-operator-mcp`
 > Repo: https://github.com/Artoxem/workspace-operator
 >
+> Demo GIF: https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif
+>
 > Feedback welcome, especially on the bulk safety model.
 
 ### Reddit — r/LocalLLaMA
@@ -172,7 +190,7 @@ Title:
 > Local Google Workspace MCP server: 132 tools, bulk file operations with undo
 
 Angle: local OAuth, no hosted middleman, Docker on loopback, read-only profile,
-what runs where. Link the same repository, mention 328 tests and MIT.
+what runs where. Link the same repository, mention 332 tests and MIT.
 
 ### X / LinkedIn thread
 
@@ -184,7 +202,9 @@ what runs where. Link the same repository, mention 328 tests and MIT.
    MIT.
 4. `pip install workspace-operator-mcp` · https://github.com/Artoxem/workspace-operator
 
-Attach the plan/undo GIF when it exists.
+Attach the Gmail demo GIF (`docs/images/gmail-demo.gif`) and the banner. A bulk
+plan/undo recording is still desirable for the bulk section, but not required
+for the first launch.
 
 ### Habr (RU)
 
@@ -199,7 +219,7 @@ Structure:
 2. Почему 10 000 отдельных tool calls — плохо: время, токены, отсутствие отката.
 3. Решение: план → подтверждение → фоновая задача → откат.
 4. Архитектура: локальный OAuth, stdio/Docker, профили, аудит, лимиты.
-5. Цифры: 100 файлов за ~9 секунд, 132 инструмента, 328 тестов.
+5. Цифры: 100 файлов за ~9 секунд, 132 инструмента, 332 теста.
 6. Ограничения: один Google-аккаунт на инстанс, не multi-tenant.
 7. Ссылки на GitHub, PyPI и SECURITY.md.
 
