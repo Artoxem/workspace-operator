@@ -13,8 +13,12 @@ with 132 tools, staged writes and server-side tool profiles.
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Artoxem/workspace-operator?style=social)](https://github.com/Artoxem/workspace-operator/stargazers)
+[![PyPI downloads](https://img.shields.io/pypi/dm/workspace-operator-mcp)](https://pypi.org/project/workspace-operator-mcp/)
 
 [English](README.md) · [Русский](README.ru.md)
+
+<!-- mcp-name: io.github.Artoxem/workspace-operator -->
 
 </div>
 

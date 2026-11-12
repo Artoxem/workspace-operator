@@ -4,7 +4,7 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Slid
 license: MIT
 metadata:
   server: workspace-operator
-  version: "1.22.0"
+  version: "1.22.1"
 ---
 
 # Google Workspace automation
