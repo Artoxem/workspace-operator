@@ -11,6 +11,10 @@ acceptable for Google Cloud screens.
 
 ### 1. Hero: plan, confirm, undo
 
+**Status: captured** as `docs/images/gmail-demo.gif`. The recording shows finding
+and reading the last message, then moving it to Trash (recoverable). A bulk
+plan → undo recording is still desirable for the bulk section.
+
 **Question it answers:** "What does this thing actually do that a chat client
 cannot?"
 
@@ -139,6 +143,7 @@ Two real captures are in the repository and already used in the docs:
 
 | File | What it shows |
 |---|---|
+| `docs/images/gmail-demo.gif` | chat demo: find the last message, read it, move it to Trash |
 | `docs/images/doctor.png` | `workspace-operator doctor`: token, scopes, API probes, `configuration looks good` |
 | `docs/images/docker-health.png` | `docker compose ps` healthy and `/healthz` returning `1.22.2` |
 

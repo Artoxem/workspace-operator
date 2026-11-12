@@ -36,6 +36,10 @@ with `readOnlyHint` / `destructiveHint`.
 Nothing here is tied to a specific account, spreadsheet or document: every tool
 takes identifiers and ranges, and all examples use synthetic data.
 
+![Demo: read the last Gmail message and move it to Trash](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif)
+
+*Find the last message, read it, then move it to Trash. The message stays recoverable for 30 days.*
+
 ## How it compares
 
 | | Google Workspace MCP (remote) | **Workspace Operator** |
