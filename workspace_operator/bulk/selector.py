@@ -245,3 +245,157 @@ def resolve_drive(
         "truncated": truncated,
         "warnings": warnings,
     }
+
+
+GMAIL_SYSTEM_LABELS = {
+    "INBOX",
+    "UNREAD",
+    "TRASH",
+    "SPAM",
+    "STARRED",
+    "IMPORTANT",
+    "SENT",
+    "DRAFT",
+}
+
+
+def resolve_gmail_labels(creds, names: Iterable[str], logger: logging.Logger) -> List[str]:
+    """Map label names (or ids) to Gmail label ids."""
+    wanted = [str(name).strip() for name in names if str(name).strip()]
+    if not wanted:
+        return []
+    service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+    labels = (
+        service.users()
+        .labels()
+        .list(userId="me")
+        .execute()
+        .get("labels", [])
+    )
+    by_name = {label.get("name", "").casefold(): label.get("id") for label in labels}
+    by_id = {label.get("id"): label.get("name") for label in labels}
+    resolved: List[str] = []
+    unknown: List[str] = []
+    for name in wanted:
+        upper = name.upper()
+        if upper in GMAIL_SYSTEM_LABELS:
+            resolved.append(upper)
+            continue
+        if name in by_id:
+            resolved.append(name)
+            continue
+        match = by_name.get(name.casefold())
+        if match:
+            resolved.append(match)
+        else:
+            unknown.append(name)
+    if unknown:
+        raise BulkError(f"unknown Gmail label(s): {', '.join(sorted(unknown))}")
+    return resolved
+
+
+def resolve_gmail(
+    creds,
+    selector: Dict[str, Any],
+    max_items: int,
+    logger: Optional[logging.Logger] = None,
+) -> Dict[str, Any]:
+    """Resolve a Gmail selector into a capped message-id snapshot."""
+    logger = logger or logging.getLogger(__name__)
+    service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+    explicit = [str(value) for value in selector.get("ids") or [] if str(value).strip()]
+    exclude_ids = {
+        str(value) for value in selector.get("exclude_ids") or [] if str(value).strip()
+    }
+    ids: List[str] = []
+    seen: Set[str] = set()
+    warnings: List[str] = []
+    truncated = False
+
+    def keep(message_id: str) -> None:
+        if message_id in seen or message_id in exclude_ids:
+            return
+        seen.add(message_id)
+        ids.append(message_id)
+
+    if explicit:
+        for message_id in explicit:
+            keep(message_id)
+            if len(ids) > max_items:
+                truncated = True
+                break
+    else:
+        query = selector.get("query")
+        if not isinstance(query, str):
+            query = ""
+        token = None
+        while True:
+            response = (
+                service.users()
+                .messages()
+                .list(
+                    userId="me",
+                    q=query.strip() or None,
+                    maxResults=500,
+                    pageToken=token,
+                    includeSpamTrash=bool(selector.get("include_spam_trash")),
+                )
+                .execute()
+            )
+            for entry in response.get("messages", []):
+                keep(entry.get("id", ""))
+                if len(ids) > max_items:
+                    truncated = True
+                    break
+            if truncated:
+                break
+            token = response.get("nextPageToken")
+            if not token:
+                break
+        if not ids:
+            warnings.append("No messages matched the selector.")
+
+    if truncated:
+        ids = ids[:max_items]
+        warnings.append(
+            f"More than {max_items} messages matched; the plan keeps the first {max_items}."
+        )
+    else:
+        ids = ids[:max_items]
+
+    sample = []
+    for message_id in ids[:5]:
+        try:
+            message = (
+                service.users()
+                .messages()
+                .get(
+                    userId="me",
+                    id=message_id,
+                    format="metadata",
+                    metadataHeaders=["Subject", "From", "Date"],
+                )
+                .execute()
+            )
+            headers = {
+                header.get("name", ""): header.get("value", "")
+                for header in message.get("payload", {}).get("headers", [])
+            }
+            sample.append(
+                {
+                    "id": message_id,
+                    "subject": headers.get("Subject", ""),
+                    "from": headers.get("From", ""),
+                    "date": headers.get("Date", ""),
+                }
+            )
+        except HttpError:
+            sample.append({"id": message_id, "subject": "", "from": "", "date": ""})
+
+    items = [{"id": message_id, "name": "", "size": 0, "mimeType": "message/rfc822"} for message_id in ids]
+    return {
+        "items": items,
+        "sample": sample,
+        "truncated": truncated,
+        "warnings": warnings,
+    }

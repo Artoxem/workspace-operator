@@ -2205,7 +2205,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="bulk_plan",
             description=(
-                "Resolve a Drive selector into a reviewed plan (dry run). Returns a "
+                "Resolve a Drive or Gmail selector into a reviewed plan (dry run). Returns a "
                 "plan_id, matched count, total size, a small sample and warnings. "
                 "Cap: 300 items by default; allow_large raises it to the hard limit. "
                 "Nothing is changed until bulk_run is called with confirm=true."
@@ -2213,10 +2213,21 @@ def _tools() -> List[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "domain": {"type": "string", "enum": ["drive"], "default": "drive"},
+                    "domain": {"type": "string", "enum": ["drive", "gmail"], "default": "drive"},
                     "action": {
                         "type": "string",
-                        "enum": ["move", "trash", "restore", "rename"],
+                        "enum": [
+                            "move",
+                            "trash",
+                            "restore",
+                            "rename",
+                            "share",
+                            "revoke_public",
+                            "archive",
+                            "label",
+                            "mark_read",
+                            "mark_unread",
+                        ],
                     },
                     "selector": {
                         "type": "object",
@@ -2242,6 +2253,7 @@ def _tools() -> List[types.Tool]:
                                 },
                             },
                             "include_trashed": {"type": "boolean", "default": False},
+                            "include_spam_trash": {"type": "boolean", "default": False},
                             "limit": {"type": "integer"},
                         },
                     },
@@ -2252,6 +2264,14 @@ def _tools() -> List[types.Tool]:
                             "pattern": {"type": "string"},
                             "find": {"type": "string"},
                             "replace": {"type": "string"},
+                            "role": {"type": "string"},
+                            "type": {"type": "string"},
+                            "email_address": {"type": "string"},
+                            "domain": {"type": "string"},
+                            "send_notification": {"type": "boolean"},
+                            "allow_public": {"type": "boolean"},
+                            "add_labels": {"type": "array", "items": {"type": "string"}},
+                            "remove_labels": {"type": "array", "items": {"type": "string"}},
                         },
                     },
                     "allow_large": {"type": "boolean", "default": False},

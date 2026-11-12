@@ -18,8 +18,17 @@ from googleapiclient.errors import HttpError
 
 from ..auth import get_creds
 from ..config import Config
+from ..security import validate_email
 from . import engine, selector as selector_module, store
-from .models import ACTIONS, DOMAINS, BulkError, Job, Plan
+from .models import (
+    ACTIONS,
+    DOMAINS,
+    DRIVE_ACTIONS,
+    GMAIL_ACTIONS,
+    BulkError,
+    Job,
+    Plan,
+)
 
 
 def _json(data: Dict[str, Any]) -> str:
@@ -46,7 +55,30 @@ def _cap(config: Config, allow_large: bool) -> int:
     return hard if allow_large else default
 
 
-def _validate_options(action: str, options: Dict[str, Any], config: Config, logger) -> None:
+def _validate_options(
+    domain: str,
+    action: str,
+    options: Dict[str, Any],
+    config: Config,
+    logger: logging.Logger,
+) -> None:
+    if domain == "gmail":
+        if action == "label":
+            add = [str(item) for item in options.get("add_labels") or [] if str(item).strip()]
+            remove = [
+                str(item) for item in options.get("remove_labels") or [] if str(item).strip()
+            ]
+            if not add and not remove:
+                raise BulkError("label needs options.add_labels or options.remove_labels")
+            creds = get_creds(config)
+            options["add_label_ids"] = selector_module.resolve_gmail_labels(
+                creds, add, logger
+            )
+            options["remove_label_ids"] = selector_module.resolve_gmail_labels(
+                creds, remove, logger
+            )
+        return
+
     if action == "move":
         target = options.get("target_folder_id")
         if not isinstance(target, str) or not target.strip():
@@ -69,6 +101,25 @@ def _validate_options(action: str, options: Dict[str, Any], config: Config, logg
             isinstance(find, str) and find
         ):
             raise BulkError("rename needs options.pattern or options.find")
+    elif action == "share":
+        role = str(options.get("role") or "").strip().lower()
+        if role not in ("reader", "commenter", "writer"):
+            raise BulkError("share needs options.role = reader | commenter | writer")
+        permission_type = str(options.get("type") or "user").strip().lower()
+        if permission_type not in ("user", "group", "domain", "anyone"):
+            raise BulkError("share needs options.type = user | group | domain | anyone")
+        if permission_type in ("user", "group"):
+            email = str(options.get("email_address") or "").strip()
+            if not validate_email(email):
+                raise BulkError("share to a user/group needs a valid email_address")
+        elif permission_type == "domain":
+            if not str(options.get("domain") or "").strip():
+                raise BulkError("share to a domain needs options.domain")
+        elif not options.get("allow_public"):
+            raise BulkError("share to anyone needs allow_public=true")
+    elif action == "revoke_public":
+        # No options: remove every type=anyone permission per file.
+        pass
 
 
 def plan_bulk(
@@ -87,11 +138,17 @@ def plan_bulk(
     action = (action or "").strip().lower()
     if domain not in DOMAINS:
         return _json({"ok": False, "error": f"unsupported domain '{domain}'"})
-    if action not in ACTIONS:
-        return _json({"ok": False, "error": f"unsupported action '{action}'"})
+    valid_actions = DRIVE_ACTIONS if domain == "drive" else GMAIL_ACTIONS
+    if action not in valid_actions:
+        return _json(
+            {
+                "ok": False,
+                "error": f"unsupported action '{action}' for domain '{domain}'",
+            }
+        )
 
     try:
-        _validate_options(action, options, config, logger)
+        _validate_options(domain, action, options, config, logger)
     except BulkError as exc:
         return _json({"ok": False, "error": str(exc)})
 
@@ -124,22 +181,34 @@ def plan_bulk(
             )
         cap = requested_limit
 
-    if selector.get("include_trashed") and action in ("trash", "move", "rename"):
+    if (
+        domain == "drive"
+        and selector.get("include_trashed")
+        and action in ("trash", "move", "rename", "share", "revoke_public")
+    ):
         return _json(
             {"ok": False, "error": "include_trashed is only valid for restore"}
         )
 
     store.cleanup_plans(config)
     try:
-        resolved = selector_module.resolve_drive(
-            get_creds(config),
-            selector,
-            max_items=cap,
-            allow_shared_drives=bool(getattr(config, "bulk_allow_shared_drives", False)),
-            protected_ids=getattr(config, "bulk_protected_ids", None),
-            protected_patterns=getattr(config, "bulk_protected_patterns", None),
-            logger=logger,
-        )
+        if domain == "drive":
+            resolved = selector_module.resolve_drive(
+                get_creds(config),
+                selector,
+                max_items=cap,
+                allow_shared_drives=bool(getattr(config, "bulk_allow_shared_drives", False)),
+                protected_ids=getattr(config, "bulk_protected_ids", None),
+                protected_patterns=getattr(config, "bulk_protected_patterns", None),
+                logger=logger,
+            )
+        else:
+            resolved = selector_module.resolve_gmail(
+                get_creds(config),
+                selector,
+                max_items=cap,
+                logger=logger,
+            )
     except BulkError:
         raise
     except Exception as exc:  # noqa: BLE001 - surface Google errors compactly
@@ -176,6 +245,18 @@ def plan_bulk(
         )
 
     sample_size = max(1, min(int(sample or 5), 20))
+    if resolved.get("sample"):
+        sample_items = resolved["sample"][:sample_size]
+    else:
+        sample_items = [
+            {
+                "id": item["id"],
+                "name": item["name"],
+                "mimeType": item["mimeType"],
+                "size": item["size"],
+            }
+            for item in items[:sample_size]
+        ]
     created = _now()
     ttl = int(getattr(config, "bulk_plan_ttl", 900) or 900)
     plan = Plan(
@@ -199,15 +280,7 @@ def plan_bulk(
             "action": action,
             "matched": len(items),
             "estimated_bytes": total_bytes,
-            "sample": [
-                {
-                    "id": item["id"],
-                    "name": item["name"],
-                    "mimeType": item["mimeType"],
-                    "size": item["size"],
-                }
-                for item in items[:sample_size]
-            ],
+            "sample": sample_items,
             "warnings": warnings,
             "expires_in_seconds": ttl,
             "next": f"bulk_run(plan_id='{plan.id}', confirm=true)",

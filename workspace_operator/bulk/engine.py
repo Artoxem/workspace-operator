@@ -162,7 +162,153 @@ def _apply_item(
             "status": "ok",
         }
 
+    if action == "share":
+        role = str(options.get("role") or "reader")
+        permission_type = str(options.get("type") or "user")
+        body: Dict[str, Any] = {"role": role, "type": permission_type}
+        if permission_type in ("user", "group"):
+            body["emailAddress"] = options.get("email_address")
+        elif permission_type == "domain":
+            body["domain"] = options.get("domain")
+        _with_retry(
+            lambda: service.permissions()
+            .create(
+                fileId=file_id,
+                body=body,
+                sendNotificationEmail=bool(options.get("send_notification")),
+                fields="id",
+            )
+            .execute(),
+            logger,
+        )
+        return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
+
+    if action == "revoke_public":
+        permissions = (
+            service.permissions()
+            .list(fileId=file_id, fields="permissions(id,type)")
+            .execute()
+            .get("permissions", [])
+        )
+        public = [entry for entry in permissions if entry.get("type") == "anyone"]
+        if not public:
+            return {"id": file_id, "name": item.get("name", ""), "status": "skipped"}
+        for entry in public:
+            _with_retry(
+                lambda permission_id=entry["id"]: service.permissions()
+                .delete(fileId=file_id, permissionId=permission_id)
+                .execute(),
+                logger,
+            )
+        return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
+
     raise BulkError(f"unsupported action '{action}'")
+
+
+def _gmail_label_changes(action: str, options: Dict[str, Any]):
+    if action == "archive":
+        return [], ["INBOX"]
+    if action == "trash":
+        return ["TRASH"], []
+    if action == "restore":
+        return [], ["TRASH"]
+    if action == "mark_read":
+        return [], ["UNREAD"]
+    if action == "mark_unread":
+        return ["UNREAD"], []
+    if action == "label":
+        return (
+            list(options.get("add_label_ids") or []),
+            list(options.get("remove_label_ids") or []),
+        )
+    raise BulkError(f"unsupported Gmail action '{action}'")
+
+
+def _run_gmail(
+    config: Config,
+    job: Job,
+    plan: Plan,
+    logger: logging.Logger,
+    on_finish: Optional[Callable[[Job], None]],
+) -> None:
+    event = CONTROLS.get(job.id)
+    skip = store.completed_ids(config, job.id)
+    items = [item for item in plan.items if item["id"] not in skip]
+    counters = _count_existing(config, job.id)
+    job.total = len(plan.items)
+    job.done = counters["done"]
+    job.ok = counters["ok"]
+    job.skipped = counters["skipped"]
+    job.failed = counters["failed"]
+    store.save_job(config, job)
+    add_ids, remove_ids = _gmail_label_changes(plan.action, plan.options)
+    cancelled = False
+    try:
+        service = build("gmail", "v1", credentials=get_creds(config))
+        for start in range(0, len(items), 1000):
+            if event is not None and event.is_set():
+                cancelled = True
+                break
+            chunk = items[start : start + 1000]
+            message_ids = [item["id"] for item in chunk]
+            try:
+                _with_retry(
+                    lambda ids=message_ids: service.users()
+                    .messages()
+                    .batchModify(
+                        userId="me",
+                        body={
+                            "ids": ids,
+                            "addLabelIds": add_ids,
+                            "removeLabelIds": remove_ids,
+                        },
+                    )
+                    .execute(),
+                    logger,
+                )
+                records = [
+                    {"id": message_id, "name": "", "status": "ok"}
+                    for message_id in message_ids
+                ]
+            except Exception as exc:  # noqa: BLE001 - chunk-level isolation
+                logger.warning("bulk Gmail chunk failed: %s", exc)
+                records = [
+                    {
+                        "id": message_id,
+                        "name": "",
+                        "status": "failed",
+                        "error": str(exc),
+                    }
+                    for message_id in message_ids
+                ]
+            for record in records:
+                store.append_result(config, job.id, record)
+                job.done += 1
+                if record["status"] == "ok":
+                    job.ok += 1
+                elif record["status"] == "skipped":
+                    job.skipped += 1
+                else:
+                    job.failed += 1
+            store.save_job(config, job)
+        job.state = "cancelled" if cancelled else "completed"
+        job.finished_at = now_iso()
+        store.save_job(config, job)
+    except Exception as exc:  # noqa: BLE001 - job-level failure
+        logger.exception("bulk Gmail job %s failed: %s", job.id, exc)
+        job.state = "failed"
+        job.error = str(exc)
+        job.finished_at = now_iso()
+        store.save_job(config, job)
+    finally:
+        with _LOCK:
+            CONTROLS.pop(job.id, None)
+            THREADS.pop(job.id, None)
+        if on_finish is not None:
+            try:
+                on_finish(job)
+            except Exception:  # noqa: BLE001
+                logger.exception("bulk: finish callback failed")
 
 
 def _count_existing(config: Config, job_id: str) -> Dict[str, int]:
@@ -186,6 +332,8 @@ def _run(
     logger: logging.Logger,
     on_finish: Optional[Callable[[Job], None]],
 ) -> None:
+    if plan.domain == "gmail":
+        return _run_gmail(config, job, plan, logger, on_finish)
     concurrency = max(1, min(int(getattr(config, "bulk_concurrency", 8) or 8), 16))
     event = CONTROLS.get(job.id)
     skip = store.completed_ids(config, job.id)

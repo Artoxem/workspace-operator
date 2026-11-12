@@ -323,8 +323,8 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 | Tool | Type | Description |
 |---|---|---|
-| `bulk_plan` | read | Resolve a Drive selector into a reviewed, immutable plan (dry run; 300-item default cap) |
-| `bulk_run` | write | Execute a reviewed plan as a background job (`confirm=true`, resumable) |
+| `bulk_plan` | read | Resolve a Drive or Gmail selector into a reviewed, immutable plan (dry run; 300-item default cap) |
+| `bulk_run` | write | Execute a reviewed plan in the background (`confirm=true`, resumable): Drive move/trash/restore/rename/share/revoke_public, Gmail archive/label/trash/restore/mark_read/mark_unread |
 | `bulk_status` | read | Compact progress: done/total, ok, skipped, failed |
 | `bulk_cancel` | write | Stop a running job; in-flight items finish |
 | `bulk_result` | read | Page through per-item results (50 by default, 200 max) |
@@ -575,7 +575,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 302 unit tests, no network
+python -m unittest discover -s tests -v     # 311 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch

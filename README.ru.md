@@ -322,8 +322,8 @@ docker run -i --rm \
 
 | Инструмент | Тип | Описание |
 |---|---|---|
-| `bulk_plan` | read | Разобрать выборку Drive в проверяемый неизменяемый план (dry run; по умолчанию до 300 файлов) |
-| `bulk_run` | write | Выполнить план фоновой задачей (`confirm=true`, можно продолжить после сбоя) |
+| `bulk_plan` | read | Разобрать выборку Drive или Gmail в проверяемый неизменяемый план (dry run; по умолчанию до 300 объектов) |
+| `bulk_run` | write | Выполнить план фоновой задачей (`confirm=true`, можно продолжить после сбоя): Drive move/trash/restore/rename/share/revoke_public, Gmail archive/label/trash/restore/mark_read/mark_unread |
 | `bulk_status` | read | Компактный прогресс: сделано/всего, успешно, пропущено, ошибок |
 | `bulk_cancel` | write | Остановить задачу; текущие файлы доработают |
 | `bulk_result` | read | Постраничные результаты по файлам (50 по умолчанию, до 200) |
@@ -574,7 +574,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 302 юнит-теста, без сети
+python -m unittest discover -s tests -v     # 311 юнит-тестов, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/live_new_tools.py              # 15 проверок партии v1.14
 python tests/live_phase2.py                 # 8 проверок партии v1.15

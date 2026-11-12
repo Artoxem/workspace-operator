@@ -157,11 +157,14 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 Шесть инструментов реализуют схему план → запуск → наблюдение. План — это неизменяемый снимок: загрузки и удаления после него не меняют проверенный набор.
 
 - `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
-  - `action`: `move`, `trash`, `restore`, `rename`.
+  - `action`: Drive `move`, `trash`, `restore`, `rename`, `share`, `revoke_public`;
+    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`.
   - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
-    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`, `limit`.
-    `ids` нельзя сочетать с `query`.
-  - `options`: `target_folder_id` для move; `pattern` или `find`/`replace` для rename.
+    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`,
+    `include_spam_trash`, `limit`. `ids` нельзя сочетать с `query`.
+  - `options`: `target_folder_id` для move; `pattern` или `find`/`replace` для rename;
+    `role`, `type`, `email_address`, `domain`, `allow_public`, `send_notification` для
+    share; `add_labels`, `remove_labels` для Gmail label.
   - Возвращает `plan_id`, `matched`, `estimated_bytes`, пять примеров и предупреждения.
   - Лимит: 300 файлов по умолчанию; `allow_large=true` поднимает до жёсткого
     предела (10 000 по умолчанию). Ничего не меняется.
@@ -190,6 +193,8 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   Google, чекпоинт каждые 25 файлов и аудит плана и запуска (только количества,
   без значений).
 - Общие диски запрещены, пока не включён `bulk.allow_shared_drives`.
+- Gmail использует `messages.batchModify` до 1000 писем за запрос; безвозвратное
+  удаление намеренно не входит в массовые операции (только корзина).
 
 ## Sheets
 - `read_sheet(spreadsheet_id, range_name)`

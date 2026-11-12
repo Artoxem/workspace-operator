@@ -15,9 +15,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-DOMAINS = ("drive",)
-ACTIONS = ("move", "trash", "restore", "rename")
-DESTRUCTIVE_ACTIONS = ("trash",)
+DOMAINS = ("drive", "gmail")
+DRIVE_ACTIONS = ("move", "trash", "restore", "rename", "share", "revoke_public")
+GMAIL_ACTIONS = (
+    "archive",
+    "label",
+    "trash",
+    "restore",
+    "mark_read",
+    "mark_unread",
+)
+ACTIONS = DRIVE_ACTIONS + GMAIL_ACTIONS
+DESTRUCTIVE_ACTIONS = ("trash", "revoke_public")
 
 
 class BulkError(ValueError):

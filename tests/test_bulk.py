@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 from workspace_operator.bulk import service, store
-from workspace_operator.bulk.engine import _rename
+from workspace_operator.bulk.engine import _gmail_label_changes, _rename
 from workspace_operator.bulk.models import Job, Plan
 from workspace_operator.bulk.selector import build_query, escape_query
 from workspace_operator.config import Config
@@ -91,6 +91,92 @@ class RenameTests(unittest.TestCase):
     def test_rejects_path_separator(self):
         with self.assertRaises(Exception):
             _rename({"name": "a.txt"}, {"pattern": "x/y.txt"}, 1)
+
+
+class GmailActionTests(unittest.TestCase):
+    def test_archive_removes_inbox(self):
+        self.assertEqual(_gmail_label_changes("archive", {}), ([], ["INBOX"]))
+
+    def test_trash_and_restore(self):
+        self.assertEqual(_gmail_label_changes("trash", {}), (["TRASH"], []))
+        self.assertEqual(_gmail_label_changes("restore", {}), ([], ["TRASH"]))
+
+    def test_read_state(self):
+        self.assertEqual(_gmail_label_changes("mark_read", {}), ([], ["UNREAD"]))
+        self.assertEqual(_gmail_label_changes("mark_unread", {}), (["UNREAD"], []))
+
+    def test_label_uses_resolved_ids(self):
+        self.assertEqual(
+            _gmail_label_changes(
+                "label", {"add_label_ids": ["Label_1"], "remove_label_ids": ["Label_2"]}
+            ),
+            (["Label_1"], ["Label_2"]),
+        )
+
+    def test_plan_gmail_archive(self):
+        fake = {
+            "items": [
+                {"id": "m1", "name": "", "size": 0, "mimeType": "message/rfc822"},
+                {"id": "m2", "name": "", "size": 0, "mimeType": "message/rfc822"},
+            ],
+            "sample": [{"id": "m1", "subject": "smoke", "from": "a@b.c", "date": ""}],
+            "truncated": False,
+            "warnings": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            with mock.patch.object(service, "get_creds", return_value=None), mock.patch.object(
+                service.selector_module, "resolve_gmail", return_value=fake
+            ):
+                payload = json.loads(
+                    service.plan_bulk(
+                        config,
+                        LOGGER,
+                        "gmail",
+                        "archive",
+                        selector={"query": "subject:bulk-smoke"},
+                    )
+                )
+            self.assertTrue(payload["ok"], payload)
+            self.assertEqual(payload["matched"], 2)
+            self.assertEqual(payload["sample"][0]["subject"], "smoke")
+
+    def test_gmail_action_cross_domain_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            payload = json.loads(service.plan_bulk(config, LOGGER, "gmail", "move"))
+            self.assertFalse(payload["ok"])
+
+
+class ShareValidationTests(unittest.TestCase):
+    def test_anyone_requires_allow_public(self):
+        with self.assertRaises(Exception):
+            service._validate_options(
+                "drive",
+                "share",
+                {"role": "reader", "type": "anyone"},
+                make_config("."),
+                LOGGER,
+            )
+
+    def test_user_requires_email(self):
+        with self.assertRaises(Exception):
+            service._validate_options(
+                "drive",
+                "share",
+                {"role": "reader", "type": "user", "email_address": "not-an-email"},
+                make_config("."),
+                LOGGER,
+            )
+
+    def test_valid_share(self):
+        service._validate_options(
+            "drive",
+            "share",
+            {"role": "writer", "type": "user", "email_address": "a@example.com"},
+            make_config("."),
+            LOGGER,
+        )
 
 
 class StoreTests(unittest.TestCase):

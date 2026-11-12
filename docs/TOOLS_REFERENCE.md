@@ -159,11 +159,14 @@ Six tools implement plan → run → observe. A plan is an immutable snapshot: l
 uploads or deletes cannot change what was reviewed.
 
 - `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
-  - `action`: `move`, `trash`, `restore`, `rename`.
+  - `action`: Drive `move`, `trash`, `restore`, `rename`, `share`, `revoke_public`;
+    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`.
   - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
-    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`, `limit`.
-    `ids` cannot be combined with `query`.
-  - `options`: `target_folder_id` for move; `pattern` or `find`/`replace` for rename.
+    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`,
+    `include_spam_trash`, `limit`. `ids` cannot be combined with `query`.
+  - `options`: `target_folder_id` for move; `pattern` or `find`/`replace` for rename;
+    `role`, `type`, `email_address`, `domain`, `allow_public`, `send_notification` for
+    share; `add_labels`, `remove_labels` for Gmail label.
   - Returns `plan_id`, `matched`, `estimated_bytes`, a five-item sample and warnings.
   - Cap: 300 items by default; `allow_large=true` raises it to the configured hard
     limit (10,000 by default). Nothing is changed.
@@ -192,6 +195,8 @@ Safety and configuration:
   transient Google errors, checkpoints every 25 items and writes audit records for
   the plan and the run (counts only, never values).
 - Shared drives are refused unless `bulk.allow_shared_drives` is enabled.
+- Gmail actions use `messages.batchModify`, up to 1,000 messages per request;
+  permanent deletion is intentionally out of scope (trash only).
 
 ## Sheets
 - `read_sheet(spreadsheet_id, range_name)`
