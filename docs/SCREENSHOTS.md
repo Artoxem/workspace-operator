@@ -25,7 +25,7 @@ cannot?"
 - File: `docs/images/hero-bulk-plan.png` (or a 15–25 s GIF, see below).
 - Used in: README, directly under the intro paragraph.
 
-**Redact:** account email, any real client/dealer names, file names with personal
+**Redact:** account email, any real customer names, file names with personal
 data, tokens.
 
 ### 2. Client connected
