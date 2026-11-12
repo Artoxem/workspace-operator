@@ -33,8 +33,8 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 121 | everything |
-| `read-write` | 102 | everything except `destructiveHint: true` |
+| `full` (default) | 122 | everything |
+| `read-write` | 103 | everything except `destructiveHint: true` |
 | `read-only` | 33 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
@@ -160,13 +160,15 @@ uploads or deletes cannot change what was reviewed.
 
 - `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
   - `action`: Drive `move`, `trash`, `restore`, `rename`, `share`, `revoke_public`;
-    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`.
+    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`;
+    Docs and Slides `replace_text`; Sheets `find_replace`.
   - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
     `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`,
     `include_spam_trash`, `limit`. `ids` cannot be combined with `query`.
   - `options`: `target_folder_id` for move; `pattern` or `find`/`replace` for rename;
     `role`, `type`, `email_address`, `domain`, `allow_public`, `send_notification` for
-    share; `add_labels`, `remove_labels` for Gmail label.
+    share; `add_labels`, `remove_labels` for Gmail label; `find`, `replace`,
+    `match_case`, and for Sheets `sheet_id` (omit = all sheets).
   - Returns `plan_id`, `matched`, `estimated_bytes`, a five-item sample and warnings.
   - Cap: 300 items by default; `allow_large=true` raises it to the configured hard
     limit (10,000 by default). Nothing is changed.
@@ -185,6 +187,10 @@ uploads or deletes cannot change what was reviewed.
   - The full artifact is a JSON Lines file at `result_file`.
 - `bulk_list(limit=10)`
   - Recent jobs, newest first.
+- `bulk_undo(job_id, confirm?)`
+  - Reverts a finished move, rename or trash job using the state saved in its
+    result records (previous parents or previous names). Requires `confirm=true`.
+  - Jobs created before 1.20.1 have no saved state and cannot be undone.
 
 Safety and configuration:
 - Trash never means permanent delete; `restore` reverses a trash job.

@@ -33,8 +33,8 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 121 | всё |
-| `read-write` | 102 | всё, кроме `destructiveHint: true` |
+| `full` (по умолчанию) | 122 | всё |
+| `read-write` | 103 | всё, кроме `destructiveHint: true` |
 | `read-only` | 33 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
@@ -158,13 +158,15 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 
 - `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
   - `action`: Drive `move`, `trash`, `restore`, `rename`, `share`, `revoke_public`;
-    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`.
+    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`;
+    Docs и Slides `replace_text`; Sheets `find_replace`.
   - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
     `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`,
     `include_spam_trash`, `limit`. `ids` нельзя сочетать с `query`.
   - `options`: `target_folder_id` для move; `pattern` или `find`/`replace` для rename;
     `role`, `type`, `email_address`, `domain`, `allow_public`, `send_notification` для
-    share; `add_labels`, `remove_labels` для Gmail label.
+    share; `add_labels`, `remove_labels` для Gmail label; `find`, `replace`,
+    `match_case`, для Sheets — `sheet_id` (без него — все листы).
   - Возвращает `plan_id`, `matched`, `estimated_bytes`, пять примеров и предупреждения.
   - Лимит: 300 файлов по умолчанию; `allow_large=true` поднимает до жёсткого
     предела (10 000 по умолчанию). Ничего не меняется.
@@ -183,6 +185,11 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - Полный артефакт — JSON Lines по пути `result_file`.
 - `bulk_list(limit=10)`
   - Последние задачи, новые сверху.
+- `bulk_undo(job_id, confirm?)`
+  - Откатывает выполненную задачу move, rename или trash по состоянию,
+    сохранённому в результатах (прежние родители или имена). Требует
+    `confirm=true`.
+  - Задачи, созданные до 1.20.1, не содержат сохранённого состояния и не откатываются.
 
 Безопасность и настройка:
 - Корзина — не безвозвратное удаление; `restore` возвращает файлы из корзины.

@@ -1,15 +1,15 @@
 # Bulk operations: audit and plan
 
-Status: phases 0–2 implemented in 1.19.0 and 1.20.0 (undo deferred).
-Scope: Google Drive, Gmail; later Sheets, Docs, Slides, Calendar.
+Status: phases 0–3 implemented (release pending).
+Scope: Google Drive, Gmail, Docs, Slides, Sheets.
 
 Implementation note: 1.19.0 added the six tools, Drive
-move/trash/restore/rename, the plan store and the background engine with eight
-workers, checkpoints and resume. 1.20.0 added Gmail archive/label/trash/restore/
-mark_read/mark_unread (batched 1,000 messages per call) and Drive
-share/revoke_public. The Drive batch endpoint (100 calls per request) is not used
-yet; concurrency already moves 100 files in about nine seconds. Undo for
-move/rename, and Sheets/Docs/Slides bulk, remain open.
+move/trash/restore/rename, the plan store and the background engine. 1.20.0
+added Gmail actions (batched 1,000 per call) and Drive share/revoke_public.
+1.21.0 added `bulk_undo` for move/rename/trash and text replacement domains for
+Docs (`replace_text`), Slides (`replace_text`) and Sheets (`find_replace`).
+The Drive batch endpoint (100 calls per request) is not used yet; concurrency
+already moves 100 files in about nine seconds.
 
 ## 1. Goals
 

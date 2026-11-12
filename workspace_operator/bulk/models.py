@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-DOMAINS = ("drive", "gmail")
+DOMAINS = ("drive", "gmail", "docs", "slides", "sheets")
 DRIVE_ACTIONS = ("move", "trash", "restore", "rename", "share", "revoke_public")
 GMAIL_ACTIONS = (
     "archive",
@@ -25,8 +25,17 @@ GMAIL_ACTIONS = (
     "mark_read",
     "mark_unread",
 )
-ACTIONS = DRIVE_ACTIONS + GMAIL_ACTIONS
+DOCS_ACTIONS = ("replace_text",)
+SLIDES_ACTIONS = ("replace_text",)
+SHEETS_ACTIONS = ("find_replace",)
+ACTIONS = DRIVE_ACTIONS + GMAIL_ACTIONS + DOCS_ACTIONS + SLIDES_ACTIONS + SHEETS_ACTIONS
 DESTRUCTIVE_ACTIONS = ("trash", "revoke_public")
+
+DOMAIN_MIME = {
+    "docs": "application/vnd.google-apps.document",
+    "slides": "application/vnd.google-apps.presentation",
+    "sheets": "application/vnd.google-apps.spreadsheet",
+}
 
 
 class BulkError(ValueError):

@@ -122,7 +122,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 121, f"{len(names)} tools")
+    record("tools/list", len(names) == 122, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",

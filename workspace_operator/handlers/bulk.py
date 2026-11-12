@@ -76,3 +76,15 @@ def bulk_list_handler(
     config: Config, logger: logging.Logger, limit: int = 10
 ) -> str:
     return service.list_bulk(config, logger, limit=limit)
+
+
+def bulk_undo_handler(
+    config: Config,
+    logger: logging.Logger,
+    job_id: str,
+    confirm: bool = False,
+    on_finish: Optional[Callable[[Job], None]] = None,
+) -> str:
+    return service.undo_bulk(
+        config, logger, job_id=job_id, confirm=confirm, on_finish=on_finish
+    )

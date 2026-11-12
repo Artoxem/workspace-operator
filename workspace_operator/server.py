@@ -29,6 +29,7 @@ from .handlers import (
     bulk_result_handler,
     bulk_run_handler,
     bulk_status_handler,
+    bulk_undo_handler,
     add_shape_handler,
     create_filter_handler,
     list_filters_handler,
@@ -2205,7 +2206,8 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="bulk_plan",
             description=(
-                "Resolve a Drive or Gmail selector into a reviewed plan (dry run). Returns a "
+                "Resolve a Drive, Gmail, Docs, Slides or Sheets selector into a reviewed "
+                "plan (dry run). Returns a "
                 "plan_id, matched count, total size, a small sample and warnings. "
                 "Cap: 300 items by default; allow_large raises it to the hard limit. "
                 "Nothing is changed until bulk_run is called with confirm=true."
@@ -2213,7 +2215,11 @@ def _tools() -> List[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "domain": {"type": "string", "enum": ["drive", "gmail"], "default": "drive"},
+                    "domain": {
+                        "type": "string",
+                        "enum": ["drive", "gmail", "docs", "slides", "sheets"],
+                        "default": "drive",
+                    },
                     "action": {
                         "type": "string",
                         "enum": [
@@ -2227,6 +2233,8 @@ def _tools() -> List[types.Tool]:
                             "label",
                             "mark_read",
                             "mark_unread",
+                            "replace_text",
+                            "find_replace",
                         ],
                     },
                     "selector": {
@@ -2272,6 +2280,8 @@ def _tools() -> List[types.Tool]:
                             "allow_public": {"type": "boolean"},
                             "add_labels": {"type": "array", "items": {"type": "string"}},
                             "remove_labels": {"type": "array", "items": {"type": "string"}},
+                            "match_case": {"type": "boolean", "default": False},
+                            "sheet_id": {"type": "integer"},
                         },
                     },
                     "allow_large": {"type": "boolean", "default": False},
@@ -2352,6 +2362,23 @@ def _tools() -> List[types.Tool]:
                 "properties": {"limit": {"type": "integer", "default": 10}},
             },
             annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="bulk_undo",
+            description=(
+                "Revert a completed bulk job using the state saved in its results. "
+                "Supports Drive move (restore previous parents), rename (restore "
+                "previous names) and trash (restore from trash). Requires confirm=true."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["job_id"],
+            },
+            annotations=_WRITE,
         ),
     ]
 
@@ -2592,7 +2619,7 @@ def create_server(config: Config, logger) -> Server:
         try:
             require_token_configured(config.mcp_auth_token)
 
-            def _on_bulk_finish(job, _audit=audit, _profile=profile.name):
+            def _record_bulk_finish(tool_name, job, _audit=audit, _profile=profile.name):
                 try:
                     start = datetime.fromisoformat(job.started_at).timestamp()
                     end = (
@@ -2609,13 +2636,19 @@ def create_server(config: Config, logger) -> Server:
                     else ("cancelled" if job.state == "cancelled" else "error")
                 )
                 _audit.record(
-                    "bulk_run",
+                    tool_name,
                     _profile,
                     status,
                     duration,
                     ("plan_id", "confirm", "job_id"),
                     error=job.error,
                 )
+
+            def _on_bulk_finish(job):
+                _record_bulk_finish("bulk_run", job)
+
+            def _on_undo_finish(job):
+                _record_bulk_finish("bulk_undo", job)
 
             handlers = {
                 "bulk_plan": lambda a: bulk_plan_handler(
@@ -2651,6 +2684,13 @@ def create_server(config: Config, logger) -> Server:
                 ),
                 "bulk_list": lambda a: bulk_list_handler(
                     config, logger, a.get("limit", 10)
+                ),
+                "bulk_undo": lambda a: bulk_undo_handler(
+                    config,
+                    logger,
+                    a.get("job_id"),
+                    a.get("confirm", False),
+                    _on_undo_finish,
                 ),
                 "workspace_search": lambda a: workspace_search_handler(
                     config,

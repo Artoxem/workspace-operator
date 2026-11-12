@@ -138,6 +138,7 @@ from .bulk import (
     bulk_result_handler,
     bulk_run_handler,
     bulk_status_handler,
+    bulk_undo_handler,
 )
 from .search import workspace_search_handler
 from .slides import (
@@ -278,4 +279,5 @@ __all__ = [
     "bulk_cancel_handler",
     "bulk_result_handler",
     "bulk_list_handler",
+    "bulk_undo_handler",
 ]

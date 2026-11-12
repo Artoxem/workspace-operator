@@ -35,14 +35,16 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _service(config: Config, allow_shared: bool):
-    service = getattr(_THREAD_LOCAL, "service", None)
+def _api(config: Config, name: str, version: str):
+    service = getattr(_THREAD_LOCAL, f"api_{name}_{version}", None)
     if service is None:
-        service = build(
-            "drive", "v3", credentials=get_creds(config), cache_discovery=False
-        )
-        _THREAD_LOCAL.service = service
+        service = build(name, version, credentials=get_creds(config), cache_discovery=False)
+        setattr(_THREAD_LOCAL, f"api_{name}_{version}", service)
     return service
+
+
+def _service(config: Config, allow_shared: bool):
+    return _api(config, "drive", "v3")
 
 
 def _with_retry(operation: Callable[[], Any], logger: logging.Logger, attempts: int = 3):
@@ -98,6 +100,7 @@ def _apply_item(
     options: Dict[str, Any],
     index: int,
     logger: logging.Logger,
+    domain: str = "drive",
 ) -> Dict[str, Any]:
     service = _service(config, allow_shared=False)
     file_id = item["id"]
@@ -121,7 +124,12 @@ def _apply_item(
             .execute(),
             logger,
         )
-        return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
+        return {
+            "id": file_id,
+            "name": item.get("name", ""),
+            "previous_parents": list(item.get("parents") or []),
+            "status": "ok",
+        }
 
     if action == "trash":
         if item.get("trashed"):
@@ -159,6 +167,58 @@ def _apply_item(
             "id": file_id,
             "name": item.get("name", ""),
             "new_name": new_name,
+            "previous_name": item.get("name", ""),
+            "status": "ok",
+        }
+
+    if action == "move_back":
+        previous = list(item.get("previous_parents") or [])
+        if not previous:
+            raise BulkError("move_back needs previous_parents")
+        current = (
+            service.files()
+            .get(fileId=file_id, fields="parents")
+            .execute()
+            .get("parents", [])
+        )
+        if set(current) == set(previous):
+            return {"id": file_id, "name": item.get("name", ""), "status": "skipped"}
+        _with_retry(
+            lambda: service.files()
+            .update(
+                fileId=file_id,
+                addParents=",".join(previous),
+                removeParents=",".join(current) or None,
+                fields="id,parents",
+            )
+            .execute(),
+            logger,
+        )
+        return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
+
+    if action == "rename_back":
+        previous = item.get("previous_name")
+        if not previous:
+            raise BulkError("rename_back needs previous_name")
+        current = (
+            service.files()
+            .get(fileId=file_id, fields="name")
+            .execute()
+            .get("name", "")
+        )
+        if current == previous:
+            return {"id": file_id, "name": current, "status": "skipped"}
+        _with_retry(
+            lambda: service.files()
+            .update(fileId=file_id, body={"name": previous}, fields="id,name")
+            .execute(),
+            logger,
+        )
+        return {
+            "id": file_id,
+            "name": current,
+            "new_name": previous,
+            "previous_name": current,
             "status": "ok",
         }
 
@@ -201,6 +261,79 @@ def _apply_item(
                 logger,
             )
         return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
+
+    if domain in ("docs", "slides") and action == "replace_text":
+        find = str(options.get("find") or "")
+        replace = str(options.get("replace") or "")
+        request = {
+            "replaceAllText": {
+                "containsText": {
+                    "text": find,
+                    "matchCase": bool(options.get("match_case")),
+                },
+                "replaceText": replace,
+            }
+        }
+        if domain == "docs":
+            response = _with_retry(
+                lambda: _api(config, "docs", "v1")
+                .documents()
+                .batchUpdate(documentId=file_id, body={"requests": [request]})
+                .execute(),
+                logger,
+            )
+        else:
+            response = _with_retry(
+                lambda: _api(config, "slides", "v1")
+                .presentations()
+                .batchUpdate(presentationId=file_id, body={"requests": [request]})
+                .execute(),
+                logger,
+            )
+        occurrences = sum(
+            int(reply.get("replaceAllText", {}).get("occurrencesChanged", 0))
+            for reply in response.get("replies", [])
+        )
+        return {
+            "id": file_id,
+            "name": item.get("name", ""),
+            "occurrences": occurrences,
+            "status": "ok",
+        }
+
+    if domain == "sheets" and action == "find_replace":
+        find = str(options.get("find") or "")
+        replace = str(options.get("replace") or "")
+        sheet_id = options.get("sheet_id")
+        request: Dict[str, Any] = {
+            "findReplace": {
+                "find": find,
+                "replacement": replace,
+                "matchCase": bool(options.get("match_case")),
+                "allSheets": sheet_id is None,
+            }
+        }
+        if sheet_id is not None:
+            request["findReplace"]["sheetId"] = int(sheet_id)
+        response = _with_retry(
+            lambda: _api(config, "sheets", "v4")
+            .spreadsheets()
+            .batchUpdate(spreadsheetId=file_id, body={"requests": [request]})
+            .execute(),
+            logger,
+        )
+        replies = response.get("replies", [])
+        occurrences = int(
+            replies[0].get("findReplace", {}).get("occurrencesChanged", 0)
+            if replies
+            else 0
+        )
+        return {
+            "id": file_id,
+            "name": item.get("name", ""),
+            "occurrences": occurrences,
+            "status": "ok",
+        }
 
     raise BulkError(f"unsupported action '{action}'")
 
@@ -358,6 +491,7 @@ def _run(
                     plan.options,
                     index,
                     logger,
+                    plan.domain,
                 ): item
                 for index, item in enumerate(items, start=1)
             }

@@ -5,11 +5,11 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
-with 121 tools, staged writes and server-side tool profiles.
+with 122 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-121-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-122-informational)](#-tool-catalog)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -26,7 +26,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**121 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
+**122 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -181,8 +181,8 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 121 | your own machine, full trust |
-| `read-write` | 102 | daily work — destructive tools hidden |
+| `full` | 122 | your own machine, full trust |
+| `read-write` | 103 | daily work — destructive tools hidden |
 | `read-only` | 33 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
@@ -323,12 +323,13 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 | Tool | Type | Description |
 |---|---|---|
-| `bulk_plan` | read | Resolve a Drive or Gmail selector into a reviewed, immutable plan (dry run; 300-item default cap) |
-| `bulk_run` | write | Execute a reviewed plan in the background (`confirm=true`, resumable): Drive move/trash/restore/rename/share/revoke_public, Gmail archive/label/trash/restore/mark_read/mark_unread |
+| `bulk_plan` | read | Resolve a Drive, Gmail, Docs, Slides or Sheets selector into a reviewed, immutable plan (dry run; 300-item default cap) |
+| `bulk_run` | write | Execute a reviewed plan in the background (`confirm=true`, resumable): Drive move/trash/restore/rename/share/revoke_public, Gmail archive/label/trash/restore/mark_read/mark_unread, Docs/Slides replace_text, Sheets find_replace |
 | `bulk_status` | read | Compact progress: done/total, ok, skipped, failed |
 | `bulk_cancel` | write | Stop a running job; in-flight items finish |
 | `bulk_result` | read | Page through per-item results (50 by default, 200 max) |
 | `bulk_list` | read | Recent bulk jobs |
+| `bulk_undo` | write | Revert a completed move/rename/trash job from its saved state (`confirm=true`) |
 
 </details>
 
@@ -523,7 +524,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 ## How it works
 
 ```
-server.py                    MCP server: 121 tool definitions, resources, prompts, profiles
+server.py                    MCP server: 122 tool definitions, resources, prompts, profiles
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny lists
 ├─ config.py                 config file + environment overrides

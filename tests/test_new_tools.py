@@ -74,7 +74,7 @@ NEW_TOOLS = [
 
 class CatalogTests(unittest.TestCase):
     def test_new_tools_are_registered(self):
-        self.assertEqual(len(_tools()), 121)
+        self.assertEqual(len(_tools()), 122)
         for name in NEW_TOOLS:
             with self.subTest(tool=name):
                 self.assertIn(name, BY_NAME)
@@ -131,7 +131,7 @@ class CatalogTests(unittest.TestCase):
             self.assertNotIn(name, read_write)
             self.assertNotIn(name, read_only)
         self.assertIn("drive_get_metadata", read_only)
-        self.assertEqual(len(read_write), 102)
+        self.assertEqual(len(read_write), 103)
         self.assertEqual(len(read_only), 33)
 
 

@@ -22,9 +22,13 @@ from ..security import validate_email
 from . import engine, selector as selector_module, store
 from .models import (
     ACTIONS,
+    DOMAIN_MIME,
     DOMAINS,
+    DOCS_ACTIONS,
     DRIVE_ACTIONS,
     GMAIL_ACTIONS,
+    SHEETS_ACTIONS,
+    SLIDES_ACTIONS,
     BulkError,
     Job,
     Plan,
@@ -77,6 +81,20 @@ def _validate_options(
             options["remove_label_ids"] = selector_module.resolve_gmail_labels(
                 creds, remove, logger
             )
+        return
+
+    if domain in ("docs", "slides", "sheets"):
+        find = options.get("find")
+        if not isinstance(find, str) or find == "":
+            raise BulkError(f"{domain} needs options.find")
+        replace = options.get("replace")
+        if replace is not None and not isinstance(replace, str):
+            raise BulkError("options.replace must be a string")
+        if domain == "sheets" and options.get("sheet_id") is not None:
+            try:
+                int(options["sheet_id"])
+            except (TypeError, ValueError) as exc:
+                raise BulkError("options.sheet_id must be an integer") from exc
         return
 
     if action == "move":
@@ -138,7 +156,13 @@ def plan_bulk(
     action = (action or "").strip().lower()
     if domain not in DOMAINS:
         return _json({"ok": False, "error": f"unsupported domain '{domain}'"})
-    valid_actions = DRIVE_ACTIONS if domain == "drive" else GMAIL_ACTIONS
+    valid_actions = {
+        "drive": DRIVE_ACTIONS,
+        "gmail": GMAIL_ACTIONS,
+        "docs": DOCS_ACTIONS,
+        "slides": SLIDES_ACTIONS,
+        "sheets": SHEETS_ACTIONS,
+    }[domain]
     if action not in valid_actions:
         return _json(
             {
@@ -192,21 +216,24 @@ def plan_bulk(
 
     store.cleanup_plans(config)
     try:
-        if domain == "drive":
-            resolved = selector_module.resolve_drive(
-                get_creds(config),
-                selector,
-                max_items=cap,
-                allow_shared_drives=bool(getattr(config, "bulk_allow_shared_drives", False)),
-                protected_ids=getattr(config, "bulk_protected_ids", None),
-                protected_patterns=getattr(config, "bulk_protected_patterns", None),
-                logger=logger,
-            )
-        else:
+        if domain == "gmail":
             resolved = selector_module.resolve_gmail(
                 get_creds(config),
                 selector,
                 max_items=cap,
+                logger=logger,
+            )
+        else:
+            drive_selector = dict(selector)
+            if domain in DOMAIN_MIME:
+                drive_selector["mime_types"] = [DOMAIN_MIME[domain]]
+            resolved = selector_module.resolve_drive(
+                get_creds(config),
+                drive_selector,
+                max_items=cap,
+                allow_shared_drives=bool(getattr(config, "bulk_allow_shared_drives", False)),
+                protected_ids=getattr(config, "bulk_protected_ids", None),
+                protected_patterns=getattr(config, "bulk_protected_patterns", None),
                 logger=logger,
             )
     except BulkError:
@@ -346,6 +373,121 @@ def run_bulk(
             "total": job.total,
             "state": job.state,
             "next": f"bulk_status(job_id='{job.id}')",
+        }
+    )
+
+
+def _undo_spec(job: Job, records: List[Dict[str, Any]]):
+    """Build inverse items from a finished job's result records."""
+    done = [record for record in records if record.get("status") == "ok"]
+    if not done:
+        raise BulkError("nothing to undo: the job has no successful items")
+    if job.action == "trash":
+        items = [
+            {
+                "id": record["id"],
+                "name": record.get("name", ""),
+                "size": 0,
+                "mimeType": "",
+                "trashed": True,
+            }
+            for record in done
+        ]
+        return "restore", items
+    if job.action == "move":
+        items = []
+        for record in done:
+            parents = record.get("previous_parents")
+            if not parents:
+                raise BulkError(
+                    "this move job has no saved parents; it predates undo support"
+                )
+            items.append(
+                {
+                    "id": record["id"],
+                    "name": record.get("name", ""),
+                    "previous_parents": list(parents),
+                    "size": 0,
+                    "mimeType": "",
+                    "trashed": False,
+                }
+            )
+        return "move_back", items
+    if job.action == "rename":
+        items = []
+        for record in done:
+            previous = record.get("previous_name")
+            if not previous:
+                raise BulkError(
+                    "this rename job has no saved names; it predates undo support"
+                )
+            items.append(
+                {
+                    "id": record["id"],
+                    "name": record.get("name", ""),
+                    "previous_name": previous,
+                    "size": 0,
+                    "mimeType": "",
+                    "trashed": False,
+                }
+            )
+        return "rename_back", items
+    raise BulkError(f"undo is not supported for '{job.action}' jobs")
+
+
+def undo_bulk(
+    config: Config,
+    logger: logging.Logger,
+    job_id: str,
+    confirm: bool = False,
+    on_finish: Optional[Callable[[Job], None]] = None,
+) -> str:
+    if getattr(config, "dry_run", False):
+        return _json(
+            {"ok": False, "error": "server dry_run is enabled; bulk_undo refuses to start"}
+        )
+    if not confirm:
+        return _json(
+            {
+                "ok": False,
+                "error": "confirmation required",
+                "message": "Call bulk_undo again with confirm=true to revert the job.",
+            }
+        )
+    try:
+        job = store.load_job(config, job_id)
+        records = store.read_results(config, job_id)
+        action, items = _undo_spec(job, records)
+    except BulkError as exc:
+        return _json({"ok": False, "error": str(exc)})
+
+    created = _now()
+    ttl = int(getattr(config, "bulk_plan_ttl", 900) or 900)
+    plan = Plan(
+        id=f"bp_{uuid4().hex[:10]}",
+        domain=job.domain,
+        action=action,
+        options={"source_job_id": job.id},
+        selector={},
+        created_at=created.isoformat(timespec="seconds"),
+        expires_at=(created + timedelta(seconds=ttl)).isoformat(timespec="seconds"),
+        items=items,
+    )
+    store.save_plan(config, plan)
+    try:
+        undo_job = engine.start_job(config, plan, logger, on_finish=on_finish)
+    except BulkError as exc:
+        return _json({"ok": False, "error": str(exc)})
+    return _json(
+        {
+            "ok": True,
+            "job_id": undo_job.id,
+            "plan_id": plan.id,
+            "source_job_id": job.id,
+            "action": action,
+            "total": undo_job.total,
+            "state": undo_job.state,
+            "next": f"bulk_status(job_id='{undo_job.id}')",
         }
     )
 

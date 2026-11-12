@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 from workspace_operator.bulk import service, store
+from workspace_operator.bulk.service import _undo_spec
 from workspace_operator.bulk.engine import _gmail_label_changes, _rename
 from workspace_operator.bulk.models import Job, Plan
 from workspace_operator.bulk.selector import build_query, escape_query
@@ -352,6 +353,146 @@ class RunServiceTests(unittest.TestCase):
             )
             self.assertFalse(payload["ok"])
             self.assertIn("expired", payload["error"])
+
+
+class UndoTests(unittest.TestCase):
+    def test_move_undo_spec(self):
+        job = Job(id="bj_1", plan_id="bp_1", domain="drive", action="move", total=1)
+        records = [
+            {
+                "id": "a",
+                "name": "a.txt",
+                "status": "ok",
+                "previous_parents": ["old"],
+            }
+        ]
+        action, items = _undo_spec(job, records)
+        self.assertEqual(action, "move_back")
+        self.assertEqual(items[0]["previous_parents"], ["old"])
+
+    def test_rename_undo_spec(self):
+        job = Job(id="bj_2", plan_id="bp_2", domain="drive", action="rename", total=1)
+        records = [{"id": "a", "name": "new.txt", "status": "ok", "previous_name": "old.txt"}]
+        action, items = _undo_spec(job, records)
+        self.assertEqual(action, "rename_back")
+        self.assertEqual(items[0]["previous_name"], "old.txt")
+
+    def test_trash_undo_spec(self):
+        job = Job(id="bj_3", plan_id="bp_3", domain="drive", action="trash", total=1)
+        records = [{"id": "a", "name": "a.txt", "status": "ok"}]
+        action, items = _undo_spec(job, records)
+        self.assertEqual(action, "restore")
+        self.assertTrue(items[0]["trashed"])
+
+    def test_gmail_undo_is_rejected(self):
+        job = Job(id="bj_4", plan_id="bp_4", domain="gmail", action="archive", total=1)
+        with self.assertRaises(Exception):
+            _undo_spec(job, [{"id": "m1", "status": "ok"}])
+
+    def test_undo_requires_confirm_and_saved_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            job = Job(
+                id="bj_undo",
+                plan_id="bp_src",
+                domain="drive",
+                action="move",
+                state="completed",
+                total=1,
+                done=1,
+                ok=1,
+                started_at=datetime.now(timezone.utc).isoformat(),
+                finished_at=datetime.now(timezone.utc).isoformat(),
+            )
+            store.save_job(config, job)
+            store.append_result(
+                config,
+                "bj_undo",
+                {
+                    "id": "a",
+                    "name": "a.txt",
+                    "status": "ok",
+                    "previous_parents": ["old"],
+                },
+            )
+            refused = json.loads(service.undo_bulk(config, LOGGER, "bj_undo", confirm=False))
+            self.assertFalse(refused["ok"])
+            fake_job = Job(
+                id="bj_new",
+                plan_id="bp_undo",
+                domain="drive",
+                action="move_back",
+                total=1,
+            )
+            with mock.patch.object(service.engine, "start_job", return_value=fake_job):
+                started = json.loads(
+                    service.undo_bulk(config, LOGGER, "bj_undo", confirm=True)
+                )
+            self.assertTrue(started["ok"])
+            self.assertEqual(started["action"], "move_back")
+
+
+
+class TextDomainTests(unittest.TestCase):
+    def _fake(self):
+        return {
+            "items": [
+                {"id": "f1", "name": "doc one", "size": 0, "mimeType": "", "trashed": False}
+            ],
+            "sample": [{"id": "f1", "name": "doc one", "size": 0, "mimeType": ""}],
+            "truncated": False,
+            "warnings": [],
+        }
+
+    def test_docs_replace_plan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            with mock.patch.object(service, "get_creds", return_value=None), mock.patch.object(
+                service.selector_module, "resolve_drive", return_value=self._fake()
+            ):
+                payload = json.loads(
+                    service.plan_bulk(
+                        config,
+                        LOGGER,
+                        "docs",
+                        "replace_text",
+                        selector={"ids": ["f1"]},
+                        options={"find": "old", "replace": "new"},
+                    )
+                )
+            self.assertTrue(payload["ok"], payload)
+            self.assertEqual(payload["matched"], 1)
+
+    def test_text_action_requires_find(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            payload = json.loads(
+                service.plan_bulk(
+                    config,
+                    LOGGER,
+                    "slides",
+                    "replace_text",
+                    selector={"ids": ["f1"]},
+                    options={"replace": "new"},
+                )
+            )
+            self.assertFalse(payload["ok"])
+
+    def test_sheets_rejects_non_integer_sheet_id(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            payload = json.loads(
+                service.plan_bulk(
+                    config,
+                    LOGGER,
+                    "sheets",
+                    "find_replace",
+                    selector={"ids": ["f1"]},
+                    options={"find": "a", "sheet_id": "not-a-number"},
+                )
+            )
+            self.assertFalse(payload["ok"])
+
 
 
 if __name__ == "__main__":
