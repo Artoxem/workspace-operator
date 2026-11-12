@@ -173,6 +173,10 @@ A healthy setup shows the token, a matching scope list and reachable APIs. If an
 API probe fails with `403 insufficientPermissions`, the token predates that
 scope: re-authorize.
 
+![Doctor output](images/doctor.png)
+
+*`workspace-operator doctor` after a successful authorization.*
+
 ## Troubleshooting
 
 | Symptom | Fix |

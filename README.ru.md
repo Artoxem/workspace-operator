@@ -339,6 +339,10 @@ docker run -d --name workspace-operator --restart unless-stopped `
 `Authorization: Bearer <token>`. Каталог Google смонтирован на запись намеренно:
 сервер обновляет `token.json` на месте.
 
+![Здоровый контейнер и публичный health-эндпоинт](docs/images/docker-health.png)
+
+*`docker compose ps` показывает healthy, `/healthz` возвращает запущенную версию.*
+
 **Клиенты, которые умеют только stdio**, тоже могут использовать образ —
 entrypoint принимает те же аргументы, что и CLI:
 

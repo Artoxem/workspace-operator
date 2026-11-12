@@ -172,6 +172,10 @@ workspace-operator doctor
 Если проверка API падает с `403 insufficientPermissions`, токен старее этого
 scope: переавторизуйтесь.
 
+![Вывод doctor](../images/doctor.png)
+
+*`workspace-operator doctor` после успешной авторизации.*
+
 ## Если что-то не работает
 
 | Симптом | Что делать |

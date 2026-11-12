@@ -345,6 +345,10 @@ Point the HTTP client at `http://127.0.0.1:8765/mcp` with
 `Authorization: Bearer <token>`. The Google folder is mounted read-write on
 purpose: the server refreshes `token.json` in place.
 
+![Healthy container and the public health endpoint](docs/images/docker-health.png)
+
+*`docker compose ps` reports healthy and `/healthz` returns the running version.*
+
 **stdio clients that only speak stdio** can still use the image — the entrypoint
 takes the same arguments as the CLI:
 

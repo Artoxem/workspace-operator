@@ -69,7 +69,7 @@ add noise.
 
 - Terminal with `docker compose ps` showing `Up (healthy)` and
   `curl http://127.0.0.1:8765/healthz` returning `"version":"1.22.2"`.
-- File: `docs/images/docker-health.png`.
+- File: `docs/images/docker-health.png` — **captured**.
 - Used in: README Docker section and `docs/TROUBLESHOOTING.md`.
 
 **Redact:** hostname, username in the prompt, any token.
@@ -80,7 +80,7 @@ add noise.
 
 - Terminal running `workspace-operator doctor`: token check, scope comparison,
   API probes with `ok` marks.
-- File: `docs/images/doctor.png`.
+- File: `docs/images/doctor.png` — **captured** (username redacted).
 - Used in: `docs/AUTH_SETUP.md`, Step 8.
 
 **Redact:** token path containing a username, email in API probe output.
@@ -132,6 +132,18 @@ File: `docs/images/bulk-demo.gif`.
 | `docker-health.png` | README Docker, TROUBLESHOOTING |
 | `doctor.png` | AUTH_SETUP, Step 8 |
 | `bulk-status.png` | README bulk/operations section |
+
+## Captured so far
+
+Two real captures are in the repository and already used in the docs:
+
+| File | What it shows |
+|---|---|
+| `docs/images/doctor.png` | `workspace-operator doctor`: token, scopes, API probes, `configuration looks good` |
+| `docs/images/docker-health.png` | `docker compose ps` healthy and `/healthz` returning `1.22.2` |
+
+Both were rendered from the real command output; the Windows username was replaced
+with `you` before rendering.
 
 ## Ready-made example
 
