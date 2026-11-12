@@ -36,7 +36,7 @@ Workspace Operator работает на вашей машине,
 
 | | Google Workspace MCP (remote) | **Workspace Operator** |
 |---|---|---|
-| Транспорт | Streamable HTTP, хостинг Google | **stdio, локально** |
+| Транспорт | Streamable HTTP, хостинг Google | **stdio + Streamable HTTP, локально или Docker** |
 | Доступность | Developer Preview | **публично, MIT** |
 | Путь данных | эндпоинт MCP Google | **ваша машина, ваш OAuth-клиент** |
 | Apps Script | — | **создание · чтение · стейджинг · запуск · отмена · откат · вызов функции** |
@@ -54,6 +54,7 @@ Workspace Operator — для «измени рабочее пространст
 | Группа | Инструментов | Ключевое |
 |---|---:|---|
 | 🔎 Кросс-поиск | 1 | Один запрос по Drive, Gmail и Calendar, сортировка по дате |
+| 📦 Массовые операции | 7 | план → подтверждение → запуск → откат для Drive, Gmail, Docs, Slides и Sheets |
 | 📁 Drive | 16 | Поиск, метаданные, переименование, корзина, шаринг, права |
 | 💬 Комментарии | 4 | Треды у Docs, Sheets и Slides: чтение, создание, ответ, решение |
 | 💾 Файлы Drive | 3 | Загрузка, скачивание, экспорт, конвертация в нативные форматы |
@@ -64,22 +65,41 @@ Workspace Operator — для «измени рабочее пространст
 | 📧 Gmail | 22 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
 | 📅 Calendar | 10 | События, слоты, встречи, изменение/удаление, ответ на приглашения |
 | 🧩 Составные | 5 | отчёт, дайджест, сравнение, клон шаблона, таблица → колода |
+| ✅ Задачи | 4 | списки, задачи, создание со сроком, завершение |
+| 📝 Формы | 4 | создание, вопросы, структура, ответы |
+| 📮 Postmaster | 2 | подтверждённые домены, статистика доставляемости |
 
 Плюс 3 ресурса, 3 шаблона ресурсов и 8 промптов — см. [каталог](#-каталог-инструментов).
 
 ## Быстрый старт
 
+### 0 — Выберите способ запуска
+
+| Что нужно | Что использовать | Что это значит |
+|---|---|---|
+| Один настольный клиент (Claude Desktop, Cursor, DSH, Windsurf, Cline) | **stdio** | Клиент сам запускает сервер дочерним процессом. Нет порта и bearer-заголовка; сервер живёт, пока живёт клиент. |
+| Один сервер для нескольких клиентов и агентов | **Docker / HTTP** | Постоянный контейнер на `127.0.0.1:8765`. Каждый клиент подключается по URL с bearer-токеном. |
+| Хотите менять код | **исходники** | То же stdio, но установка из `requirements.txt`. |
+
+В обоих случаях **один раз нужен Google OAuth**. Для HTTP дополнительно нужен
+локальный `MCP_AUTH_TOKEN` — это не Google-учётка и не токен Google.
+
 ### 1 — Установка
+
+**stdio (для одного настольного клиента)**
 
 ```bash
 pip install workspace-operator-mcp
+workspace-operator version
 ```
 
-PyPI отражает последний релиз на GitHub. Если `workspace-operator version` показывает
-версию старше описанной здесь, до следующего релиза ставьте из исходников или
-используйте контейнер.
+**Docker / HTTP (для нескольких клиентов)**
 
-Из исходников (для разработки):
+```bash
+docker pull ghcr.io/artoxem/workspace-operator:1.22.1
+```
+
+**Из исходников (разработка)**
 
 ```bash
 git clone https://github.com/Artoxem/workspace-operator.git
@@ -91,15 +111,36 @@ pip install -r requirements.txt
 Нужен Python 3.10+. Пакет ставит команду `workspace-operator`; форма
 `python -m workspace_operator` тоже работает из исходников.
 
-### 2 — Google OAuth
+### 2 — Google OAuth (один раз)
 
-1. Создайте OAuth 2.0 Client ID (тип **Desktop app**) в
-   [Google Cloud Console](https://console.cloud.google.com/).
-2. Включите API: **Drive, Docs, Sheets, Slides, Gmail, Calendar, Apps Script**.
-3. Скачайте JSON клиента — сервер прочитает его при первом запуске.
+1. Создайте проект в [Google Cloud Console](https://console.cloud.google.com/).
+2. Включите нужные API: **Drive, Docs, Sheets, Slides, Gmail, Calendar,
+   Apps Script**, а также **Tasks** и **Forms**. **Postmaster Tools** —
+   необязательно и нужно только для подтверждённых доменов.
+3. Настройте OAuth consent screen: **External**, добавьте свой аккаунт в
+   тестовые пользователи, пока приложение в режиме Testing.
+4. Создайте **OAuth client ID** типа **Desktop app**, скачайте JSON и сохраните
+   его как `oauth.keys.json` в `~/.google/`.
+5. Авторизуйтесь один раз:
 
-> Пошагово: [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md) · [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md)
-> Обновляетесь? Для Slides нужен скоуп `.../auth/presentations` — переавторизуйтесь один раз.
+```bash
+workspace-operator doctor
+```
+
+При первом запуске откроется браузер. Войдите, разрешите доступы — токен
+сохранится в `~/.google/token.json`.
+
+**Нет браузера (сервер, SSH, Docker-хост)?** Авторизуйтесь на машине с
+браузером, скопируйте `token.json` рядом с `oauth.keys.json` на целевую машину
+и смонтируйте каталог в контейнер **на запись**. Сервер обновляет токен на
+месте, поэтому read-only монтирование сломает обновление.
+
+**Поменялись scopes или обновились на мажорную версию?** Удалите `token.json`
+и снова запустите `workspace-operator doctor`. Doctor покажет, каких именно
+scopes не хватает.
+
+> Пошагово, с описанием экранов Google Cloud:
+> [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md) · [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md)
 
 ### 3 — Конфигурация
 
@@ -108,69 +149,65 @@ cp config.example.yaml config.yaml
 ```
 
 ```yaml
-client_secrets_file: "C:\\Users\\you\\.google\\oauth.keys.json"
-token_file: "C:\\Users\\you\\.google\\token.json"
-backup_dir: "C:\\Users\\you\\.google\\backups"
-mcp_auth_token: "MySecretToken_2026!"
+client_secrets_file: "/home/you/.google/oauth.keys.json"
+token_file: "/home/you/.google/token.json"
+backup_dir: "/home/you/.google/backups"
+mcp_auth_token: "длинная-случайная-строка"
 tool_profile: "read-write"      # full | read-write | read-only
 ```
 
-`mcp_auth_token` — локальный ключ активации, а не сетевая защита: без него сервер
-не начнёт обрабатывать инструменты. Любой ключ можно переопределить переменной
-окружения — см. [docs/ru/SECURITY.md](docs/ru/SECURITY.md).
+В Windows используйте прямые слэши (`C:/Users/you/.google/oauth.keys.json`) или
+двойные обратные в YAML. Любой ключ можно переопределить переменной окружения —
+см. [docs/ru/SECURITY.md](docs/ru/SECURITY.md).
+
+Два разных секрета, не перепутайте:
+
+| Секрет | Что это | Кто создаёт |
+|---|---|---|
+| `token.json` | Google OAuth токен — подтверждение, что Google выдал доступы | Google после нажатия **Allow** в браузере |
+| `mcp_auth_token` | Локальная bearer-строка — ключ активации сервера и заголовок `Authorization` для HTTP | Вы, любая случайная строка |
+
+`mcp_auth_token` сам по себе не сетевая защита: это ключ активации и bearer для
+HTTP-транспорта.
 
 ### 4 — Подключение клиента
 
-<details open>
-<summary><strong>Google Antigravity</strong> — App, IDE и CLI читают один конфиг</summary>
-
-`~/.gemini/config/mcp_config.json` (глобально) или `<workspace>/.agents/mcp_config.json`:
+**stdio-клиент** — клиент сам запускает установленную команду:
 
 ```json
 {
   "mcpServers": {
     "workspace-operator": {
-      "command": "python",
-      "args": ["D:\\DEV\\workspace-operator\\server.py"],
+      "command": "workspace-operator",
+      "args": ["serve"],
       "env": {
-        "MCP_CONFIG_FILE": "D:\\DEV\\workspace-operator\\config.yaml",
-        "MCP_AUTH_TOKEN": "MySecretToken_2026!",
-        "MCP_TOOL_PROFILE": "read-write"
-      },
-      "timeoutSeconds": 300,
-      "tools": { "workspace_search": { "eager": true } }
-    }
-  }
-}
-```
-
-Готовый файл: [antigravity/mcp_config.example.json](antigravity/mcp_config.example.json) ·
-инструкция: [antigravity/README.md](antigravity/README.md) ·
-Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md)
-
-</details>
-
-<details>
-<summary><strong>Claude Desktop, Cursor, VS Code, Windsurf</strong></summary>
-
-```json
-{
-  "mcpServers": {
-    "workspace-operator": {
-      "command": "python",
-      "args": ["D:\\DEV\\workspace-operator\\server.py"],
-      "env": {
-        "MCP_CONFIG_FILE": "D:\\DEV\\workspace-operator\\config.yaml",
-        "MCP_AUTH_TOKEN": "MySecretToken_2026!"
+        "MCP_CONFIG_FILE": "C:/Users/you/.google/config.yaml",
+        "MCP_AUTH_TOKEN": "длинная-случайная-строка"
       }
     }
   }
 }
 ```
 
-Пути для конкретных клиентов: [docs/ru/IDE_SETUP.md](docs/ru/IDE_SETUP.md).
+**HTTP-клиент** — контейнер или `workspace-operator serve --http` уже запущены:
 
-</details>
+```json
+{
+  "mcpServers": {
+    "workspace-operator": {
+      "url": "http://127.0.0.1:8765/mcp",
+      "headers": { "Authorization": "Bearer длинная-случайная-строка" }
+    }
+  }
+}
+```
+
+Пути для конкретных клиентов: [docs/ru/IDE_SETUP.md](docs/ru/IDE_SETUP.md) ·
+[docs/IDE_SETUP.md](docs/IDE_SETUP.md). Для Antigravity отдельная инструкция:
+[antigravity/README.md](antigravity/README.md).
+
+Если клиент не может запустить команду, проверьте `workspace-operator version`
+в той же оболочке, из которой запускается клиент: у IDE часто другой `PATH`.
 
 ## Профили инструментов
 
@@ -200,7 +237,7 @@ denied_tools: ["send_email", "share_file"]
 python -m workspace_operator doctor     # конфиг, токен, скоупы, доступность API
 python -m workspace_operator doctor --offline   # то же, но без сети
 python -m workspace_operator tools      # каталог (--profile read-only, --json)
-python -m workspace_operator serve      # stdio-сервер (то же, что python server.py)
+python -m workspace_operator serve      # stdio-сервер
 ```
 
 | Возможность | Как включить | Что делает |
@@ -233,29 +270,67 @@ python -m workspace_operator serve --http --port 8765
 
 ### Docker
 
-```bash
-docker pull ghcr.io/artoxem/workspace-operator:latest
+Контейнер работает по **HTTP** и не может открыть браузер, поэтому сначала
+авторизуйте Google **на хосте**:
 
-docker run --rm -p 127.0.0.1:8765:8765 \
-  -v "$HOME/.google:/home/app/.google" \
-  -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
-  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
-  ghcr.io/artoxem/workspace-operator:latest
+```bash
+pip install workspace-operator-mcp   # или используйте исходники
+workspace-operator doctor           # браузер -> ~/.google/token.json
 ```
 
-Образ работает под непривилегированным пользователем (uid 10001), публикует порт только
-на loopback и монтирует Google-креденшелы на запись — сервер обновляет токен на месте.
-`docker compose up --build` собирает тот же образ локально.
+Дальше — Compose (рекомендуется) или один `docker run`.
 
-Клиенты, которые умеют только stdio, тоже могут работать с образом — entrypoint
-принимает те же аргументы, что и CLI:
+**Compose**
+
+```bash
+cp .env.example .env                # задайте MCP_AUTH_TOKEN и GOOGLE_DIR
+docker compose up -d
+curl http://127.0.0.1:8765/healthz
+```
+
+`docker-compose.yml` монтирует `config.docker.yaml`, каталог Google **на запись**
+и `./data` для аудит-лога и массовых задач.
+
+**docker run — Linux/macOS**
+
+```bash
+docker run -d --name workspace-operator --restart unless-stopped \
+  -p 127.0.0.1:8765:8765 \
+  -v "$HOME/.google:/home/app/.google" \
+  -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
+  -v "$PWD/data:/home/app/data" \
+  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
+  ghcr.io/artoxem/workspace-operator:1.22.1
+```
+
+**docker run — Windows PowerShell**
+
+```powershell
+$token = python -c "import secrets; print(secrets.token_urlsafe(32))"
+docker run -d --name workspace-operator --restart unless-stopped `
+  -p 127.0.0.1:8765:8765 `
+  -v "${env:USERPROFILE}\.google:/home/app/.google" `
+  -v "${PWD}\config.docker.yaml:/app/config.yaml:ro" `
+  -v "${PWD}\data:/home/app/data" `
+  -e MCP_AUTH_TOKEN=$token `
+  ghcr.io/artoxem/workspace-operator:1.22.1
+```
+
+Укажите HTTP-клиенту `http://127.0.0.1:8765/mcp` и заголовок
+`Authorization: Bearer <token>`. Каталог Google смонтирован на запись намеренно:
+сервер обновляет `token.json` на месте.
+
+**Клиенты, которые умеют только stdio**, тоже могут использовать образ —
+entrypoint принимает те же аргументы, что и CLI:
 
 ```bash
 docker run -i --rm \
   -v "$HOME/.google:/home/app/.google" \
   --entrypoint python \
-  ghcr.io/artoxem/workspace-operator:latest -m workspace_operator serve
+  ghcr.io/artoxem/workspace-operator:1.22.1 -m workspace_operator serve
 ```
+
+Что-то не работает? Смотрите [docs/ru/TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md).
 
 Что-то не работает? Смотрите [docs/ru/TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md).
 
@@ -318,7 +393,7 @@ docker run -i --rm \
 </details>
 
 <details>
-<summary>📦 Массовые операции (6)</summary>
+<summary>📦 Массовые операции (7)</summary>
 
 | Инструмент | Тип | Описание |
 |---|---|---|

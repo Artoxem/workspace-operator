@@ -40,7 +40,7 @@ takes identifiers and ranges, and all examples use synthetic data.
 
 | | Google Workspace MCP (remote) | **Workspace Operator** |
 |---|---|---|
-| Transport | Streamable HTTP, Google-hosted | **stdio, local** |
+| Transport | Streamable HTTP, Google-hosted | **stdio + Streamable HTTP, local or Docker** |
 | Availability | Developer Preview | **public, MIT** |
 | Data path | Google MCP endpoint | **your machine, your OAuth client** |
 | Apps Script | — | **create · read · stage · execute · cancel · restore · run function** |
@@ -58,6 +58,7 @@ Operator is for "change the workspace and be able to roll it back".
 | Group | Tools | Highlights |
 |---|---:|---|
 | 🔎 Cross-search | 1 | One query over Drive, Gmail and Calendar, merged by date |
+| 📦 Bulk operations | 7 | plan → confirm → run → undo for Drive, Gmail, Docs, Slides and Sheets |
 | 📁 Drive | 16 | Search, metadata, rename, trash/restore, share, permissions |
 | 💬 Comments | 4 | Threads on Docs, Sheets and Slides: read, write, reply, resolve |
 | 💾 Drive files | 3 | Upload/download/export, conversion to native Google formats |
@@ -68,23 +69,43 @@ Operator is for "change the workspace and be able to roll it back".
 | 📧 Gmail | 22 | Threads, attachments, replies, drafts, labels, batch delete |
 | 📅 Calendar | 10 | Events, free slots, meetings, update/delete, invite responses |
 | 🧩 Composite | 5 | report from sheet, digest, table diff, template clone, table → deck |
+| ✅ Tasks | 4 | lists, tasks, create with due date, complete |
+| 📝 Forms | 4 | create, add questions, read structure, list responses |
+| 📮 Postmaster | 2 | verified domains, deliverability stats |
 
 Plus 3 resources, 3 resource templates and 8 prompts — see the
 [tool catalog](#-tool-catalog).
 
 ## Quick start
 
+### 0 — Choose how to run it
+
+| You want | Use | What it means |
+|---|---|---|
+| One desktop client (Claude Desktop, Cursor, DSH, Windsurf, Cline) | **stdio** | The client starts the server as a child process. No port, no bearer header, no background service; the server stops when the client stops. |
+| One server shared by several clients or agents | **Docker / HTTP** | A long-running container on `127.0.0.1:8765`. Every client connects by URL with a bearer token. |
+| Change the code | **source checkout** | Same as stdio, installed from `requirements.txt`. |
+
+Both paths need **Google OAuth once**. The HTTP path additionally needs a local
+`MCP_AUTH_TOKEN` string; it is not a Google credential and has nothing to do with
+your Google account.
+
 ### 1 — Install
+
+**stdio (recommended for a single desktop client)**
 
 ```bash
 pip install workspace-operator-mcp
+workspace-operator version
 ```
 
-PyPI mirrors the latest GitHub release. If `workspace-operator version` reports an
-older version than this README describes, install from source or use the container
-below until the next release is published.
+**Docker / HTTP (recommended for several clients)**
 
-From source (development):
+```bash
+docker pull ghcr.io/artoxem/workspace-operator:1.22.1
+```
+
+**From source (development)**
 
 ```bash
 git clone https://github.com/Artoxem/workspace-operator.git
@@ -93,18 +114,39 @@ python -m venv .venv && .venv\Scripts\activate    # Windows
 pip install -r requirements.txt
 ```
 
-Python 3.10 or newer. The package installs the `workspace-operator` command; the
-`python -m workspace_operator` form works from a source checkout too.
+Python 3.10 or newer. The package installs the `workspace-operator` command;
+`python -m workspace_operator` works from a source checkout too.
 
-### 2 — Google OAuth
+### 2 — Google OAuth (once)
 
-1. Create an OAuth 2.0 Client ID (type: **Desktop app**) in
-   [Google Cloud Console](https://console.cloud.google.com/).
-2. Enable these APIs: **Drive, Docs, Sheets, Slides, Gmail, Calendar, Apps Script**.
-3. Download the client JSON — the server will read it on first run.
+1. Create or pick a project in [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the APIs you need: **Drive, Docs, Sheets, Slides, Gmail, Calendar,
+   Apps Script**, plus **Tasks** and **Forms**. **Postmaster Tools** is optional
+   and only useful for domains you have verified.
+3. Configure the OAuth consent screen: **External**, add your account as a test
+   user while the app is in Testing.
+4. Create an **OAuth client ID** of type **Desktop app**, then download the JSON
+   and save it as `oauth.keys.json` in `~/.google/`.
+5. Authorize once:
 
-> Step by step: [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md) · [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md)
-> Upgrading? Slides needs the `.../auth/presentations` scope — re-run the OAuth flow once.
+```bash
+workspace-operator doctor
+```
+
+The first run opens a browser. Sign in, allow the scopes, and the token is saved
+to `~/.google/token.json`.
+
+**No browser (server, SSH, Docker host)?** Authorize on a machine with a
+browser, then copy `token.json` next to `oauth.keys.json` on the target and
+mount that directory read-write into the container. The server refreshes the
+token in place, so a read-only mount breaks it.
+
+**Changed scopes or upgraded a major version?** Delete `token.json` and run
+`workspace-operator doctor` again. The doctor prints exactly which scopes are
+missing instead of failing silently.
+
+> Step by step:
+> [docs/AUTH_SETUP.md](docs/AUTH_SETUP.md) · [docs/ru/AUTH_SETUP.md](docs/ru/AUTH_SETUP.md)
 
 ### 3 — Configure
 
@@ -113,69 +155,66 @@ cp config.example.yaml config.yaml
 ```
 
 ```yaml
-client_secrets_file: "C:\\Users\\you\\.google\\oauth.keys.json"
-token_file: "C:\\Users\\you\\.google\\token.json"
-backup_dir: "C:\\Users\\you\\.google\\backups"
-mcp_auth_token: "MySecretToken_2026!"
+client_secrets_file: "/home/you/.google/oauth.keys.json"
+token_file: "/home/you/.google/token.json"
+backup_dir: "/home/you/.google/backups"
+mcp_auth_token: "put-a-long-random-string-here"
 tool_profile: "read-write"      # full | read-write | read-only
 ```
 
-`mcp_auth_token` is a local activation key, not network security: the server refuses
-to handle tools until it is set. Every key can be overridden by an environment
-variable — see [docs/SECURITY.md](docs/SECURITY.md).
+On Windows use forward slashes (`C:/Users/you/.google/oauth.keys.json`) or double
+backslashes in YAML. Every key can be overridden by an environment variable; see
+[docs/SECURITY.md](docs/SECURITY.md).
+
+Two different secrets, do not mix them up:
+
+| Secret | What it is | Who creates it |
+|---|---|---|
+| `token.json` | Google OAuth token — proof that Google granted the scopes | Google, after you click **Allow** in the browser |
+| `mcp_auth_token` | Local bearer string — a gate for the MCP server (and the HTTP `Authorization` header) | You, any random string |
+
+`mcp_auth_token` is not network security by itself; it is an activation key and
+a per-request bearer for the HTTP transport.
 
 ### 4 — Connect a client
 
-<details open>
-<summary><strong>Google Antigravity</strong> — App, IDE and CLI share one config</summary>
-
-`~/.gemini/config/mcp_config.json` (global) or `<workspace>/.agents/mcp_config.json`:
+**stdio client** — the client launches the installed command:
 
 ```json
 {
   "mcpServers": {
     "workspace-operator": {
-      "command": "python",
-      "args": ["D:\\DEV\\workspace-operator\\server.py"],
+      "command": "workspace-operator",
+      "args": ["serve"],
       "env": {
-        "MCP_CONFIG_FILE": "D:\\DEV\\workspace-operator\\config.yaml",
-        "MCP_AUTH_TOKEN": "MySecretToken_2026!",
-        "MCP_TOOL_PROFILE": "read-write"
-      },
-      "timeoutSeconds": 300,
-      "tools": { "workspace_search": { "eager": true } }
-    }
-  }
-}
-```
-
-Ready-made file: [antigravity/mcp_config.example.json](antigravity/mcp_config.example.json) ·
-walkthrough: [antigravity/README.md](antigravity/README.md) ·
-Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md)
-
-</details>
-
-<details>
-<summary><strong>Claude Desktop, Cursor, VS Code, Windsurf</strong></summary>
-
-```json
-{
-  "mcpServers": {
-    "workspace-operator": {
-      "command": "python",
-      "args": ["D:\\DEV\\workspace-operator\\server.py"],
-      "env": {
-        "MCP_CONFIG_FILE": "D:\\DEV\\workspace-operator\\config.yaml",
-        "MCP_AUTH_TOKEN": "MySecretToken_2026!"
+        "MCP_CONFIG_FILE": "C:/Users/you/.google/config.yaml",
+        "MCP_AUTH_TOKEN": "put-a-long-random-string-here"
       }
     }
   }
 }
 ```
 
-Per-client paths: [docs/IDE_SETUP.md](docs/IDE_SETUP.md) · [docs/ru/IDE_SETUP.md](docs/ru/IDE_SETUP.md).
+**HTTP client** — the container or `workspace-operator serve --http` is already
+running:
 
-</details>
+```json
+{
+  "mcpServers": {
+    "workspace-operator": {
+      "url": "http://127.0.0.1:8765/mcp",
+      "headers": { "Authorization": "Bearer put-a-long-random-string-here" }
+    }
+  }
+}
+```
+
+Per-client file locations: [docs/IDE_SETUP.md](docs/IDE_SETUP.md) ·
+[docs/ru/IDE_SETUP.md](docs/ru/IDE_SETUP.md). Antigravity has its own walkthrough:
+[antigravity/README.md](antigravity/README.md).
+
+If the client cannot start the command, check `workspace-operator version` in
+the same shell the client uses — IDEs often have a different `PATH`.
 
 ## Tool profiles
 
@@ -205,7 +244,7 @@ A blocked call returns a clear explanation instead of failing silently.
 python -m workspace_operator doctor     # config, token, scopes, API reachability
 python -m workspace_operator doctor --offline   # same, without network probes
 python -m workspace_operator tools      # catalog (--profile read-only, --json)
-python -m workspace_operator serve      # stdio server (same as python server.py)
+python -m workspace_operator serve      # stdio server
 ```
 
 | Feature | How to use it | What it does |
@@ -238,29 +277,67 @@ python -m workspace_operator serve --http --port 8765
 
 ### Docker
 
-```bash
-docker pull ghcr.io/artoxem/workspace-operator:latest
+The container speaks **HTTP**. It cannot open a browser, so authorize Google
+**on the host first**:
 
-docker run --rm -p 127.0.0.1:8765:8765 \
-  -v "$HOME/.google:/home/app/.google" \
-  -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
-  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
-  ghcr.io/artoxem/workspace-operator:latest
+```bash
+pip install workspace-operator-mcp   # or use a source checkout
+workspace-operator doctor           # browser -> ~/.google/token.json
 ```
 
-The image runs as an unprivileged user (uid 10001), publishes only to loopback and
-mounts the Google credentials read-write, because the server refreshes the token in
-place. `docker compose up --build` builds the same image locally.
+Then use Compose (recommended) or a single `docker run`.
 
-Clients that only speak stdio can still use the image — the entrypoint takes the
-same arguments as the CLI:
+**Compose**
+
+```bash
+cp .env.example .env                # set MCP_AUTH_TOKEN and GOOGLE_DIR
+docker compose up -d
+curl http://127.0.0.1:8765/healthz
+```
+
+`docker-compose.yml` mounts `config.docker.yaml`, the Google folder read-write,
+and `./data` for the audit log and bulk jobs.
+
+**docker run — Linux/macOS**
+
+```bash
+docker run -d --name workspace-operator --restart unless-stopped \
+  -p 127.0.0.1:8765:8765 \
+  -v "$HOME/.google:/home/app/.google" \
+  -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
+  -v "$PWD/data:/home/app/data" \
+  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
+  ghcr.io/artoxem/workspace-operator:1.22.1
+```
+
+**docker run — Windows PowerShell**
+
+```powershell
+$token = python -c "import secrets; print(secrets.token_urlsafe(32))"
+docker run -d --name workspace-operator --restart unless-stopped `
+  -p 127.0.0.1:8765:8765 `
+  -v "${env:USERPROFILE}\.google:/home/app/.google" `
+  -v "${PWD}\config.docker.yaml:/app/config.yaml:ro" `
+  -v "${PWD}\data:/home/app/data" `
+  -e MCP_AUTH_TOKEN=$token `
+  ghcr.io/artoxem/workspace-operator:1.22.1
+```
+
+Point the HTTP client at `http://127.0.0.1:8765/mcp` with
+`Authorization: Bearer <token>`. The Google folder is mounted read-write on
+purpose: the server refreshes `token.json` in place.
+
+**stdio clients that only speak stdio** can still use the image — the entrypoint
+takes the same arguments as the CLI:
 
 ```bash
 docker run -i --rm \
   -v "$HOME/.google:/home/app/.google" \
   --entrypoint python \
-  ghcr.io/artoxem/workspace-operator:latest -m workspace_operator serve
+  ghcr.io/artoxem/workspace-operator:1.22.1 -m workspace_operator serve
 ```
+
+Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
@@ -323,7 +400,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 </details>
 
 <details>
-<summary>📦 Bulk operations (6)</summary>
+<summary>📦 Bulk operations (7)</summary>
 
 | Tool | Type | Description |
 |---|---|---|
