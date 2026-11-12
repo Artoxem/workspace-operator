@@ -1,4 +1,4 @@
 """Workspace Operator — Google Workspace automation over MCP."""
 
-__version__ = "1.22.3"
+__version__ = "1.22.4"
 __all__ = ["config", "auth", "security", "operations", "server", "handlers"]
