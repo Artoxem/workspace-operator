@@ -14,7 +14,7 @@ with 132 tools, staged writes and server-side tool profiles.
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Artoxem/workspace-operator?style=social)](https://github.com/Artoxem/workspace-operator/stargazers)
-[![PyPI downloads](https://img.shields.io/pypi/dm/workspace-operator-mcp)](https://pypi.org/project/workspace-operator-mcp/)
+[![PyPI downloads](https://img.shields.io/pypi/dw/workspace-operator-mcp?label=downloads%2Fweek)](https://pypi.org/project/workspace-operator-mcp/)
 
 [English](README.md) · [Русский](README.ru.md)
 
