@@ -56,6 +56,18 @@ audit_log: ""
 # Retries for transient Google API errors (429/5xx), exponential backoff
 retry_attempts: 3
 
+# Bulk operations (bulk_plan -> bulk_run). Caps are the safety layer against
+# accidental mass changes; plans above max_items need allow_large=true.
+bulk:
+  dir: ""                  # default: ./data/bulk
+  max_items: 300           # default cap for one plan
+  hard_limit: 10000        # absolute ceiling with allow_large=true
+  concurrency: 8           # parallel API workers (1-16)
+  plan_ttl: 900            # seconds a reviewed plan stays valid
+  protected_ids: []        # never touch these file ids
+  protected_patterns: []   # never touch files matching these glob patterns
+  allow_shared_drives: false
+
 # Example: Read-only configuration (safer for exploration)
 # Uncomment and replace the scopes above with:
 # scopes:

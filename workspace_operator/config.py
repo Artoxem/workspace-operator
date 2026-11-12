@@ -1,7 +1,7 @@
 import json
 import logging as _logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from .runtime import parse_bool
@@ -35,6 +35,14 @@ class Config:
     audit_log: Optional[str] = None
     retry_attempts: int = 3
     http_tokens: Optional[Dict[str, str]] = None
+    bulk_dir: Optional[str] = None
+    bulk_max_items: int = 300
+    bulk_hard_limit: int = 10000
+    bulk_concurrency: int = 8
+    bulk_plan_ttl: int = 900
+    bulk_protected_ids: List[str] = field(default_factory=list)
+    bulk_protected_patterns: List[str] = field(default_factory=list)
+    bulk_allow_shared_drives: bool = False
 
 
 def _default_path(*parts: str) -> str:
@@ -133,6 +141,32 @@ def load_config() -> Config:
     except (TypeError, ValueError):
         retry_attempts = 3
 
+    bulk_config = file_config.get("bulk")
+    if not isinstance(bulk_config, dict):
+        bulk_config = {}
+
+    def _bulk_int(name: str, key: str, default: int) -> int:
+        try:
+            return int(os.environ.get(name, bulk_config.get(key, default)))
+        except (TypeError, ValueError):
+            return default
+
+    bulk_dir = os.environ.get("MCP_BULK_DIR", bulk_config.get("dir"))
+    bulk_protected_ids = (
+        _env_list("MCP_BULK_PROTECTED_IDS") or bulk_config.get("protected_ids") or []
+    )
+    bulk_protected_patterns = (
+        _env_list("MCP_BULK_PROTECTED_PATTERNS")
+        or bulk_config.get("protected_patterns")
+        or []
+    )
+    bulk_allow_shared_drives = parse_bool(
+        os.environ.get(
+            "MCP_BULK_ALLOW_SHARED_DRIVES",
+            bulk_config.get("allow_shared_drives", False),
+        )
+    )
+
     return Config(
         client_secrets_file=client_secrets_file,
         token_file=token_file,
@@ -148,4 +182,12 @@ def load_config() -> Config:
         audit_log=audit_log,
         retry_attempts=retry_attempts,
         http_tokens=http_tokens,
+        bulk_dir=bulk_dir,
+        bulk_max_items=_bulk_int("MCP_BULK_MAX_ITEMS", "max_items", 300),
+        bulk_hard_limit=_bulk_int("MCP_BULK_HARD_LIMIT", "hard_limit", 10000),
+        bulk_concurrency=_bulk_int("MCP_BULK_CONCURRENCY", "concurrency", 8),
+        bulk_plan_ttl=_bulk_int("MCP_BULK_PLAN_TTL", "plan_ttl", 900),
+        bulk_protected_ids=[str(item) for item in bulk_protected_ids],
+        bulk_protected_patterns=[str(item) for item in bulk_protected_patterns],
+        bulk_allow_shared_drives=bulk_allow_shared_drives,
     )

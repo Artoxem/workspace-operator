@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 115 | everything |
-| `read-write` | 96 | everything except `destructiveHint: true` |
-| `read-only` | 29 | only `readOnlyHint: true` |
+| `full` (default) | 121 | everything |
+| `read-write` | 102 | everything except `destructiveHint: true` |
+| `read-only` | 33 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -153,6 +153,45 @@ Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1
   - Revoke public access, requires `confirm=true`.
 - `drive_copy_file(file_id, name?, parent_id?)`
   - Copy a file.
+
+## Bulk operations
+Six tools implement plan → run → observe. A plan is an immutable snapshot: later
+uploads or deletes cannot change what was reviewed.
+
+- `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
+  - `action`: `move`, `trash`, `restore`, `rename`.
+  - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
+    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`, `limit`.
+    `ids` cannot be combined with `query`.
+  - `options`: `target_folder_id` for move; `pattern` or `find`/`replace` for rename.
+  - Returns `plan_id`, `matched`, `estimated_bytes`, a five-item sample and warnings.
+  - Cap: 300 items by default; `allow_large=true` raises it to the configured hard
+    limit (10,000 by default). Nothing is changed.
+- `bulk_run(plan_id, confirm?, job_id?)`
+  - Requires `confirm=true` and a non-expired plan (15 minutes by default).
+  - Starts a background job and returns immediately with a `job_id`.
+  - Pass `job_id` to resume an interrupted or cancelled job; finished items are
+    skipped by id.
+- `bulk_status(job_id)`
+  - Compact progress: `state`, `done`, `total`, `ok`, `skipped`, `failed`,
+    `percent`, `result_file`. No per-item data.
+- `bulk_cancel(job_id)`
+  - Sets the cancellation flag; in-flight items finish, pending items are dropped.
+- `bulk_result(job_id, offset=0, limit=50)`
+  - Pages through per-item outcomes (`id`, `name`, `status`, `error`, `new_name`).
+  - The full artifact is a JSON Lines file at `result_file`.
+- `bulk_list(limit=10)`
+  - Recent jobs, newest first.
+
+Safety and configuration:
+- Trash never means permanent delete; `restore` reverses a trash job.
+- Protected ids and name patterns come from `bulk.protected_ids` /
+  `bulk.protected_patterns` (or `MCP_BULK_PROTECTED_IDS` /
+  `MCP_BULK_PROTECTED_PATTERNS`).
+- Execution uses eight worker threads by default (`bulk.concurrency`), retries
+  transient Google errors, checkpoints every 25 items and writes audit records for
+  the plan and the run (counts only, never values).
+- Shared drives are refused unless `bulk.allow_shared_drives` is enabled.
 
 ## Sheets
 - `read_sheet(spreadsheet_id, range_name)`

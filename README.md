@@ -5,11 +5,11 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
-with 115 tools, staged writes and server-side tool profiles.
+with 121 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-115-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-121-informational)](#-tool-catalog)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -26,7 +26,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**115 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
+**121 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -181,9 +181,9 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 115 | your own machine, full trust |
-| `read-write` | 96 | daily work — destructive tools hidden |
-| `read-only` | 29 | exploration, demos, shared machines, untrusted agents |
+| `full` | 121 | your own machine, full trust |
+| `read-write` | 102 | daily work — destructive tools hidden |
+| `read-only` | 33 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-write"
@@ -315,6 +315,20 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `drive_create_comment` | write | Add a comment, optionally quoting text |
 | `drive_reply_comment` | write | Reply in an existing thread |
 | `drive_resolve_comment` | write | Mark a thread resolved (`confirm=true`) |
+
+</details>
+
+<details>
+<summary>📦 Bulk operations (6)</summary>
+
+| Tool | Type | Description |
+|---|---|---|
+| `bulk_plan` | read | Resolve a Drive selector into a reviewed, immutable plan (dry run; 300-item default cap) |
+| `bulk_run` | write | Execute a reviewed plan as a background job (`confirm=true`, resumable) |
+| `bulk_status` | read | Compact progress: done/total, ok, skipped, failed |
+| `bulk_cancel` | write | Stop a running job; in-flight items finish |
+| `bulk_result` | read | Page through per-item results (50 by default, 200 max) |
+| `bulk_list` | read | Recent bulk jobs |
 
 </details>
 
@@ -509,7 +523,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 ## How it works
 
 ```
-server.py                    MCP server: 115 tool definitions, resources, prompts, profiles
+server.py                    MCP server: 121 tool definitions, resources, prompts, profiles
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny lists
 ├─ config.py                 config file + environment overrides
@@ -561,7 +575,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 285 unit tests, no network
+python -m unittest discover -s tests -v     # 302 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch

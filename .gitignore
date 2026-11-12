@@ -42,3 +42,6 @@ build/
 
 ## Local secrets
 .env
+
+## Local runtime state (audit log, bulk jobs)
+data/

@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 115 | всё |
-| `read-write` | 96 | всё, кроме `destructiveHint: true` |
-| `read-only` | 29 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 121 | всё |
+| `read-write` | 102 | всё, кроме `destructiveHint: true` |
+| `read-only` | 33 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -152,6 +152,44 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - Отозвать публичный доступ, требует `confirm=true`.
 - `drive_copy_file(file_id, name?, parent_id?)`
   - Копировать файл.
+
+## Массовые операции
+Шесть инструментов реализуют схему план → запуск → наблюдение. План — это неизменяемый снимок: загрузки и удаления после него не меняют проверенный набор.
+
+- `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
+  - `action`: `move`, `trash`, `restore`, `rename`.
+  - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
+    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`, `limit`.
+    `ids` нельзя сочетать с `query`.
+  - `options`: `target_folder_id` для move; `pattern` или `find`/`replace` для rename.
+  - Возвращает `plan_id`, `matched`, `estimated_bytes`, пять примеров и предупреждения.
+  - Лимит: 300 файлов по умолчанию; `allow_large=true` поднимает до жёсткого
+    предела (10 000 по умолчанию). Ничего не меняется.
+- `bulk_run(plan_id, confirm?, job_id?)`
+  - Требует `confirm=true` и неистёкший план (15 минут по умолчанию).
+  - Запускает фоновую задачу и сразу возвращает `job_id`.
+  - Передай `job_id`, чтобы продолжить прерванную или отменённую задачу;
+    завершённые файлы пропускаются по id.
+- `bulk_status(job_id)`
+  - Компактный прогресс: `state`, `done`, `total`, `ok`, `skipped`, `failed`,
+    `percent`, `result_file`. Без списка файлов.
+- `bulk_cancel(job_id)`
+  - Ставит флаг отмены; текущие файлы дорабатываются, очередь сбрасывается.
+- `bulk_result(job_id, offset=0, limit=50)`
+  - Страницы результатов по файлам (`id`, `name`, `status`, `error`, `new_name`).
+  - Полный артефакт — JSON Lines по пути `result_file`.
+- `bulk_list(limit=10)`
+  - Последние задачи, новые сверху.
+
+Безопасность и настройка:
+- Корзина — не безвозвратное удаление; `restore` возвращает файлы из корзины.
+- Защищённые id и шаблоны имён задаются в `bulk.protected_ids` /
+  `bulk.protected_patterns` (или `MCP_BULK_PROTECTED_IDS` /
+  `MCP_BULK_PROTECTED_PATTERNS`).
+- По умолчанию восемь потоков (`bulk.concurrency`), повторы временных ошибок
+  Google, чекпоинт каждые 25 файлов и аудит плана и запуска (только количества,
+  без значений).
+- Общие диски запрещены, пока не включён `bulk.allow_shared_drives`.
 
 ## Sheets
 - `read_sheet(spreadsheet_id, range_name)`

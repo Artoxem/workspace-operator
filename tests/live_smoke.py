@@ -122,7 +122,7 @@ async def full_checks(session: ClientSession) -> None:
 
     tools = await session.list_tools()
     names = {tool.name for tool in tools.tools}
-    record("tools/list", len(names) == 115, f"{len(names)} tools")
+    record("tools/list", len(names) == 121, f"{len(names)} tools")
     record("workspace_search present", "workspace_search" in names)
     record(
         "tool annotations",
@@ -762,7 +762,7 @@ async def full_checks(session: ClientSession) -> None:
 async def read_only_checks(session: ClientSession) -> None:
     await session.initialize()
     tools = await session.list_tools()
-    record("read-only profile tools/list", len(tools.tools) == 29, f"{len(tools.tools)} tools")
+    record("read-only profile tools/list", len(tools.tools) == 33, f"{len(tools.tools)} tools")
 
     blocked = await session.call_tool(
         "send_email", {"to": "nobody@example.com", "subject": "x", "body_text": "x"}

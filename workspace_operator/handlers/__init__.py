@@ -131,6 +131,14 @@ from .gmail_threads import (
     gmail_reply_handler,
 )
 from .formatting import format_sheet_handler
+from .bulk import (
+    bulk_cancel_handler,
+    bulk_list_handler,
+    bulk_plan_handler,
+    bulk_result_handler,
+    bulk_run_handler,
+    bulk_status_handler,
+)
 from .search import workspace_search_handler
 from .slides import (
     add_shape_handler,
@@ -264,4 +272,10 @@ __all__ = [
     "add_shape_handler",
     "set_event_color_handler",
     "update_deployment_handler",
+    "bulk_plan_handler",
+    "bulk_run_handler",
+    "bulk_status_handler",
+    "bulk_cancel_handler",
+    "bulk_result_handler",
+    "bulk_list_handler",
 ]

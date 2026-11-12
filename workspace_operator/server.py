@@ -23,6 +23,12 @@ from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .runtime import AuditLog, call_with_retry
 from .handlers import (
+    bulk_cancel_handler,
+    bulk_list_handler,
+    bulk_plan_handler,
+    bulk_result_handler,
+    bulk_run_handler,
+    bulk_status_handler,
     add_shape_handler,
     create_filter_handler,
     list_filters_handler,
@@ -2196,6 +2202,137 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+        types.Tool(
+            name="bulk_plan",
+            description=(
+                "Resolve a Drive selector into a reviewed plan (dry run). Returns a "
+                "plan_id, matched count, total size, a small sample and warnings. "
+                "Cap: 300 items by default; allow_large raises it to the hard limit. "
+                "Nothing is changed until bulk_run is called with confirm=true."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "domain": {"type": "string", "enum": ["drive"], "default": "drive"},
+                    "action": {
+                        "type": "string",
+                        "enum": ["move", "trash", "restore", "rename"],
+                    },
+                    "selector": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string"},
+                            "folder_id": {"type": "string"},
+                            "recursive": {"type": "boolean", "default": False},
+                            "mime_types": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "name_contains": {"type": "string"},
+                            "ids": {"type": "array", "items": {"type": "string"}},
+                            "exclude_ids": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "modified": {
+                                "type": "object",
+                                "properties": {
+                                    "after": {"type": "string"},
+                                    "before": {"type": "string"},
+                                },
+                            },
+                            "include_trashed": {"type": "boolean", "default": False},
+                            "limit": {"type": "integer"},
+                        },
+                    },
+                    "options": {
+                        "type": "object",
+                        "properties": {
+                            "target_folder_id": {"type": "string"},
+                            "pattern": {"type": "string"},
+                            "find": {"type": "string"},
+                            "replace": {"type": "string"},
+                        },
+                    },
+                    "allow_large": {"type": "boolean", "default": False},
+                    "sample": {"type": "integer", "default": 5},
+                },
+                "required": ["action"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="bulk_run",
+            description=(
+                "Execute a reviewed bulk plan as a background job. Requires "
+                "confirm=true and a non-expired plan_id. Pass job_id to resume an "
+                "interrupted job. Returns immediately with a job_id; poll "
+                "bulk_status for progress."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "plan_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                    "job_id": {"type": "string"},
+                },
+                "required": ["plan_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="bulk_status",
+            description=(
+                "Compact progress for a bulk job: state, done/total, ok, skipped, "
+                "failed percentages and the result file path."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {"job_id": {"type": "string"}},
+                "required": ["job_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="bulk_cancel",
+            description=(
+                "Request cancellation of a running bulk job. In-flight items finish; "
+                "the job state becomes cancelled and can be resumed later."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {"job_id": {"type": "string"}},
+                "required": ["job_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="bulk_result",
+            description=(
+                "Read one page of per-item bulk results (id, name, status, error). "
+                "Paginated: 50 items by default, 200 maximum. Use the result_file "
+                "path for the full artifact."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string"},
+                    "offset": {"type": "integer", "default": 0},
+                    "limit": {"type": "integer", "default": 50},
+                },
+                "required": ["job_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="bulk_list",
+            description="List recent bulk jobs in this profile, newest first.",
+            inputSchema={
+                "type": "object",
+                "properties": {"limit": {"type": "integer", "default": 10}},
+            },
+            annotations=_READ_ONLY,
+        ),
     ]
 
 
@@ -2435,7 +2572,66 @@ def create_server(config: Config, logger) -> Server:
         try:
             require_token_configured(config.mcp_auth_token)
 
+            def _on_bulk_finish(job, _audit=audit, _profile=profile.name):
+                try:
+                    start = datetime.fromisoformat(job.started_at).timestamp()
+                    end = (
+                        datetime.fromisoformat(job.finished_at).timestamp()
+                        if job.finished_at
+                        else time.time()
+                    )
+                    duration = max(0, int((end - start) * 1000))
+                except Exception:  # noqa: BLE001 - audit must never break a job
+                    duration = 0
+                status = (
+                    "ok"
+                    if job.state == "completed"
+                    else ("cancelled" if job.state == "cancelled" else "error")
+                )
+                _audit.record(
+                    "bulk_run",
+                    _profile,
+                    status,
+                    duration,
+                    ("plan_id", "confirm", "job_id"),
+                    error=job.error,
+                )
+
             handlers = {
+                "bulk_plan": lambda a: bulk_plan_handler(
+                    config,
+                    logger,
+                    a.get("domain", "drive"),
+                    a.get("action"),
+                    a.get("selector") or {},
+                    a.get("options") or {},
+                    a.get("allow_large", False),
+                    a.get("sample", 5),
+                ),
+                "bulk_run": lambda a: bulk_run_handler(
+                    config,
+                    logger,
+                    a.get("plan_id"),
+                    a.get("confirm", False),
+                    _on_bulk_finish,
+                    a.get("job_id"),
+                ),
+                "bulk_status": lambda a: bulk_status_handler(
+                    config, logger, a.get("job_id")
+                ),
+                "bulk_cancel": lambda a: bulk_cancel_handler(
+                    config, logger, a.get("job_id")
+                ),
+                "bulk_result": lambda a: bulk_result_handler(
+                    config,
+                    logger,
+                    a.get("job_id"),
+                    a.get("offset", 0),
+                    a.get("limit", 50),
+                ),
+                "bulk_list": lambda a: bulk_list_handler(
+                    config, logger, a.get("limit", 10)
+                ),
                 "workspace_search": lambda a: workspace_search_handler(
                     config,
                     logger,

@@ -5,11 +5,11 @@
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — один локальный
-MCP-сервер с 115 инструментами, многошаговыми записями и профилями на стороне сервера.
+MCP-сервер с 121 инструментами, многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-115-informational)](#-каталог-инструментов)
+[![Tools](https://img.shields.io/badge/tools-121-informational)](#-каталог-инструментов)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -26,7 +26,7 @@ Workspace Operator работает на вашей машине,
 стейджинг Apps Script, передача файлов в обе стороны, сборка презентаций,
 форматирование таблиц, ответы в тред и работа с вложениями.
 
-**115 инструментов · 3 ресурса · 3 шаблона ресурсов · 8 промптов**, у каждого инструмента
+**121 инструментов · 3 ресурса · 3 шаблона ресурсов · 8 промптов**, у каждого инструмента
 аннотации `readOnlyHint` / `destructiveHint`.
 
 Ничто здесь не привязано к конкретному аккаунту, таблице или документу: каждый
@@ -180,9 +180,9 @@ Agent Skill: [skills/google-workspace/SKILL.md](skills/google-workspace/SKILL.md
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 115 | своя машина, полное доверие |
-| `read-write` | 96 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 29 | разведка, демо, общие машины, недоверенные агенты |
+| `full` | 121 | своя машина, полное доверие |
+| `read-write` | 102 | ежедневная работа — деструктивные скрыты |
+| `read-only` | 33 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-write"
@@ -314,6 +314,20 @@ docker run -i --rm \
 | `drive_create_comment` | write | Добавить комментарий, можно с цитатой |
 | `drive_reply_comment` | write | Ответить в существующем треде |
 | `drive_resolve_comment` | write | Пометить тред решённым (`confirm=true`) |
+
+</details>
+
+<details>
+<summary>📦 Массовые операции (6)</summary>
+
+| Инструмент | Тип | Описание |
+|---|---|---|
+| `bulk_plan` | read | Разобрать выборку Drive в проверяемый неизменяемый план (dry run; по умолчанию до 300 файлов) |
+| `bulk_run` | write | Выполнить план фоновой задачей (`confirm=true`, можно продолжить после сбоя) |
+| `bulk_status` | read | Компактный прогресс: сделано/всего, успешно, пропущено, ошибок |
+| `bulk_cancel` | write | Остановить задачу; текущие файлы доработают |
+| `bulk_result` | read | Постраничные результаты по файлам (50 по умолчанию, до 200) |
+| `bulk_list` | read | Последние массовые задачи |
 
 </details>
 
@@ -508,7 +522,7 @@ docker run -i --rm \
 ## Как устроено
 
 ```
-server.py                    MCP-сервер: 115 инструментов, ресурсы, промпты, профили
+server.py                    MCP-сервер: 121 инструмент, ресурсы, промпты, профили
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny
 ├─ config.py                 конфиг + переменные окружения
@@ -560,7 +574,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 285 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 302 юнит-теста, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/live_new_tools.py              # 15 проверок партии v1.14
 python tests/live_phase2.py                 # 8 проверок партии v1.15

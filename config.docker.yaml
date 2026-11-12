@@ -13,6 +13,16 @@ mcp_auth_token: "change_me"
 
 tool_profile: "full"
 
+bulk:
+  dir: "/home/app/data/bulk"
+  max_items: 300
+  hard_limit: 10000
+  concurrency: 8
+  plan_ttl: 900
+  protected_ids: []
+  protected_patterns: []
+  allow_shared_drives: false
+
 scopes:
   - "https://www.googleapis.com/auth/spreadsheets"
   - "https://www.googleapis.com/auth/drive"
