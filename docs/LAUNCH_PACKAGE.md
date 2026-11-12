@@ -55,9 +55,6 @@ Use absolute URLs so the same asset works on GitHub, PyPI and directory pages.
 | Doctor screenshot | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/doctor.png | AUTH_SETUP, PulseMCP |
 | Docker health | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/docker-health.png | Docker section, mcp.so |
 
-The repository also has `docs/images/mcp-manager.png` (a DSH-local manager view,
-useful as a "connected" reference, not as a product hero).
-
 ## Directory submissions
 
 ### Glama

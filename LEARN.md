@@ -1,16 +1,21 @@
-# LEARN: Build an MCP Google Tools Server
+# LEARN: How Workspace Operator was built
 
-This document breaks the project into small components and walks through each stage so you can build your own MCP server that exposes Google APIs to AI assistants.
+This walkthrough explains the components of Workspace Operator and how they fit
+together. The code snippets show the original skeleton; the shipped server now
+has 132 tools, bulk plan/run/undo, server-side profiles and optional HTTP/Docker
+deployment. See [README.md](README.md) for the current surface and
+[docs/TOOLS_REFERENCE.md](docs/TOOLS_REFERENCE.md) for the tool reference.
 
 ---
 
 ## What We're Building
 
 An **MCP (Model Context Protocol) server** that:
-- Runs as a STDIO process (stdin/stdout) launched by your IDE
-- Exposes tools (Drive, Sheets, Gmail, Calendar, etc.) to the AI
-- Uses OAuth 2.0 for Google API access
-- Applies safety patterns (confirm, dry-run) for destructive operations
+- Runs over stdio for one client, or Streamable HTTP for several clients
+- Exposes tools across Drive, Docs, Sheets, Slides, Gmail, Calendar, Tasks,
+  Forms, Apps Script and Postmaster (132 in the current release)
+- Uses OAuth 2.0 with your own Google Cloud client
+- Applies safety patterns: `confirm`, `dry_run`, plan → run → undo, profiles
 
 ---
 
@@ -18,14 +23,16 @@ An **MCP (Model Context Protocol) server** that:
 
 - Python 3.10+
 - A Google Cloud project with OAuth credentials
-- An IDE that supports MCP (Cursor, Windsurf, VS Code with Copilot)
+- An MCP client (Cursor, VS Code with Copilot, Claude, or a custom host)
+- Optional: `pip install workspace-operator-mcp` to run the packaged server
+  instead of the tutorial skeleton
 
 ---
 
 ## Part 1: Project Structure
 
 ```
-my-mcp-google/
+workspace-operator/
 ├── server.py           # Entry point, runs the MCP server
 ├── config.example.yaml # Example configuration
 ├── requirements.txt
@@ -330,11 +337,10 @@ The IDE launches your server as a subprocess and passes env vars. Add an MCP con
 ```json
 {
   "mcpServers": {
-    "google-tools": {
-      "command": "python",
-      "args": ["D:\\path\\to\\your\\project\\server.py"],
+    "workspace": {
+      "command": "workspace-operator",
+      "args": ["serve"],
       "env": {
-        "MCP_AUTH_TOKEN": "your_token",
         "MCP_CONFIG_FILE": "D:\\path\\to\\your\\project\\config.yaml"
       }
     }
@@ -348,7 +354,7 @@ The IDE launches your server as a subprocess and passes env vars. Add an MCP con
 
 ## Part 9: Smoke Test and Usage
 
-1. Run locally: `python server.py` (it will wait on stdin).
+1. Run locally: `workspace-operator serve` (it will wait on stdin).
 2. Connect via IDE (restart IDE or reload MCP config).
 3. Call `get_gmail_profile()` — if OAuth is configured, you get your Gmail address.
 
@@ -363,7 +369,7 @@ Full tool reference and examples: [docs/TOOLS_REFERENCE.md](docs/TOOLS_REFERENCE
 | 1 | Create project layout, `requirements.txt` |
 | 2 | Implement `config.py`, `config.example.yaml` |
 | 3 | Set up OAuth in Google Cloud, implement `auth.py` |
-| 4 | Add MCP skeleton (`server.py`, stdio transport) |
+| 4 | Add MCP skeleton (`server.py`, stdio + optional HTTP) |
 | 5 | Register tools with `@server.list_tools()` and `inputSchema` |
 | 6 | Implement handlers (Gmail, Sheets, Drive, etc.) |
 | 7 | Add `confirm` / dry-run for destructive ops |

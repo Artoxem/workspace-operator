@@ -150,14 +150,6 @@ Two real captures are in the repository and already used in the docs:
 Both were rendered from the real command output; the Windows username was replaced
 with `you` before rendering.
 
-## Ready-made example
-
-A real capture of the DSH MCP manager page is in
-`docs/images/mcp-manager.png`. It shows a connected server and the 132-tool
-count. It is a DSH-local management page, not part of the Workspace Operator
-server itself, so it is useful as an internal reference for what a "connected"
-state looks like, not as the README hero.
-
 ## What to send back
 
 Put raw screenshots in `docs/images/` (or any folder) and say which ones they
