@@ -30,6 +30,16 @@ from .handlers import (
     bulk_run_handler,
     bulk_status_handler,
     bulk_undo_handler,
+    forms_add_questions_handler,
+    forms_create_handler,
+    forms_get_handler,
+    forms_list_responses_handler,
+    postmaster_list_domains_handler,
+    postmaster_traffic_stats_handler,
+    tasks_complete_handler,
+    tasks_create_handler,
+    tasks_list_handler,
+    tasks_list_lists_handler,
     add_shape_handler,
     create_filter_handler,
     list_filters_handler,
@@ -2380,6 +2390,147 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
+        types.Tool(
+            name="tasks_list_lists",
+            description="List Google Tasks task lists with their ids.",
+            inputSchema={"type": "object", "properties": {}, "required": []},
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="tasks_list",
+            description=(
+                "List tasks in a Google Tasks list. Default list is '@default'; "
+                "show_completed includes finished tasks."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "tasklist_id": {"type": "string", "default": "@default"},
+                    "show_completed": {"type": "boolean", "default": False},
+                    "max_results": {"type": "integer", "default": 50},
+                },
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="tasks_create",
+            description=(
+                "Create a Google Task. due is an RFC 3339 timestamp "
+                "(for example 2026-11-20T00:00:00.000Z)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "notes": {"type": "string"},
+                    "due": {"type": "string"},
+                    "tasklist_id": {"type": "string", "default": "@default"},
+                },
+                "required": ["title"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="tasks_complete",
+            description="Mark a Google Task as completed.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "tasklist_id": {"type": "string", "default": "@default"},
+                },
+                "required": ["task_id"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="forms_create",
+            description="Create a Google Form with a title and optional description.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                },
+                "required": ["title"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="forms_add_questions",
+            description=(
+                "Append short-answer questions to a Google Form. Each question is an "
+                "object with title, optional description and required."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "form_id": {"type": "string"},
+                    "questions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "description": {"type": "string"},
+                                "required": {"type": "boolean"},
+                            },
+                            "required": ["title"],
+                        },
+                    },
+                },
+                "required": ["form_id", "questions"],
+            },
+            annotations=_WRITE,
+        ),
+        types.Tool(
+            name="forms_get",
+            description="Read a Google Form: title, description, responder link and questions.",
+            inputSchema={
+                "type": "object",
+                "properties": {"form_id": {"type": "string"}},
+                "required": ["form_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="forms_list_responses",
+            description="List Google Form responses with answers mapped to question titles.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "form_id": {"type": "string"},
+                    "max_results": {"type": "integer", "default": 50},
+                },
+                "required": ["form_id"],
+            },
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="postmaster_list_domains",
+            description=(
+                "List domains verified in Gmail Postmaster Tools with the account's "
+                "permission level."
+            ),
+            inputSchema={"type": "object", "properties": {}, "required": []},
+            annotations=_READ_ONLY,
+        ),
+        types.Tool(
+            name="postmaster_traffic_stats",
+            description=(
+                "Read Gmail Postmaster traffic stats for a verified domain: spam rate, "
+                "domain reputation, DKIM/DMARC/SPF ratios and delivery errors."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "domain": {"type": "string"},
+                    "days": {"type": "integer", "default": 7},
+                },
+                "required": ["domain"],
+            },
+            annotations=_READ_ONLY,
+        ),
     ]
 
 
@@ -2691,6 +2842,43 @@ def create_server(config: Config, logger) -> Server:
                     a.get("job_id"),
                     a.get("confirm", False),
                     _on_undo_finish,
+                ),
+                "tasks_list_lists": lambda a: tasks_list_lists_handler(config, logger),
+                "tasks_list": lambda a: tasks_list_handler(
+                    config,
+                    logger,
+                    a.get("tasklist_id", "@default"),
+                    a.get("show_completed", False),
+                    a.get("max_results", 50),
+                ),
+                "tasks_create": lambda a: tasks_create_handler(
+                    config,
+                    logger,
+                    a.get("title"),
+                    a.get("notes"),
+                    a.get("due"),
+                    a.get("tasklist_id", "@default"),
+                ),
+                "tasks_complete": lambda a: tasks_complete_handler(
+                    config, logger, a.get("task_id"), a.get("tasklist_id", "@default")
+                ),
+                "forms_create": lambda a: forms_create_handler(
+                    config, logger, a.get("title"), a.get("description")
+                ),
+                "forms_add_questions": lambda a: forms_add_questions_handler(
+                    config, logger, a.get("form_id"), a.get("questions") or []
+                ),
+                "forms_get": lambda a: forms_get_handler(
+                    config, logger, a.get("form_id")
+                ),
+                "forms_list_responses": lambda a: forms_list_responses_handler(
+                    config, logger, a.get("form_id"), a.get("max_results", 50)
+                ),
+                "postmaster_list_domains": lambda a: postmaster_list_domains_handler(
+                    config, logger
+                ),
+                "postmaster_traffic_stats": lambda a: postmaster_traffic_stats_handler(
+                    config, logger, a.get("domain"), a.get("days", 7)
                 ),
                 "workspace_search": lambda a: workspace_search_handler(
                     config,

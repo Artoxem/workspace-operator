@@ -33,9 +33,9 @@ the server answers with an explicit "disabled by the active tool profile" error.
 
 | Profile | Tools | What is exposed |
 |---|---:|---|
-| `full` (default) | 122 | everything |
-| `read-write` | 103 | everything except `destructiveHint: true` |
-| `read-only` | 33 | only `readOnlyHint: true` |
+| `full` (default) | 132 | everything |
+| `read-write` | 113 | everything except `destructiveHint: true` |
+| `read-only` | 39 | only `readOnlyHint: true` |
 
 `allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
 
@@ -349,6 +349,33 @@ Safety and configuration:
   - Restore from backup.
 
 ---
+
+## Tasks
+- `tasks_list_lists()`
+  - Task lists with ids.
+- `tasks_list(tasklist_id='@default', show_completed=false, max_results=50)`
+  - Tasks in a list; completed tasks are hidden unless `show_completed=true`.
+- `tasks_create(title, notes?, due?, tasklist_id='@default')`
+  - `due` is an RFC 3339 timestamp, e.g. `2026-11-20T00:00:00.000Z`.
+- `tasks_complete(task_id, tasklist_id='@default')`
+  - Marks a task completed.
+
+## Forms
+- `forms_create(title, description?)`
+  - Creates a form and returns its id and responder link.
+- `forms_add_questions(form_id, questions[])`
+  - Appends short-answer questions. Each: `{title, description?, required?}`.
+- `forms_get(form_id)`
+  - Title, description, responder link and questions with ids.
+- `forms_list_responses(form_id, max_results=50)`
+  - Responses with answers mapped to question titles (max 100).
+
+## Postmaster
+- `postmaster_list_domains()`
+  - Domains verified in Postmaster Tools and your permission level.
+- `postmaster_traffic_stats(domain, days=7)`
+  - Daily spam rate, domain reputation, DKIM/DMARC/SPF ratios and delivery
+    errors for a verified domain (up to 90 days).
 
 ## Resources
 

@@ -4,12 +4,12 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Slid
 license: MIT
 metadata:
   server: workspace-operator
-  version: "1.21.0"
+  version: "1.22.0"
 ---
 
 # Google Workspace automation
 
-You have an MCP server with 122 tools over Google Drive, Docs, Sheets, Slides,
+You have an MCP server with 132 tools over Google Drive, Docs, Sheets, Slides,
 Gmail, Calendar and Apps Script. Follow this order; it keeps context small and
 operations reversible.
 

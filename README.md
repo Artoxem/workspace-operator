@@ -5,11 +5,11 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
-with 122 tools, staged writes and server-side tool profiles.
+with 132 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-122-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-132-informational)](#-tool-catalog)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -26,7 +26,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 file transfer in both directions, presentation assembly, sheet formatting, threaded
 replies and attachments.
 
-**122 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
+**132 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -181,9 +181,9 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 122 | your own machine, full trust |
-| `read-write` | 103 | daily work — destructive tools hidden |
-| `read-only` | 33 | exploration, demos, shared machines, untrusted agents |
+| `full` | 132 | your own machine, full trust |
+| `read-write` | 113 | daily work — destructive tools hidden |
+| `read-only` | 39 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-write"
@@ -330,6 +330,40 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `bulk_result` | read | Page through per-item results (50 by default, 200 max) |
 | `bulk_list` | read | Recent bulk jobs |
 | `bulk_undo` | write | Revert a completed move/rename/trash job from its saved state (`confirm=true`) |
+
+</details>
+
+<details>
+<summary>✅ Tasks (4)</summary>
+
+| Tool | Type | Description |
+|---|---|---|
+| `tasks_list_lists` | read | Task lists with their ids |
+| `tasks_list` | read | Tasks in a list; optionally include completed |
+| `tasks_create` | write | Create a task with notes and an optional due date |
+| `tasks_complete` | write | Mark a task completed |
+
+</details>
+
+<details>
+<summary>📝 Forms (4)</summary>
+
+| Tool | Type | Description |
+|---|---|---|
+| `forms_create` | write | Create a form with a title and description |
+| `forms_add_questions` | write | Append short-answer questions |
+| `forms_get` | read | Title, responder link and questions |
+| `forms_list_responses` | read | Responses with answers mapped to question titles |
+
+</details>
+
+<details>
+<summary>📮 Postmaster (2)</summary>
+
+| Tool | Type | Description |
+|---|---|---|
+| `postmaster_list_domains` | read | Verified domains and your permission level |
+| `postmaster_traffic_stats` | read | Spam rate, reputation, DKIM/DMARC/SPF and delivery errors |
 
 </details>
 
@@ -524,7 +558,7 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 ## How it works
 
 ```
-server.py                    MCP server: 122 tool definitions, resources, prompts, profiles
+server.py                    MCP server: 132 tool definitions, resources, prompts, profiles
 workspace_operator/
 ├─ profiles.py               read-only / read-write / full + allow-deny lists
 ├─ config.py                 config file + environment overrides
@@ -576,7 +610,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 311 unit tests, no network
+python -m unittest discover -s tests -v     # 327 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch

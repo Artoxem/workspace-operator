@@ -43,6 +43,10 @@ scopes:
   - "https://www.googleapis.com/auth/gmail.settings.basic"    # Gmail filters
   - "https://www.googleapis.com/auth/calendar"                # Manage calendar events
   - "https://www.googleapis.com/auth/presentations"           # Google Slides
+  - "https://www.googleapis.com/auth/tasks"                       # Google Tasks
+  - "https://www.googleapis.com/auth/forms.body"                  # Google Forms (create/edit)
+  - "https://www.googleapis.com/auth/forms.responses.readonly"    # Form responses
+  - "https://www.googleapis.com/auth/postmaster.readonly"         # Postmaster domain stats
 
 
 # Runtime behaviour

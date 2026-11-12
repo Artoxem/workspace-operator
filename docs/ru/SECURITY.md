@@ -25,9 +25,9 @@
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 122 | своя машина, полное доверие |
-| `read-write` | 103 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 33 | разведка, демо, общие машины, недоверенные агенты |
+| `full` | 132 | своя машина, полное доверие |
+| `read-write` | 113 | ежедневная работа — деструктивные скрыты |
+| `read-only` | 39 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-only"
@@ -81,14 +81,19 @@ OAuth scopes определяют, к каким данным в вашем Goog
 ### Scopes по умолчанию (полный доступ)
 ```yaml
 scopes:
-  - "https://www.googleapis.com/auth/spreadsheets"           # Чтение/запись таблиц
-  - "https://www.googleapis.com/auth/drive"                   # Полный доступ к Drive
-  - "https://www.googleapis.com/auth/documents"               # Чтение/запись документов
-  - "https://www.googleapis.com/auth/gmail.modify"            # Чтение/отправка/удаление писем (включает чтение)
-  - "https://www.googleapis.com/auth/gmail.settings.basic"    # Фильтры Gmail
-  - "https://www.googleapis.com/auth/calendar"                # Управление календарём
-  - "https://www.googleapis.com/auth/script.projects"         # Доступ к Apps Script
-  - "https://www.googleapis.com/auth/script.deployments"      # Деплои Apps Script
+  - "https://www.googleapis.com/auth/spreadsheets"
+  - "https://www.googleapis.com/auth/drive"
+  - "https://www.googleapis.com/auth/script.projects"
+  - "https://www.googleapis.com/auth/script.deployments"
+  - "https://www.googleapis.com/auth/documents"
+  - "https://www.googleapis.com/auth/presentations"
+  - "https://www.googleapis.com/auth/gmail.modify"
+  - "https://www.googleapis.com/auth/gmail.settings.basic"
+  - "https://www.googleapis.com/auth/calendar"
+  - "https://www.googleapis.com/auth/tasks"
+  - "https://www.googleapis.com/auth/forms.body"
+  - "https://www.googleapis.com/auth/forms.responses.readonly"
+  - "https://www.googleapis.com/auth/postmaster.readonly"
 ```
 
 ### Конфигурация только для чтения (безопаснее для тестирования)

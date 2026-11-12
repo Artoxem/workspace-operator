@@ -25,9 +25,9 @@ anything outside the profile with an explicit error.
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 122 | your own machine, full trust |
-| `read-write` | 103 | daily work — destructive tools hidden |
-| `read-only` | 33 | exploration, demos, shared machines, untrusted agents |
+| `full` | 132 | your own machine, full trust |
+| `read-write` | 113 | daily work — destructive tools hidden |
+| `read-only` | 39 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-only"
@@ -82,14 +82,19 @@ OAuth scopes define what the server can access in your Google account. You can c
 ### Default Scopes (Full Access)
 ```yaml
 scopes:
-  - "https://www.googleapis.com/auth/spreadsheets"           # Read/write sheets
-  - "https://www.googleapis.com/auth/drive"                   # Full Drive access
-  - "https://www.googleapis.com/auth/documents"               # Read/write docs
-  - "https://www.googleapis.com/auth/gmail.modify"            # Read/send/delete emails (includes read)
-  - "https://www.googleapis.com/auth/gmail.settings.basic"    # Gmail filters
-  - "https://www.googleapis.com/auth/calendar"                # Manage calendar
-  - "https://www.googleapis.com/auth/script.projects"         # Apps Script access
-  - "https://www.googleapis.com/auth/script.deployments"      # Apps Script deployments
+  - "https://www.googleapis.com/auth/spreadsheets"
+  - "https://www.googleapis.com/auth/drive"
+  - "https://www.googleapis.com/auth/script.projects"
+  - "https://www.googleapis.com/auth/script.deployments"
+  - "https://www.googleapis.com/auth/documents"
+  - "https://www.googleapis.com/auth/presentations"
+  - "https://www.googleapis.com/auth/gmail.modify"
+  - "https://www.googleapis.com/auth/gmail.settings.basic"
+  - "https://www.googleapis.com/auth/calendar"
+  - "https://www.googleapis.com/auth/tasks"
+  - "https://www.googleapis.com/auth/forms.body"
+  - "https://www.googleapis.com/auth/forms.responses.readonly"
+  - "https://www.googleapis.com/auth/postmaster.readonly"
 ```
 
 ### Read-Only Configuration (Safer for Exploration)

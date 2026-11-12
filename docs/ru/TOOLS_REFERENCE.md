@@ -33,9 +33,9 @@
 
 | Профиль | Инструментов | Что доступно |
 |---|---:|---|
-| `full` (по умолчанию) | 122 | всё |
-| `read-write` | 103 | всё, кроме `destructiveHint: true` |
-| `read-only` | 33 | только `readOnlyHint: true` |
+| `full` (по умолчанию) | 132 | всё |
+| `read-write` | 113 | всё, кроме `destructiveHint: true` |
+| `read-only` | 39 | только `readOnlyHint: true` |
 
 `allowed_tools` и `denied_tools` применяются поверх профиля; запрет важнее разрешения.
 
@@ -346,6 +346,33 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
   - Откатить из backup.
 
 ---
+
+## Задачи
+- `tasks_list_lists()`
+  - Списки задач и их ID.
+- `tasks_list(tasklist_id='@default', show_completed=false, max_results=50)`
+  - Задачи в списке; выполненные скрыты, пока не указан `show_completed=true`.
+- `tasks_create(title, notes?, due?, tasklist_id='@default')`
+  - `due` — время в RFC 3339, например `2026-11-20T00:00:00.000Z`.
+- `tasks_complete(task_id, tasklist_id='@default')`
+  - Отмечает задачу выполненной.
+
+## Формы
+- `forms_create(title, description?)`
+  - Создаёт форму, возвращает ID и ссылку для ответов.
+- `forms_add_questions(form_id, questions[])`
+  - Добавляет вопросы с коротким ответом. Каждый: `{title, description?, required?}`.
+- `forms_get(form_id)`
+  - Заголовок, описание, ссылка и вопросы с ID.
+- `forms_list_responses(form_id, max_results=50)`
+  - Ответы с привязкой к названиям вопросов (до 100).
+
+## Postmaster
+- `postmaster_list_domains()`
+  - Домены, подтверждённые в Postmaster Tools, и уровень доступа.
+- `postmaster_traffic_stats(domain, days=7)`
+  - Ежедневная доля спама, репутация домена, DKIM/DMARC/SPF и ошибки доставки
+    для подтверждённого домена (до 90 дней).
 
 ## Ресурсы (Resources)
 

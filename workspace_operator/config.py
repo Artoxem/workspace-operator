@@ -16,6 +16,10 @@ DEFAULT_SCOPES = [
     "https://www.googleapis.com/auth/gmail.settings.basic",
     "https://www.googleapis.com/auth/calendar",
     "https://www.googleapis.com/auth/presentations",
+    "https://www.googleapis.com/auth/tasks",
+    "https://www.googleapis.com/auth/forms.body",
+    "https://www.googleapis.com/auth/forms.responses.readonly",
+    "https://www.googleapis.com/auth/postmaster.readonly",
 ]
 
 

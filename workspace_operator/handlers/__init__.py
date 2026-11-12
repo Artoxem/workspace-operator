@@ -130,6 +130,22 @@ from .gmail_threads import (
     gmail_get_thread_handler,
     gmail_reply_handler,
 )
+from .tasks import (
+    tasks_complete_handler,
+    tasks_create_handler,
+    tasks_list_handler,
+    tasks_list_lists_handler,
+)
+from .forms import (
+    forms_add_questions_handler,
+    forms_create_handler,
+    forms_get_handler,
+    forms_list_responses_handler,
+)
+from .postmaster import (
+    postmaster_list_domains_handler,
+    postmaster_traffic_stats_handler,
+)
 from .formatting import format_sheet_handler
 from .bulk import (
     bulk_cancel_handler,
@@ -280,4 +296,14 @@ __all__ = [
     "bulk_result_handler",
     "bulk_list_handler",
     "bulk_undo_handler",
+    "tasks_complete_handler",
+    "tasks_create_handler",
+    "tasks_list_handler",
+    "tasks_list_lists_handler",
+    "forms_add_questions_handler",
+    "forms_create_handler",
+    "forms_get_handler",
+    "forms_list_responses_handler",
+    "postmaster_list_domains_handler",
+    "postmaster_traffic_stats_handler",
 ]
