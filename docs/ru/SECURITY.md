@@ -93,7 +93,8 @@ scopes:
   - "https://www.googleapis.com/auth/tasks"
   - "https://www.googleapis.com/auth/forms.body"
   - "https://www.googleapis.com/auth/forms.responses.readonly"
-  - "https://www.googleapis.com/auth/postmaster.readonly"
+  - "https://www.googleapis.com/auth/postmaster.domain"
+  - "https://www.googleapis.com/auth/postmaster.traffic.readonly"
 ```
 
 ### Конфигурация только для чтения (безопаснее для тестирования)

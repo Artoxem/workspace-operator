@@ -609,7 +609,7 @@ skills/google-workspace/     Agent Skill: когда какой инструме
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 327 юнит-тестов, без сети
+python -m unittest discover -s tests -v     # 328 юнит-тестов, без сети
 python tests/live_smoke.py                  # 51 проверка на реальном аккаунте
 python tests/live_new_tools.py              # 15 проверок партии v1.14
 python tests/live_phase2.py                 # 8 проверок партии v1.15

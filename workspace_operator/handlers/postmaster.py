@@ -1,18 +1,50 @@
-"""Gmail Postmaster Tools handlers (domain deliverability metrics)."""
+"""Gmail Postmaster Tools handlers (v2 domain deliverability metrics)."""
 
+import json
 import logging
+import urllib.request
 from datetime import date, timedelta
 from typing import Any, Dict, List
 
-from googleapiclient.discovery import build
+from googleapiclient.discovery import build_from_document
 
 from ..auth import get_creds
 from ..config import Config
 
+DISCOVERY_URL = (
+    "https://gmailpostmastertools.googleapis.com/$discovery/rest?version=v2"
+)
+_DISCOVERY: Dict[str, Any] = {}
+
+# Metric definitions sent to domains.domainStats.query. The key is the name
+# echoed back in each DomainStat.metric field.
+METRICS = [
+    {"name": "spam_rate", "baseMetric": {"standardMetric": "SPAM_RATE"}},
+    {"name": "delivery_errors", "baseMetric": {"standardMetric": "DELIVERY_ERROR_COUNT"}},
+    {
+        "name": "auth_spf",
+        "baseMetric": {"standardMetric": "AUTH_SUCCESS_RATE"},
+        "filter": 'auth_type = "spf"',
+    },
+    {
+        "name": "auth_dkim",
+        "baseMetric": {"standardMetric": "AUTH_SUCCESS_RATE"},
+        "filter": 'auth_type = "dkim"',
+    },
+    {
+        "name": "auth_dmarc",
+        "baseMetric": {"standardMetric": "AUTH_SUCCESS_RATE"},
+        "filter": 'auth_type = "dmarc"',
+    },
+]
+
 
 def _service(config: Config):
-    return build(
-        "gmailpostmastertools", "v1beta1", credentials=get_creds(config), cache_discovery=False
+    if not _DISCOVERY:
+        with urllib.request.urlopen(DISCOVERY_URL, timeout=20) as response:
+            _DISCOVERY.update(json.load(response))
+    return build_from_document(
+        json.dumps(_DISCOVERY), credentials=get_creds(config)
     )
 
 
@@ -27,16 +59,34 @@ def _percent(value: Any) -> str:
     if value is None:
         return "n/a"
     try:
-        return f"{float(value) * 100:.2f}%"
+        number = float(value)
     except (TypeError, ValueError):
         return "n/a"
+    if 0 <= number <= 1:
+        number *= 100
+    return f"{number:.2f}%"
 
 
-def _date_of(name: str) -> str:
-    tail = str(name or "").rsplit("/", 1)[-1]
-    if len(tail) == 8 and tail.isdigit():
-        return f"{tail[0:4]}-{tail[4:6]}-{tail[6:8]}"
-    return tail
+def _stat_value(stat: Dict[str, Any]) -> Any:
+    value = stat.get("value") or {}
+    for key in ("doubleValue", "floatValue", "intValue"):
+        if key in value and value[key] is not None:
+            try:
+                return float(value[key]) if key != "intValue" else int(value[key])
+            except (TypeError, ValueError):
+                return value[key]
+    return value.get("stringValue")
+
+
+def _date_label(stat: Dict[str, Any]) -> str:
+    date_value = stat.get("date") or {}
+    if date_value:
+        return (
+            f"{int(date_value.get('year', 0)):04d}-"
+            f"{int(date_value.get('month', 0)):02d}-"
+            f"{int(date_value.get('day', 0)):02d}"
+        )
+    return "overall"
 
 
 def postmaster_list_domains_handler(config: Config, logger: logging.Logger) -> str:
@@ -46,9 +96,7 @@ def postmaster_list_domains_handler(config: Config, logger: logging.Logger) -> s
         token = None
         while True:
             response = (
-                service.domains()
-                .list(pageSize=100, pageToken=token)
-                .execute()
+                service.domains().list(pageSize=100, pageToken=token).execute()
             )
             domains.extend(response.get("domains", []))
             token = response.get("nextPageToken")
@@ -61,9 +109,12 @@ def postmaster_list_domains_handler(config: Config, logger: logging.Logger) -> s
             )
         lines = ["Postmaster domains:"]
         for entry in domains:
+            state = entry.get("verificationState")
             lines.append(
                 f"- {_normalize_domain(entry.get('name', ''))} "
-                f"(permission: {entry.get('permission', 'unknown')})"
+                f"(permission: {entry.get('permission', 'unknown')}"
+                + (f", state: {state}" if state else "")
+                + ")"
             )
         return "\n".join(lines)
     except Exception as exc:  # noqa: BLE001
@@ -88,49 +139,62 @@ def postmaster_traffic_stats_handler(
         end = date.today()
         start = end - timedelta(days=window - 1)
         service = _service(config)
-        entries: List[Dict[str, Any]] = []
+        rows: List[Dict[str, Any]] = []
         token = None
         while True:
+            body: Dict[str, Any] = {
+                "timeQuery": {
+                    "dateRanges": {
+                        "dateRanges": [
+                            {
+                                "start": {
+                                    "year": start.year,
+                                    "month": start.month,
+                                    "day": start.day,
+                                },
+                                "end": {
+                                    "year": end.year,
+                                    "month": end.month,
+                                    "day": end.day,
+                                },
+                            }
+                        ]
+                    }
+                },
+                "metricDefinitions": METRICS,
+                "aggregationGranularity": "DAILY",
+                "pageSize": 200,
+            }
+            if token:
+                body["pageToken"] = token
             response = (
                 service.domains()
-                .trafficStats()
-                .list(
-                    parent=f"domains/{name}",
-                    startDate_year=start.year,
-                    startDate_month=start.month,
-                    startDate_day=start.day,
-                    endDate_year=end.year,
-                    endDate_month=end.month,
-                    endDate_day=end.day,
-                    pageSize=90,
-                    pageToken=token,
-                )
+                .domainStats()
+                .query(parent=f"domains/{name}", body=body)
                 .execute()
             )
-            entries.extend(response.get("trafficStats", []))
+            rows.extend(response.get("domainStats", []))
             token = response.get("nextPageToken")
             if not token:
                 break
-        if not entries:
+        if not rows:
             return f"No traffic statistics for {name} in the last {window} day(s)."
+
+        by_date: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            label = _date_label(row)
+            by_date.setdefault(label, {})[row.get("metric", "")] = _stat_value(row)
+
         lines = [f"Postmaster stats for {name} ({window} day(s)):"]
-        for entry in sorted(entries, key=lambda item: item.get("name", "")):
-            errors = entry.get("deliveryErrors") or []
-            error_text = ", ".join(
-                f"{error.get('errorType', '?')}={_percent(error.get('errorRatio'))}"
-                for error in errors
+        for label in sorted(by_date):
+            metrics = by_date[label]
+            lines.append(
+                f"- {label}: spam={_percent(metrics.get('spam_rate'))}, "
+                f"spf={_percent(metrics.get('auth_spf'))}, "
+                f"dkim={_percent(metrics.get('auth_dkim'))}, "
+                f"dmarc={_percent(metrics.get('auth_dmarc'))}, "
+                f"delivery_errors={metrics.get('delivery_errors', 'n/a')}"
             )
-            line = (
-                f"- {_date_of(entry.get('name', ''))}: "
-                f"spam={_percent(entry.get('userReportedSpamRatio'))}, "
-                f"reputation={entry.get('domainReputation', 'n/a')}, "
-                f"dkim={_percent(entry.get('dkimSuccessRatio'))}, "
-                f"dmarc={_percent(entry.get('dmarcSuccessRatio'))}, "
-                f"spf={_percent(entry.get('spfSuccessRatio'))}"
-            )
-            if error_text:
-                line += f", errors: {error_text}"
-            lines.append(line)
         return "\n".join(lines)
     except Exception as exc:  # noqa: BLE001
         logger.error("postmaster_traffic_stats failed: %s", exc)

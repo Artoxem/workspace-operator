@@ -610,7 +610,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 327 unit tests, no network
+python -m unittest discover -s tests -v     # 328 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch

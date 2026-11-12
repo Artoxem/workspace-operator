@@ -36,13 +36,14 @@ returns an empty list or a clear error. Uses the v1beta1 API surface.
 
 ## Scopes and re-authorization
 
-Four scopes were added:
+Five scopes were added:
 
 ```
 https://www.googleapis.com/auth/tasks
 https://www.googleapis.com/auth/forms.body
 https://www.googleapis.com/auth/forms.responses.readonly
-https://www.googleapis.com/auth/postmaster.readonly
+https://www.googleapis.com/auth/postmaster.domain
+https://www.googleapis.com/auth/postmaster.traffic.readonly
 ```
 
 Existing tokens do not contain them, so Google returns `403
@@ -58,7 +59,7 @@ else changes: same client secrets, same profile, same container mount.
 
 ## Tests
 
-- 327 unit tests.
+- 328 unit tests.
 - Handler tests for Tasks, Forms and Postmaster request/response formatting.
 - Live checks require the re-issued token; run `doctor --online` after consent.
 

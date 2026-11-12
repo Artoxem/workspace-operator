@@ -110,10 +110,21 @@ class PostmasterTests(unittest.TestCase):
 
     def test_percent_and_date(self):
         self.assertEqual(postmaster_module._percent(0.0123), "1.23%")
+        self.assertEqual(postmaster_module._percent(99.5), "99.50%")
         self.assertEqual(postmaster_module._percent(None), "n/a")
         self.assertEqual(
-            postmaster_module._date_of("domains/example.com/trafficStats/20261112"),
+            postmaster_module._date_label(
+                {"date": {"year": 2026, "month": 11, "day": 12}}
+            ),
             "2026-11-12",
+        )
+
+    def test_stat_value(self):
+        self.assertEqual(
+            postmaster_module._stat_value({"value": {"doubleValue": 0.5}}), 0.5
+        )
+        self.assertEqual(
+            postmaster_module._stat_value({"value": {"intValue": "7"}}), 7
         )
 
 
