@@ -61,6 +61,59 @@ alone**: the OAuth token still carries whatever scopes you granted. The stronges
 combination is read-only scopes **and** the `read-only` profile — then neither the
 token nor the server can write.
 
+## Deployment models and isolation
+
+Workspace Operator is a **single-user server**. One process uses one OAuth token
+and exposes one tool profile. Several MCP clients can connect, but they are
+clients of the same user, not separate users.
+
+| Model | Supported | Notes |
+|---|---|---|
+| One person, several clients | Yes | `http_tokens` gives each client a name for the audit log; all share the account and profile |
+| Team sharing one Google account | Yes, no isolation | Same Drive/Gmail, same audit log, same bulk jobs; use `read-only` for untrusted members |
+| Several Google accounts | No, one instance each | Per user: own `config.yaml`, `token.json`, `data/` and port |
+| Public or multi-tenant service | No | No user accounts, quotas, per-user profiles or job ownership |
+
+### What a bearer token does and does not do
+
+- It authenticates a request to this instance and gives the token a name in the
+  audit log (`client` field).
+- It does **not** scope tools, data or jobs. Every token sees every exposed tool
+  and can call `bulk_status`, `bulk_cancel` or `bulk_result` for any job.
+- `http_tokens` is a client registry, not a user registry. There is no role
+  model: the profile and allow/deny lists are global.
+
+### Recommended deployments
+
+**One person, one or more clients.** Use stdio for a single desktop client, or
+one HTTP container with a token per client. Keep the port on loopback.
+
+**Small team on one account.** It works, but treat everyone as the same user.
+Run the `read-only` profile for people who only need to look, keep
+`MCP_AUTH_TOKEN` private, and remember that the audit log is shared.
+
+**Several accounts.** Run one instance per account:
+
+```bash
+docker run -d --name workspace-alice \
+  -p 127.0.0.1:8765:8765 \
+  -v /home/alice/.google:/home/app/.google \
+  -v /home/alice/workspace-data:/home/app/data \
+  -e MCP_AUTH_TOKEN=... \
+  ghcr.io/artoxem/workspace-operator:1.22.2
+```
+
+Repeat with another port, config and Google folder for each person. A reverse
+proxy can route by hostname or path. This is the only configuration with real
+data isolation; horizontal scaling of one token across several instances is not
+supported because bulk plans and jobs live on local disk.
+
+### If you need multi-tenancy
+
+It is out of scope today. A real multi-user service would need per-user OAuth,
+token-to-user mapping, per-user profiles and quotas, job ownership and a shared
+job store. None of that exists in this server.
+
 ## MCP_AUTH_TOKEN
 All tool calls require `MCP_AUTH_TOKEN` to be configured (environment variable or
 `mcp_auth_token` in `config.yaml`). This is a **server-side configuration check**

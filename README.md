@@ -76,6 +76,24 @@ Operator is for "change the workspace and be able to roll it back".
 Plus 3 resources, 3 resource templates and 8 prompts — see the
 [tool catalog](#-tool-catalog).
 
+## Who it is for
+
+Workspace Operator is a **single-user server**: one process, one Google account,
+one tool profile. "Several clients" does not mean "several users".
+
+| You have | Does it fit? | What happens |
+|---|---|---|
+| One person with several MCP clients | **Yes** | Each client can use its own bearer token (`http_tokens`); they share the account, profile and data |
+| A small team on one Google account | **Works, without isolation** | Everyone sees the same Drive/Gmail; bulk jobs and the audit log are shared; use the `read-only` profile for people you do not fully trust |
+| Several Google accounts | **One instance per account** | Separate config, OAuth token, data directory and port or container per person |
+| Public service or multi-tenant SaaS | **No** | No per-user authentication, quotas, job ownership or data separation |
+
+A bearer token only identifies a client in the audit log; it does not create a
+separate user. Anyone holding a valid token can call every exposed tool and
+cancel any bulk job in that instance. Read
+[SECURITY.md](docs/SECURITY.md#deployment-models-and-isolation) before sharing an
+instance with other people.
+
 ## Quick start
 
 ### 0 — Choose how to run it

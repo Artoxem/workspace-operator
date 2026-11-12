@@ -4,8 +4,10 @@ Workspace Operator uses Google's **installed application** flow: you click
 **Allow** in a browser once, the token is saved locally, and the server refreshes
 it automatically afterwards. No service account and no shared server is needed.
 
-Budget about ten minutes. You only repeat this when you add scopes or move to a
-new machine.
+Budget about ten minutes. This consent belongs to **one Google account**: for
+several accounts, run one instance per account (see
+[SECURITY.md](SECURITY.md#deployment-models-and-isolation)). Repeat the flow only
+when you add scopes or move to a new machine.
 
 ## What you need
 
