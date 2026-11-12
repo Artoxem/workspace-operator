@@ -24,6 +24,8 @@ with 132 tools, staged writes and server-side tool profiles.
 
 ---
 
+![Workspace Operator — MCP server for Google Workspace](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/workspace-operator-banner.jpg)
+
 Workspace Operator runs on your machine, talks to
 Google over your own OAuth client, and gives an AI agent the operations that turn
 "read my inbox" into "do the work and let me undo it": staged Apps Script updates,

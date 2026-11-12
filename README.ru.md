@@ -20,6 +20,8 @@ MCP-сервер с 132 инструментами, многошаговыми �
 
 ---
 
+![Workspace Operator — MCP-сервер для Google Workspace](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/workspace-operator-banner.jpg)
+
 Workspace Operator работает на вашей машине,
 обращается к Google через ваш собственный OAuth-клиент и даёт ИИ-агенту операции,
 которые превращают «прочитай мою почту» в «сделай работу, и чтобы можно было откатить»:

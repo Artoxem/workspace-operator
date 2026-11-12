@@ -50,7 +50,7 @@ Use absolute URLs so the same asset works on GitHub, PyPI and directory pages.
 
 | Asset | URL | Use |
 |---|---|---|
-| Banner | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/workspace-operator.png | Social preview, directory cards |
+| Banner | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/workspace-operator-banner.jpg | README hero, social preview, directory cards |
 | Gmail demo GIF | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif | Show HN/Reddit/X, Glama |
 | Doctor screenshot | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/doctor.png | AUTH_SETUP, PulseMCP |
 | Docker health | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/docker-health.png | Docker section, mcp.so |
