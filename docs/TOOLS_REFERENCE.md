@@ -274,9 +274,11 @@ Safety and configuration:
   - Read a message: From / To / Date / Subject / status / labels / attachments,
     plus the decoded body (text/plain preferred, HTML converted, 2 500 characters max).
 - `delete_email(message_id, confirm?)`
-  - Requires `confirm=true`.
+  - Moves the message to Trash; requires `confirm=true`. Recoverable for 30 days.
 - `batch_delete_emails(message_ids[], dry_run?)`
-  - Defaults to `dry_run=true`.
+  - Moves up to 1,000 messages per request to Trash; `dry_run=true` by default.
+  - Permanent deletion needs the `https://mail.google.com/` scope, which the
+    default configuration does not request.
 - `gmail_search_and_summarize(query, max_results?)`
   - Search with a short summary.
 - `gmail_get_thread(thread_id?, message_id?, include_body?)`

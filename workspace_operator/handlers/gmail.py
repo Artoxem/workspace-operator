@@ -264,7 +264,7 @@ def read_email_handler(config: Config, logger: logging.Logger, message_id: str) 
 def delete_email_handler(
     config: Config, logger: logging.Logger, message_id: str, confirm: bool = False
 ) -> str:
-    """Delete email with confirmation requirement."""
+    """Move one email to Trash with confirmation (recoverable 30 days)."""
     try:
         creds = get_creds(config)
         service = build("gmail", "v1", credentials=creds)
@@ -285,31 +285,34 @@ def delete_email_handler(
             logger.warning("Delete email attempted without confirm: %s", message_id)
             return (
                 "⚠️ CONFIRMATION REQUIRED\n\n"
-                f"This will permanently delete email {message_id}.\n\n"
+                f"This will move email {message_id} to Trash (recoverable for 30 days).\n\n"
                 f"Email preview:\n{snippet}\n\n"
                 "⚠️ To proceed, call this tool again with confirm=True"
             )
 
-        service.users().messages().delete(userId="me", id=message_id).execute()
-        logger.info("Email deleted: %s", message_id)
-        return f"✅ Email {message_id} deleted successfully."
+        service.users().messages().trash(userId="me", id=message_id).execute()
+        logger.info("Email moved to trash: %s", message_id)
+        return (
+            f"✅ Email {message_id} moved to Trash. "
+            "Recoverable in Gmail for 30 days."
+        )
 
     except Exception as e:
-        logger.error("Error deleting email %s: %s", message_id, str(e))
-        return f"Error deleting email: {str(e)}"
+        logger.error("Error moving email to trash %s: %s", message_id, str(e))
+        return f"Error moving email to trash: {str(e)}"
 
 
 def batch_delete_emails_handler(
     config: Config, logger: logging.Logger, message_ids: List[str], dry_run: bool = True
 ) -> str:
-    """Batch delete emails with dry-run mode."""
+    """Move many emails to Trash with dry-run mode."""
     try:
         creds = get_creds(config)
         service = build("gmail", "v1", credentials=creds)
 
         if dry_run:
-            preview = "🔍 DRY RUN MODE - No emails will be deleted\n\n"
-            preview += f"Would delete {len(message_ids)} email(s):\n\n"
+            preview = "🔍 DRY RUN MODE — no emails will be changed\n\n"
+            preview += f"Would move {len(message_ids)} email(s) to Trash:\n\n"
 
             previews_to_show = min(10, len(message_ids))
             for msg_id in message_ids[:previews_to_show]:
@@ -328,18 +331,24 @@ def batch_delete_emails_handler(
             if len(message_ids) > previews_to_show:
                 preview += f"\n... and {len(message_ids) - previews_to_show} more\n"
 
-            preview += "\n⚠️ To actually delete these emails, call with dry_run=False"
-            logger.info("Batch delete dry-run: %s emails", len(message_ids))
+            preview += "\n⚠️ To move these emails to Trash, call with dry_run=False"
+            logger.info("Batch trash dry-run: %s emails", len(message_ids))
             return preview
 
-        body = {"ids": message_ids}
-        service.users().messages().batchDelete(userId="me", body=body).execute()
-        logger.info("Batch deleted %s emails", len(message_ids))
-        return f"✅ Successfully deleted {len(message_ids)} email(s)."
+        moved = 0
+        for start in range(0, len(message_ids), 1000):
+            chunk = message_ids[start : start + 1000]
+            service.users().messages().batchModify(
+                userId="me",
+                body={"ids": chunk, "addLabelIds": ["TRASH"], "removeLabelIds": []},
+            ).execute()
+            moved += len(chunk)
+        logger.info("Batch moved %s emails to trash", moved)
+        return f"✅ Moved {moved} email(s) to Trash. Recoverable for 30 days."
 
     except Exception as e:
-        logger.error("Error batch deleting emails: %s", str(e))
-        return f"Error: batch deleting emails: {str(e)}"
+        logger.error("Error batch moving emails to trash: %s", str(e))
+        return f"Error: moving emails to trash: {str(e)}"
 
 
 def gmail_search_and_summarize_handler(

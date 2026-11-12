@@ -274,7 +274,9 @@ Workspace search: 'бюджет Q3' — 6 result(s) [drive (3), gmail (2), calen
 - `delete_email(message_id, confirm?)`
   - Требует `confirm=true`.
 - `batch_delete_emails(message_ids[], dry_run?)`
-  - По умолчанию `dry_run=true`.
+  - Перемещает до 1000 писем за запрос в корзину; `dry_run=true` по умолчанию.
+  - Безвозвратное удаление требует scope `https://mail.google.com/`, который
+    стандартная конфигурация не запрашивает.
 - `gmail_search_and_summarize(query, max_results?)`
   - Поиск и краткое резюме.
 - `gmail_get_thread(thread_id?, message_id?, include_body?)`

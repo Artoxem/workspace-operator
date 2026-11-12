@@ -573,8 +573,8 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 | `gmail_reply` | write | Reply in-thread (`draft_mode=true` by default) |
 | `gmail_label_apply` | write | Apply a label (`dry_run=true` by default) |
 | `gmail_archive` | write | Archive (`confirm=true`) |
-| `delete_email` | destructive | Delete (`confirm=true`) |
-| `batch_delete_emails` | destructive | Delete many (`dry_run=true` by default) |
+| `delete_email` | destructive | Move to Trash (`confirm=true`, recoverable 30 days) |
+| `batch_delete_emails` | destructive | Move many to Trash (`dry_run=true` by default) |
 | `gmail_list_labels` | read | Labels with IDs, user and system |
 | `gmail_create_label` | write | Create a label |
 | `gmail_send_with_attachments` | write | Draft or send with local files (20 MB) |

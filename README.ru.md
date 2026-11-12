@@ -567,8 +567,8 @@ docker run -i --rm \
 | `gmail_reply` | write | Ответ в тред (`draft_mode=true` по умолчанию) |
 | `gmail_label_apply` | write | Навесить метку (`dry_run=true`) |
 | `gmail_archive` | write | Архивировать (`confirm=true`) |
-| `delete_email` | destructive | Удалить письмо (`confirm=true`) |
-| `batch_delete_emails` | destructive | Удалить несколько (`dry_run=true`) |
+| `delete_email` | destructive | В корзину (`confirm=true`, восстановимо 30 дней) |
+| `batch_delete_emails` | destructive | Несколько в корзину (`dry_run=true`) |
 | `gmail_list_labels` | read | Метки с ID, пользовательские и системные |
 | `gmail_create_label` | write | Создать метку |
 | `gmail_send_with_attachments` | write | Черновик или отправка с файлами (20 МБ) |

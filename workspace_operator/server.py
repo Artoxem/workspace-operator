@@ -1179,7 +1179,7 @@ def _tools() -> List[types.Tool]:
         ),
         types.Tool(
             name="delete_email",
-            description="Delete a specific email by ID. REQUIRES confirm=True parameter for safety!",
+            description="Move one email to Trash by ID (recoverable 30 days). REQUIRES confirm=True.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -1199,7 +1199,7 @@ def _tools() -> List[types.Tool]:
         ),
         types.Tool(
             name="batch_delete_emails",
-            description="Delete multiple emails by their IDs. Defaults to dry_run=True for safety!",
+            description="Move multiple emails to Trash by ID. Defaults to dry_run=True.",
             inputSchema={
                 "type": "object",
                 "properties": {
