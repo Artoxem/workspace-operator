@@ -17,6 +17,7 @@ process simple.
 import hmac
 import json
 import logging
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -111,8 +112,8 @@ def _security_settings(
     )
 
 
-def build_asgi_app(server, options: HttpOptions, version: str) -> Starlette:
-    manager = StreamableHTTPSessionManager(
+def _manager_for(server, options: HttpOptions) -> StreamableHTTPSessionManager:
+    return StreamableHTTPSessionManager(
         app=server,
         stateless=True,
         json_response=True,
@@ -120,6 +121,17 @@ def build_asgi_app(server, options: HttpOptions, version: str) -> Starlette:
             options.host, options.port, options.extra_hosts
         ),
     )
+
+
+def build_asgi_app(servers, options: HttpOptions, version: str) -> Starlette:
+    """Build the HTTP app.
+
+    ``servers`` is either one MCP ``Server`` (the legacy default) or a mapping
+    of path → server, used for the profile endpoints.
+    """
+    if not isinstance(servers, dict):
+        servers = {"/mcp": servers}
+    managers = {path: _manager_for(server, options) for path, server in servers.items()}
 
     async def healthz(_request):
         return JSONResponse(
@@ -136,8 +148,9 @@ def build_asgi_app(server, options: HttpOptions, version: str) -> Starlette:
         """Raw ASGI endpoint: the session manager writes its own response."""
 
         async def __call__(self, scope, receive, send):
-            path = scope.get("path", "")
-            if path not in ("/mcp", "/mcp/"):
+            path = scope.get("path", "").rstrip("/") or "/"
+            manager = managers.get(path)
+            if manager is None:
                 response = JSONResponse({"error": "not found"}, status_code=404)
                 await response(scope, receive, send)
                 return
@@ -159,12 +172,19 @@ def build_asgi_app(server, options: HttpOptions, version: str) -> Starlette:
             finally:
                 current_client.reset(token)
 
+    @asynccontextmanager
+    async def lifespan(_app):
+        async with AsyncExitStack() as stack:
+            for manager in managers.values():
+                await stack.enter_async_context(manager.run())
+            yield
+
     app = Starlette(
         routes=[
             Route("/healthz", healthz, methods=["GET"]),
             Mount("/", app=McpEndpoint()),
         ],
-        lifespan=lambda app: manager.run(),
+        lifespan=lifespan,
     )
     return app
 
@@ -182,7 +202,21 @@ def serve_http(server, config, logger: logging.Logger, options: HttpOptions, ver
         return 2
     options.tokens = tokens
 
-    app = build_asgi_app(server, options, version)
+    from dataclasses import replace
+    from .server import create_server
+
+    servers = {"/mcp": server}
+    for path, profile in (
+        ("/mcp/read", "read-only"),
+        ("/mcp/full", "full"),
+        ("/mcp/read-write", "read-write"),
+    ):
+        if profile != config.tool_profile:
+            servers[path] = create_server(
+                replace(config, tool_profile=profile), logger
+            )
+
+    app = build_asgi_app(servers, options, version)
     where = "localhost only" if options.host in LOOPBACK else "NETWORK EXPOSED"
     print(
         f"Workspace Operator {version} — Streamable HTTP on "

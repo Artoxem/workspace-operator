@@ -4,12 +4,12 @@
 
 **Deep automation for Google Workspace through the Model Context Protocol**
 
-Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — one local MCP server
-with 132 tools, staged writes and server-side tool profiles.
+Drive · Docs · Sheets · Gmail · Calendar · Tasks · Forms · Apps Script — one local
+MCP server with 39 tools, staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-132-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-39-informational)](#-tool-catalog)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -28,11 +28,10 @@ with 132 tools, staged writes and server-side tool profiles.
 
 Workspace Operator runs on your machine, talks to
 Google over your own OAuth client, and gives an AI agent the operations that turn
-"read my inbox" into "do the work and let me undo it": staged Apps Script updates,
-file transfer in both directions, presentation assembly, sheet formatting, threaded
-replies and attachments.
+"read my inbox" into "do the work and let me undo it": staged Apps Script updates, file transfer,
+sheet formatting, threaded replies and attachments.
 
-**132 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
+**39 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -51,7 +50,6 @@ takes identifiers and ranges, and all examples use synthetic data.
 | Data path | Google MCP endpoint | **your machine, your OAuth client** |
 | Apps Script | — | **create · read · stage · execute · cancel · restore · run function** |
 | Local files | — | **upload, download, export to pdf/docx/xlsx/pptx** |
-| Slides | — | **create, add slides, fill text, insert images** |
 | Sheets formatting | — | **bold, colours, number formats, widths, freeze** |
 | Gmail threads | single messages | **threads, attachments, in-thread replies** |
 | Server-side tool profiles | IAM / admin allow-list | **read-only / read-write / full + allow-deny** |
@@ -63,21 +61,17 @@ Operator is for "change the workspace and be able to roll it back".
 
 | Group | Tools | Highlights |
 |---|---:|---|
-| 🔎 Cross-search | 1 | One query over Drive, Gmail and Calendar, merged by date |
-| 📦 Bulk operations | 7 | plan → confirm → run → undo for Drive, Gmail, Docs, Slides and Sheets |
-| 📁 Drive | 16 | Search, metadata, rename, trash/restore, share, permissions |
-| 💬 Comments | 4 | Threads on Docs, Sheets and Slides: read, write, reply, resolve |
-| 💾 Drive files | 3 | Upload/download/export, conversion to native Google formats |
-| 📊 Sheets | 25 | Read/write, formatting, conditional rules, charts, filter views, CSV |
-| 📄 Docs | 8 | Read (tables included), append, find & replace, templates, PDF export |
-| 🖼 Slides | 11 | Create decks, add/delete slides, replace text, insert images |
-| ⚙️ Apps Script | 10 | Staged updates with backups, rollback, run functions |
-| 📧 Gmail | 22 | Threads, attachments, replies, drafts, labels, batch delete |
-| 📅 Calendar | 10 | Events, free slots, meetings, update/delete, invite responses |
-| 🧩 Composite | 5 | report from sheet, digest, table diff, template clone, table → deck |
-| ✅ Tasks | 4 | lists, tasks, create with due date, complete |
-| 📝 Forms | 4 | create, add questions, read structure, list responses |
-| 📮 Postmaster | 2 | verified domains, deliverability stats |
+| 🔎 Discovery | 4 | Cross-search, Drive search, digest, table diff |
+| 📦 Bulk operations | 7 | plan → confirm → run → undo for Drive, Gmail, Docs and Sheets |
+| 📁 Drive | 4 | search, read, write, recoverable trash, permissions |
+| 📊 Sheets | 6 | values, format, structure, data, delete (confirm) |
+| 📄 Docs | 3 | read, write, replace/format (confirm) |
+| 📧 Gmail | 4 | read, write, settings, recoverable trash |
+| 📅 Calendar | 3 | read, write, delete |
+| ✅ Tasks | 2 | read, write |
+| 📝 Forms | 2 | read, write |
+| 📮 Postmaster | 1 | domains and deliverability stats |
+| ⚙️ Apps Script | 3 | read, staged writes, run (admin) |
 
 Plus 3 resources, 3 resource templates and 8 prompts — see the
 [tool catalog](#-tool-catalog).
@@ -144,7 +138,7 @@ Python 3.10 or newer. The package installs the `workspace-operator` command;
 ### 2 — Google OAuth (once)
 
 1. Create or pick a project in [Google Cloud Console](https://console.cloud.google.com/).
-2. Enable the APIs you need: **Drive, Docs, Sheets, Slides, Gmail, Calendar,
+2. Enable the APIs you need: **Drive, Docs, Sheets, Gmail, Calendar,
    Apps Script**, plus **Tasks** and **Forms**. **Postmaster Tools** is optional
    and only useful for domains you have verified.
 3. Configure the OAuth consent screen: **External**, add your account as a test
@@ -183,7 +177,7 @@ client_secrets_file: "/home/you/.google/oauth.keys.json"
 token_file: "/home/you/.google/token.json"
 backup_dir: "/home/you/.google/backups"
 mcp_auth_token: "put-a-long-random-string-here"
-tool_profile: "read-write"      # full | read-write | read-only
+tool_profile: "core"            # core | full | read-write | read-only
 ```
 
 On Windows use forward slashes (`C:/Users/you/.google/oauth.keys.json`) or double
@@ -248,19 +242,22 @@ callable. It complements OAuth scopes (what Google allows) and client permission
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 132 | your own machine, full trust |
-| `read-write` | 113 | daily work — destructive tools hidden |
-| `read-only` | 39 | exploration, demos, shared machines, untrusted agents |
+| `core` | 20 | everyday read/write, no formatting or destructive edits |
+| `full` | 39 | formatting, destructive edits, Forms, Postmaster, Script |
+| `read-write` | 30 | automation without destructive actions |
+| `read-only` | 17 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
-tool_profile: "read-write"
+tool_profile: "core"
 # Optional, applied on top. Deny wins over allow.
-allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
-denied_tools: ["send_email", "share_file"]
+allowed_tools: ["workspace_search", "sheets_read", "read_doc", "gmail_read"]
+denied_tools: ["gmail_write", "drive_write"]
 ```
 
 Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
 A blocked call returns a clear explanation instead of failing silently.
+
+See [choosing a profile](docs/PROFILES.md) and the [2.0 migration guide](docs/MIGRATION_2.0.md).
 
 ## Operations
 
@@ -371,257 +368,51 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Tool catalog
 
-<details>
-<summary>🔎 Cross-search (1)</summary>
+39 consolidated tools. The default `core` profile exposes 20; `full` adds formatting, destructive edits, Forms, Postmaster and Script actions.
 
-| Tool | Type | Description |
-|---|---|---|
-| `workspace_search` | read | One query across Drive, Gmail and Calendar, date-sorted, partial failures reported |
+Call a consolidated tool with an `action`, for example `drive_read(action="metadata", file_id=...)` or `sheets_write(action="append", spreadsheet_id=..., range=..., values=...)`.
 
-</details>
-
-<details>
-<summary>📁 Drive (16)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `find_files` | read | Search by name or Drive query |
-| `drive_search_advanced` | read | Full Drive query syntax with a limit |
-| `drive_list_permissions` | read | List permissions of a file |
-| `create_folder` | write | Create a folder |
-| `move_file` | write | Move a file into a folder |
-| `drive_copy_file` | write | Copy a file |
-| `share_file` | write | Share with user/group/domain/anyone |
-| `drive_revoke_public` | destructive | Revoke public access (`confirm=true`) |
-| `drive_get_metadata` | read | Size, owner, parents, timestamps and link |
-| `drive_rename_file` | write | Rename without moving or copying |
-| `drive_delete_file` | destructive | Move to trash (`confirm=true`) |
-| `drive_restore_file` | write | Restore a file from the trash |
-| `drive_remove_permission` | destructive | Revoke one permission (`confirm=true`) |
-| `drive_empty_trash` | destructive | Permanently delete trashed files (`confirm=true`) |
-| `drive_transfer_ownership` | destructive | Hand a file to another owner (`confirm=true`) |
-| `drive_create_shortcut` | write | Create a shortcut to another file |
-
-</details>
-
-<details>
-<summary>💾 Drive files (3)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `drive_upload` | write | Upload a local file; `convert_to` turns docx/xlsx/pptx into native Google files |
-| `drive_download` | read | Download a binary file to disk |
-| `drive_export` | read | Export a Doc/Sheet/Slide to pdf, docx, xlsx, pptx, csv… |
-
-</details>
-
-<details>
-<summary>💬 Comments (4)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `drive_list_comments` | read | Comments and replies on a Doc, Sheet or Slide |
-| `drive_create_comment` | write | Add a comment, optionally quoting text |
-| `drive_reply_comment` | write | Reply in an existing thread |
-| `drive_resolve_comment` | write | Mark a thread resolved (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>📦 Bulk operations (7)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `bulk_plan` | read | Resolve a Drive, Gmail, Docs, Slides or Sheets selector into a reviewed, immutable plan (dry run; 300-item default cap) |
-| `bulk_run` | write | Execute a reviewed plan in the background (`confirm=true`, resumable): Drive move/trash/restore/rename/share/revoke_public, Gmail archive/label/trash/restore/mark_read/mark_unread, Docs/Slides replace_text, Sheets find_replace |
-| `bulk_status` | read | Compact progress: done/total, ok, skipped, failed |
-| `bulk_cancel` | write | Stop a running job; in-flight items finish |
-| `bulk_result` | read | Page through per-item results (50 by default, 200 max) |
-| `bulk_list` | read | Recent bulk jobs |
-| `bulk_undo` | write | Revert a completed move/rename/trash job from its saved state (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>✅ Tasks (4)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `tasks_list_lists` | read | Task lists with their ids |
-| `tasks_list` | read | Tasks in a list; optionally include completed |
-| `tasks_create` | write | Create a task with notes and an optional due date |
-| `tasks_complete` | write | Mark a task completed |
-
-</details>
-
-<details>
-<summary>📝 Forms (4)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `forms_create` | write | Create a form with a title and description |
-| `forms_add_questions` | write | Append short-answer questions |
-| `forms_get` | read | Title, responder link and questions |
-| `forms_list_responses` | read | Responses with answers mapped to question titles |
-
-</details>
-
-<details>
-<summary>📮 Postmaster (2)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `postmaster_list_domains` | read | Verified domains and your permission level |
-| `postmaster_traffic_stats` | read | Spam rate, reputation, DKIM/DMARC/SPF and delivery errors |
-
-</details>
-
-<details>
-<summary>📊 Sheets (25)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `read_sheet` | read | Read a cell range |
-| `get_spreadsheet_meta` | read | Sheet names and IDs |
-| `sheet_export_csv` | read | Export a range as CSV |
-| `append_row` | write | Append a row |
-| `update_sheet` | write | Write rows to a range |
-| `create_spreadsheet` | write | Create a spreadsheet |
-| `add_sheet` | write | Add a tab |
-| `sheet_create_filter_view` | write | Create a filter view |
-| `sheet_create_named_range` | write | Create a named range |
-| `sheet_find_replace` | write | Find & replace (`dry_run=true` by default) |
-| `sheet_format` | write | Bold, colours, number formats, widths, row heights, frozen panes |
-| `clear_range` | destructive | Clear a range (auto dry-run for large ranges) |
-| `sheet_conditional_format` | write | Colour cells when a condition matches |
-| `sheet_add_chart` | write | Insert a COLUMN/BAR/LINE/AREA/PIE chart from a range |
-| `sheet_delete_sheet` | destructive | Delete a tab (`confirm=true`) |
-| `sheet_insert_rows` | write | Insert empty rows before a row number |
-| `sheet_delete_rows` | destructive | Delete rows (`confirm=true`) |
-| `sheet_merge_cells` | write | Merge or unmerge a range |
-| `sheet_insert_columns` | write | Insert empty columns before a column |
-| `sheet_delete_columns` | destructive | Delete columns (`confirm=true`) |
-| `sheet_sort_range` | write | Sort a range by one column |
-| `sheet_add_pivot_table` | write | Pivot table from a range onto a new sheet |
-| `sheet_set_data_validation` | write | List or number-range validation |
-| `sheet_protect_range` | write | Warning or locked protection |
-| `sheet_set_borders` | write | Solid/dotted/dashed borders |
-
-</details>
-
-<details>
-<summary>📄 Docs (8)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `read_doc` | read | Read text and tables |
-| `doc_export_pdf` | read | Export as binary PDF |
-| `create_doc` | write | Create a document |
-| `append_to_doc` | write | Append text |
-| `doc_fill_template` | destructive | Fill placeholders (`confirm=true`) |
-| `doc_replace_text` | destructive | Find & replace with a preview (`confirm=true`) |
-| `docs_insert_image` | write | Insert an inline image from a public URL |
-| `docs_format_text` | destructive | Bold/italic/size/heading for matched text (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>🖼 Slides (11)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `slides_create` | write | Create a presentation |
-| `slides_get` | read | Slide count, IDs and text per slide |
-| `slides_add_slide` | write | Add a slide with a predefined layout |
-| `slides_replace_text` | destructive | Replace placeholders (`confirm=true`) |
-| `slides_insert_image` | write | Insert a public image URL onto a slide |
-| `slides_delete_slide` | destructive | Delete a slide (`confirm=true`) |
-| `slides_move_slide` | write | Move a slide to another position |
-| `slides_set_notes` | write | Replace the speaker notes |
-| `slides_add_table` | write | Insert a native table onto a slide |
-| `slides_list_layouts` | read | Layouts available in a presentation |
-| `slides_add_shape` | write | Rectangle/ellipse/text box with optional text |
-
-</details>
-
-<details>
-<summary>⚙️ Apps Script (10)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `get_script_content` | read | Read project files |
-| `create_script_project` | write | Create a project |
-| `prepare_script_update` | write | Stage an update, returns `operation_id` |
-| `execute_operation` | write | Apply a staged update (auto-backup first) |
-| `cancel_operation` | write | Cancel a staged update |
-| `restore_script_backup` | write | Restore from a backup |
-| `script_run_function` | destructive | Run a function from an API-executable deployment |
-| `script_list_deployments` | read | Deployments of a project |
-| `script_create_deployment` | write | Deploy a saved version |
-| `script_update_deployment` | write | Point a deployment at a newer version |
-
-</details>
-
-<details>
-<summary>📧 Gmail (22)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `get_gmail_profile` | read | Authenticated address |
-| `list_emails` | read | List with date, sender and subject |
-| `read_email` | read | Headers, labels, attachments and decoded body |
-| `gmail_search_and_summarize` | read | Search with a compact summary |
-| `gmail_get_thread` | read | Whole conversation |
-| `gmail_get_attachment` | read | Save an attachment to disk |
-| `create_draft` | write | Create a draft |
-| `send_email` | write | Send or draft (`draft_mode=true` by default) |
-| `send_draft` | write | Send an existing draft |
-| `gmail_reply` | write | Reply in-thread (`draft_mode=true` by default) |
-| `gmail_label_apply` | write | Apply a label (`dry_run=true` by default) |
-| `gmail_archive` | write | Archive (`confirm=true`) |
-| `delete_email` | destructive | Move to Trash (`confirm=true`, recoverable 30 days) |
-| `batch_delete_emails` | destructive | Move many to Trash (`dry_run=true` by default) |
-| `gmail_list_labels` | read | Labels with IDs, user and system |
-| `gmail_create_label` | write | Create a label |
-| `gmail_send_with_attachments` | write | Draft or send with local files (20 MB) |
-| `gmail_list_drafts` | read | Drafts with recipient and subject |
-| `gmail_delete_draft` | destructive | Delete a draft (`confirm=true`) |
-| `gmail_list_filters` | read | Filters with criteria and actions |
-| `gmail_create_filter` | write | Filter: match from/subject/query, add or remove labels |
-| `gmail_update_draft` | write | Replace draft content |
-
-</details>
-
-<details>
-<summary>🧩 Composite (5)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `report_from_sheet` | write | Read a range → column statistics → Doc with **native tables** or plain text (`output=text`) |
-| `digest` | write | Last N hours across Gmail, Calendar and Drive → text or Doc |
-| `compare_tables` | write | Diff two ranges by a key column; `output=doc` builds native tables |
-| `clone_and_fill` | write | Copy any Drive file and replace placeholders in the copy |
-| `sheet_to_slides` | write | Read a range → deck: title slide + one slide per row group |
-
-</details>
-
-<details>
-<summary>📅 Calendar (10)</summary>
-
-| Tool | Type | Description |
-|---|---|---|
-| `list_events` | read | Upcoming events with times and locations |
-| `calendar_find_free_slots` | read | Free slots in a window |
-| `create_event` | write | Create an event |
-| `calendar_create_meeting` | write | Meeting with attendees (`confirm=true`) |
-| `calendar_update_event` | write | Change any field; only what you pass is modified |
-| `calendar_delete_event` | destructive | Delete an event (`confirm=true`) |
-| `calendar_respond_to_invite` | write | Accept / decline / tentative (`confirm=true`) |
-| `calendar_list_calendars` | read | Calendars with access roles |
-| `calendar_move_event` | write | Move an event to another calendar |
-| `calendar_set_event_color` | write | Colour an event (`1`–`11`) |
-
-</details>
+| Tool | Safety | Actions | What it does |
+|---|---|---|---|
+| `workspace_search` | read | - | Search Drive, Gmail and Calendar in one call. |
+| `drive_search` | read | - | Search Drive with full query syntax (replaces find_files and drive_search_advanced). |
+| `digest` | read | - | Summarise Gmail, Calendar and Drive for the last N hours. |
+| `compare_tables` | read | - | Diff two sheet ranges by a key column. |
+| `drive_read` | read | metadata, export, list_permissions | Read Drive metadata, permissions and exported files. |
+| `drive_write` | write | create_folder, copy, move, rename, upload, share, restore | Create, copy, move, rename, upload, share and restore Drive files. |
+| `drive_trash` | destructive | - | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
+| `drive_permissions` | destructive | remove, revoke_public | Remove access from a Drive file. |
+| `read_doc` | read | - | Read the contents of a Google Doc. |
+| `docs_write` | write | create, append, insert_image | Create and extend Google Docs. |
+| `docs_edit` | destructive | replace, format | Replace or format text in a Google Doc, with a preview. |
+| `sheets_read` | read | meta, read, export_csv | Read sheet metadata, values and CSV exports. |
+| `sheets_write` | write | create_spreadsheet, add_sheet, update, append, clear, find_replace | Create spreadsheets and write values. |
+| `sheets_format` | write | format, borders, conditional, validation, protect | Format ranges, borders, conditional rules, validation and protection. |
+| `sheets_structure` | write | insert_rows, insert_columns, merge, sort, named_range, filter_view | Insert, merge, sort and organise sheet ranges. |
+| `sheets_delete` | destructive | delete_rows, delete_columns, delete_sheet | Delete rows, columns or a sheet (requires confirm). |
+| `sheets_data` | write | chart, pivot | Charts and pivot tables. |
+| `gmail_read` | read | profile, list, read, thread, attachment, search, labels, filters | Read Gmail messages, threads, attachments, labels and filters. |
+| `gmail_write` | write | send, reply, send_with_attachments, draft_create, draft_update, draft_send, draft_list, archive | Send, reply, draft and archive Gmail messages. |
+| `gmail_settings` | write | label_create, label_apply, filter_create | Manage Gmail labels and filters. |
+| `gmail_delete` | destructive | email, draft | Move messages or drafts to Trash (recoverable). |
+| `calendar_read` | read | events, calendars | Read events and calendars. |
+| `calendar_write` | write | meeting, update, move, respond, color | Create, update, move, answer and colour events. |
+| `calendar_delete` | destructive | - | Delete an event (requires confirm). |
+| `tasks_read` | read | lists, list | Read task lists and tasks. |
+| `tasks_write` | write | create, complete | Create and complete tasks. |
+| `forms_read` | read | get, responses | Read forms and responses. |
+| `forms_write` | write | create, add_questions | Create forms and add questions. |
+| `postmaster_read` | read | domains, traffic | Read Postmaster domains and traffic statistics. |
+| `script_read` | read | content, deployments | Read Apps Script content and deployments. |
+| `script_write` | write | create_project, prepare, execute, cancel, restore, create_deployment, update_deployment | Prepare, execute, restore and deploy Apps Script changes. |
+| `script_run` | destructive | - | Run an Apps Script API function (arbitrary code; confirm required). |
+| `bulk_plan` | read | - | Resolve a selector into a dry-run bulk plan. |
+| `bulk_run` | destructive | - | Execute a reviewed bulk plan as a background job. |
+| `bulk_status` | read | - | Read progress for a bulk job. |
+| `bulk_result` | read | - | Read one page of bulk job results. |
+| `bulk_list` | read | - | List recent bulk jobs. |
+| `bulk_cancel` | write | - | Request cancellation of a running bulk job. |
+| `bulk_undo` | destructive | - | Undo a completed bulk job (move, rename, trash). |
 
 ### Resources
 
@@ -652,14 +443,15 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 | Guard | Applies to |
 |---|---|
-| `confirm=true` required | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash`, `sheet_delete_columns`, `drive_transfer_ownership`, `docs_format_text`, `gmail_delete_draft`, `calendar_delete_event`, `calendar_respond_to_invite` |
-| `dry_run=true` by default | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
-| Draft mode by default | `send_email`, `gmail_reply` |
-| Public sharing blocked | `share_file` refuses `type=anyone` without `allow_public=true` |
-| No silent overwrite | `drive_download`, `drive_export`, `gmail_get_attachment` |
-| Staged Apps Script | `prepare_script_update` → `execute_operation` (backup first) |
+| `confirm=true` | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` |
+| `dry_run` / preview | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
+| Draft mode by default | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
+| Public sharing | disabled unless `allow_public_sharing=true` **and** `allow_public=true` |
+| No permanent file delete | Drive tools only move to Trash; `drive_empty_trash` and `drive_transfer_ownership` are not exposed |
+| Staged Apps Script | `script_write.prepare` → `script_write.execute` (backup first) |
+| Scope routing | tools whose Google scope is missing are hidden at startup |
 | Tool annotations | every tool carries `readOnlyHint` / `destructiveHint` |
-| Server-side profiles | `read-only` / `read-write` / `full` + allow/deny lists |
+| Profiles | `core` (default), `full`, `read-write`, `read-only` + allow/deny lists |
 
 > ⚠️ An agent can reach everything your OAuth token can. Use read-only scopes and the
 > `read-only` profile for sensitive accounts — [docs/SECURITY.md](docs/SECURITY.md).
@@ -667,9 +459,15 @@ Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 ## How it works
 
 ```
-server.py                    MCP server: 132 tool definitions, resources, prompts, profiles
+server.py                    MCP protocol wiring and dispatch
 workspace_operator/
-├─ profiles.py               read-only / read-write / full + allow-deny lists
+├─ toolset/                  typed catalog, action router, scope/profile surface
+│  ├─ models.py              ToolSpec / ActionSpec / Safety / Surface
+│  ├─ catalog.py             39 consolidated tools and action → handler map
+│  ├─ surface.py             profile + scope filtering
+│  ├─ routing.py             action validation and confirm gate
+│  └─ scopes.py              granted Google scopes from the token file
+├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 config file + environment overrides
 ├─ auth.py                   OAuth 2.0 credentials and token cache
 ├─ text.py                   entity/whitespace normalisation, timestamps, error hints
@@ -677,56 +475,30 @@ workspace_operator/
 ├─ security.py               token and email checks
 ├─ runtime.py                retries, audit log, dry-run helpers
 ├─ cli.py                    doctor / tools / serve
-└─ handlers/
-   ├─ search.py              workspace_search — Drive + Gmail + Calendar
-   ├─ files.py               drive_upload / drive_download / drive_export
-   ├─ formatting.py          sheet_format request builders
-   ├─ gmail_threads.py       threads, attachments, in-thread replies
-   ├─ slides.py              presentations
-   ├─ calendar_writes.py     update / delete / invite responses
-   ├─ report.py              report_from_sheet: stats + document
-   ├─ digest.py              digest across mail, calendar and drive
-   ├─ compare.py             table diff by key column
-   ├─ template.py            clone a file and fill placeholders
-   ├─ deck.py                table → presentation
-   ├─ drive_extra.py         metadata, rename, trash/restore, permissions
-   ├─ comments.py            Drive comments: list, create, reply, resolve
-   ├─ doc_edit.py            find & replace inside a document
-   ├─ sheets_extra.py        conditional formatting, charts
-   ├─ sheets_structure.py    tabs, rows, merged cells
-   ├─ sheets_more.py         columns and sorting
-   ├─ doc_media.py           inline images in documents
-   ├─ doc_format.py          bold/italic/heading for matched text
-   ├─ sheets_pivot.py        pivot tables
-   ├─ gmail_drafts.py        draft list, update and cleanup
-   ├─ gmail_filters.py       filters: list and create
-   ├─ sheets_validate.py     validation, protection, borders
-   ├─ gmail_labels.py        labels and bulk message flags
-   ├─ drive.py  sheets.py  docs.py
-   ├─ gmail.py  calendar.py  apps_script.py
-tests/                       unit, live and round-trip checks
+└─ handlers/                 Google API implementations used by the catalog
+tests/                       unit, surface and in-memory MCP checks
 antigravity/                 ready-to-paste mcp_config.json
 skills/google-workspace/     Agent Skill: when to use which tool
 ```
 
 Design rules:
 
-* every handler returns a string — exceptions never reach the transport;
-* writes are staged, confirmed or drafted, never silent;
-* Apps Script is a two-phase commit with an automatic backup;
-* server-side profiles keep the exposed surface small.
+* the catalog is the single source of truth for names, actions, scopes and docs;
+* every action maps to exactly one handler and is validated before dispatch;
+* destructive actions require `confirm=true` at the router and in the handler;
+* no tool permanently deletes a Drive file; Trash is the boundary;
+* server-side profiles and scope routing keep the exposed surface small.
 
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 328 unit tests, no network
+python -m unittest discover -s tests -v     # 354 unit tests, no network
 python tests/live_smoke.py                  # 51 checks against a real account
 python tests/live_new_tools.py              # 15 checks for the v1.14 batch
 python tests/live_phase2.py                 # 8 checks for the v1.15 batch
 python tests/live_phase3.py                 # 8 checks for the v1.16 batch
 python tests/live_phase4.py                 # 5 checks for the v1.17 batch
 python tests/live_phase5.py                 # 7 checks for the v1.18 batch
-python tests/pptx_roundtrip.py deck.pptx    # 5 checks: pptx → Slides → replace
 ```
 
 The live suite is self-cleaning: it uploads and trashes a temp file, creates and
@@ -759,26 +531,24 @@ code in sync (tool counts, profile numbers, links, examples).
 
 Knowing the edges is part of the contract:
 
-- **Drive**: deleting means "move to trash"; `drive_empty_trash` is the only
-  permanent path and needs `confirm=true`.
+- **Drive**: deleting means "move to Trash"; there is no permanent-delete or
+  ownership-transfer tool.
 - **Sheets**: tabs, rows, columns, merges, sorting, pivot tables, validation,
-  protection and borders are handled; charts cover the basic types and conditional
-  formatting takes one rule per call.
-- **Docs**: text styling works on matched text; tables are created by the report
-  tool but not edited cell by cell afterwards.
-- **Slides**: slides, speaker notes and native tables work; shapes, diagrams and
-  per-shape styling do not.
+  protection and borders are handled; charts cover the basic types.
+- **Docs**: text styling works on matched text; no template-fill tool is exposed.
+- **Slides and Drive comments** were removed in 2.0; see the migration guide.
 - **One account per server**: a single OAuth token, no multi-tenant mode.
 
 ## Roadmap
 
 - [x] Cross-product search, tool profiles
-- [x] Files, Slides, Apps Script execution
+- [x] Files, Apps Script execution
 - [x] Sheet formatting
 - [x] Gmail threads, attachments, replies
 - [x] Calendar update/delete/respond
-- [x] Composite tools: `report_from_sheet`, `digest`, `compare_tables`, `clone_and_fill`
+- [x] `digest` and `compare_tables`
 - [x] Optional HTTP transport (Streamable HTTP, stateless, localhost-first)
+- [x] 2.0 consolidated surface, scope routing, core profile
 
 ## Responsibility
 

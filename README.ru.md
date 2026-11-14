@@ -4,12 +4,12 @@
 
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
-Drive · Docs · Sheets · Slides · Gmail · Calendar · Apps Script — один локальный
-MCP-сервер с 132 инструментами, многошаговыми записями и профилями на стороне сервера.
+Drive · Docs · Sheets · Gmail · Calendar · Tasks · Forms · Apps Script — один
+локальный MCP-сервер с 39 инструментами, многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-132-informational)](#-каталог-инструментов)
+[![Tools](https://img.shields.io/badge/tools-39-informational)](#-каталог-инструментов)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -25,10 +25,10 @@ MCP-сервер с 132 инструментами, многошаговыми �
 Workspace Operator работает на вашей машине,
 обращается к Google через ваш собственный OAuth-клиент и даёт ИИ-агенту операции,
 которые превращают «прочитай мою почту» в «сделай работу, и чтобы можно было откатить»:
-стейджинг Apps Script, передача файлов в обе стороны, сборка презентаций,
-форматирование таблиц, ответы в тред и работа с вложениями.
+стейджинг Apps Script, передача файлов, форматирование таблиц, ответы в тред и
+работа с вложениями.
 
-**132 инструментов · 3 ресурса · 3 шаблона ресурсов · 8 промптов**, у каждого инструмента
+**39 инструментов · 3 ресурса · 3 шаблона ресурсов · 8 промптов**, у каждого инструмента
 аннотации `readOnlyHint` / `destructiveHint`.
 
 Ничто здесь не привязано к конкретному аккаунту, таблице или документу: каждый
@@ -47,7 +47,6 @@ Workspace Operator работает на вашей машине,
 | Путь данных | эндпоинт MCP Google | **ваша машина, ваш OAuth-клиент** |
 | Apps Script | — | **создание · чтение · стейджинг · запуск · отмена · откат · вызов функции** |
 | Локальные файлы | — | **загрузка, скачивание, экспорт в pdf/docx/xlsx/pptx** |
-| Slides | — | **создание, слайды, замена текста, картинки** |
 | Форматирование Sheets | — | **жирный, цвета, форматы чисел, ширины, закрепление** |
 | Треды Gmail | отдельные письма | **треды, вложения, ответы в тред** |
 | Профили инструментов на сервере | IAM / allow-list админа | **read-only / read-write / full + allow-deny** |
@@ -59,21 +58,17 @@ Workspace Operator — для «измени рабочее пространст
 
 | Группа | Инструментов | Ключевое |
 |---|---:|---|
-| 🔎 Кросс-поиск | 1 | Один запрос по Drive, Gmail и Calendar, сортировка по дате |
-| 📦 Массовые операции | 7 | план → подтверждение → запуск → откат для Drive, Gmail, Docs, Slides и Sheets |
-| 📁 Drive | 16 | Поиск, метаданные, переименование, корзина, шаринг, права |
-| 💬 Комментарии | 4 | Треды у Docs, Sheets и Slides: чтение, создание, ответ, решение |
-| 💾 Файлы Drive | 3 | Загрузка, скачивание, экспорт, конвертация в нативные форматы |
-| 📊 Sheets | 25 | Чтение и запись, форматирование, условные правила, графики, фильтры, CSV |
-| 📄 Docs | 8 | Чтение (включая таблицы), дописывание, поиск и замена, шаблоны, PDF |
-| 🖼 Slides | 11 | Создание, добавление и удаление слайдов, замена текста, картинки |
-| ⚙️ Apps Script | 10 | Стейджинг с бэкапами, откат, запуск функций |
-| 📧 Gmail | 22 | Треды, вложения, ответы, черновики, метки, пакетное удаление |
-| 📅 Calendar | 10 | События, слоты, встречи, изменение/удаление, ответ на приглашения |
-| 🧩 Составные | 5 | отчёт, дайджест, сравнение, клон шаблона, таблица → колода |
-| ✅ Задачи | 4 | списки, задачи, создание со сроком, завершение |
-| 📝 Формы | 4 | создание, вопросы, структура, ответы |
-| 📮 Postmaster | 2 | подтверждённые домены, статистика доставляемости |
+| 🔎 Discovery | 4 | Кросс-поиск, поиск по Drive, дайджест, сравнение таблиц |
+| 📦 Массовые операции | 7 | план → подтверждение → запуск → откат для Drive, Gmail, Docs и Sheets |
+| 📁 Drive | 4 | поиск, чтение, запись, обратимая корзина, права |
+| 📊 Sheets | 6 | значения, форматирование, структура, данные, удаление (confirm) |
+| 📄 Docs | 3 | чтение, запись, замена/формат (confirm) |
+| 📧 Gmail | 4 | чтение, запись, настройки, обратимая корзина |
+| 📅 Calendar | 3 | чтение, запись, удаление |
+| ✅ Задачи | 2 | чтение, запись |
+| 📝 Формы | 2 | чтение, запись |
+| 📮 Postmaster | 1 | домены и статистика доставляемости |
+| ⚙️ Apps Script | 3 | чтение, стейджинг, запуск (admin) |
 
 Плюс 3 ресурса, 3 шаблона ресурсов и 8 промптов — см. [каталог](#-каталог-инструментов).
 
@@ -139,7 +134,7 @@ pip install -r requirements.txt
 ### 2 — Google OAuth (один раз)
 
 1. Создайте проект в [Google Cloud Console](https://console.cloud.google.com/).
-2. Включите нужные API: **Drive, Docs, Sheets, Slides, Gmail, Calendar,
+2. Включите нужные API: **Drive, Docs, Sheets, Gmail, Calendar,
    Apps Script**, а также **Tasks** и **Forms**. **Postmaster Tools** —
    необязательно и нужно только для подтверждённых доменов.
 3. Настройте OAuth consent screen: **External**, добавьте свой аккаунт в
@@ -178,7 +173,7 @@ client_secrets_file: "/home/you/.google/oauth.keys.json"
 token_file: "/home/you/.google/token.json"
 backup_dir: "/home/you/.google/backups"
 mcp_auth_token: "длинная-случайная-строка"
-tool_profile: "read-write"      # full | read-write | read-only
+tool_profile: "core"            # core | full | read-write | read-only
 ```
 
 В Windows используйте прямые слэши (`C:/Users/you/.google/oauth.keys.json`) или
@@ -242,19 +237,22 @@ HTTP-транспорта.
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 132 | своя машина, полное доверие |
-| `read-write` | 113 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 39 | разведка, демо, общие машины, недоверенные агенты |
+| `core` | 20 | ежедневное чтение/запись без форматирования и destructive |
+| `full` | 39 | форматирование, destructive, Forms, Postmaster, Script |
+| `read-write` | 30 | автоматизация без destructive |
+| `read-only` | 17 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
-tool_profile: "read-write"
+tool_profile: "core"
 # Необязательно, применяется поверх профиля. Запрет важнее разрешения.
-allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
-denied_tools: ["send_email", "share_file"]
+allowed_tools: ["workspace_search", "sheets_read", "read_doc", "gmail_read"]
+denied_tools: ["gmail_write", "drive_write"]
 ```
 
 Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
 Заблокированный вызов возвращает понятное объяснение, а не молчит.
+
+См. [выбор профиля](docs/ru/PROFILES.md) и [переход на 2.0](docs/ru/MIGRATION_2.0.md).
 
 ## Эксплуатация
 
@@ -365,257 +363,51 @@ docker run -i --rm \
 
 ## Каталог инструментов
 
-<details>
-<summary>🔎 Кросс-поиск (1)</summary>
+39 consolidated tools. The default `core` profile exposes 20; `full` adds formatting, destructive edits, Forms, Postmaster and Script actions.
 
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `workspace_search` | read | Один запрос по Drive, Gmail и Calendar; сортировка по дате, частичные сбои не фатальны |
+Call a consolidated tool with an `action`, for example `drive_read(action="metadata", file_id=...)` or `sheets_write(action="append", spreadsheet_id=..., range=..., values=...)`.
 
-</details>
-
-<details>
-<summary>📁 Drive (16)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `find_files` | read | Поиск по имени или запросу Drive |
-| `drive_search_advanced` | read | Полный синтаксис запросов Drive |
-| `drive_list_permissions` | read | Права на файл |
-| `create_folder` | write | Создать папку |
-| `move_file` | write | Переместить файл |
-| `drive_copy_file` | write | Копировать файл |
-| `share_file` | write | Поделиться с пользователем/группой/доменом |
-| `drive_revoke_public` | destructive | Отозвать публичный доступ (`confirm=true`) |
-| `drive_get_metadata` | read | Размер, владелец, родители, даты и ссылка |
-| `drive_rename_file` | write | Переименовать без перемещения |
-| `drive_delete_file` | destructive | В корзину (`confirm=true`) |
-| `drive_restore_file` | write | Восстановить из корзины |
-| `drive_remove_permission` | destructive | Отозвать одно право (`confirm=true`) |
-| `drive_empty_trash` | destructive | Очистить корзину навсегда (`confirm=true`) |
-| `drive_transfer_ownership` | destructive | Передать файл другому владельцу (`confirm=true`) |
-| `drive_create_shortcut` | write | Создать ярлык на другой файл |
-
-</details>
-
-<details>
-<summary>💾 Файлы Drive (3)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `drive_upload` | write | Загрузить файл; `convert_to` превращает docx/xlsx/pptx в Google-файлы |
-| `drive_download` | read | Скачать бинарный файл на диск |
-| `drive_export` | read | Экспорт Doc/Sheet/Slide в pdf, docx, xlsx, pptx, csv… |
-
-</details>
-
-<details>
-<summary>💬 Комментарии (4)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `drive_list_comments` | read | Комментарии и ответы у Doc, Sheet или Slide |
-| `drive_create_comment` | write | Добавить комментарий, можно с цитатой |
-| `drive_reply_comment` | write | Ответить в существующем треде |
-| `drive_resolve_comment` | write | Пометить тред решённым (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>📦 Массовые операции (7)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `bulk_plan` | read | Разобрать выборку Drive, Gmail, Docs, Slides или Sheets в проверяемый неизменяемый план (dry run; по умолчанию до 300 объектов) |
-| `bulk_run` | write | Выполнить план фоновой задачей (`confirm=true`, можно продолжить после сбоя): Drive move/trash/restore/rename/share/revoke_public, Gmail archive/label/trash/restore/mark_read/mark_unread, Docs/Slides replace_text, Sheets find_replace |
-| `bulk_status` | read | Компактный прогресс: сделано/всего, успешно, пропущено, ошибок |
-| `bulk_cancel` | write | Остановить задачу; текущие файлы доработают |
-| `bulk_result` | read | Постраничные результаты по файлам (50 по умолчанию, до 200) |
-| `bulk_list` | read | Последние массовые задачи |
-| `bulk_undo` | write | Откатить выполненную задачу move/rename/trash по сохранённому состоянию (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>✅ Задачи (4)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `tasks_list_lists` | read | Списки задач и их ID |
-| `tasks_list` | read | Задачи в списке; можно показать выполненные |
-| `tasks_create` | write | Создать задачу с заметкой и сроком |
-| `tasks_complete` | write | Отметить задачу выполненной |
-
-</details>
-
-<details>
-<summary>📝 Формы (4)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `forms_create` | write | Создать форму с заголовком и описанием |
-| `forms_add_questions` | write | Добавить вопросы с коротким ответом |
-| `forms_get` | read | Заголовок, ссылка для ответов и вопросы |
-| `forms_list_responses` | read | Ответы с привязкой к названиям вопросов |
-
-</details>
-
-<details>
-<summary>📮 Postmaster (2)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `postmaster_list_domains` | read | Подтверждённые домены и уровень доступа |
-| `postmaster_traffic_stats` | read | Спам, репутация, DKIM/DMARC/SPF и ошибки доставки |
-
-</details>
-
-<details>
-<summary>📊 Sheets (25)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `read_sheet` | read | Прочитать диапазон |
-| `get_spreadsheet_meta` | read | Названия листов и их ID |
-| `sheet_export_csv` | read | Экспорт диапазона в CSV |
-| `append_row` | write | Добавить строку |
-| `update_sheet` | write | Записать строки в диапазон |
-| `create_spreadsheet` | write | Создать таблицу |
-| `add_sheet` | write | Добавить лист |
-| `sheet_create_filter_view` | write | Создать фильтр |
-| `sheet_create_named_range` | write | Создать именованный диапазон |
-| `sheet_find_replace` | write | Поиск и замена (`dry_run=true` по умолчанию) |
-| `sheet_format` | write | Жирный, цвета, форматы чисел, ширины, высоты строк, закрепление |
-| `clear_range` | destructive | Очистить диапазон (авто dry-run для больших) |
-| `sheet_conditional_format` | write | Закрасить ячейки по условию |
-| `sheet_add_chart` | write | Вставить график COLUMN/BAR/LINE/AREA/PIE по диапазону |
-| `sheet_delete_sheet` | destructive | Удалить лист (`confirm=true`) |
-| `sheet_insert_rows` | write | Вставить пустые строки перед номером |
-| `sheet_delete_rows` | destructive | Удалить строки (`confirm=true`) |
-| `sheet_merge_cells` | write | Объединить или разъединить диапазон |
-| `sheet_insert_columns` | write | Вставить пустые колонки |
-| `sheet_delete_columns` | destructive | Удалить колонки (`confirm=true`) |
-| `sheet_sort_range` | write | Отсортировать диапазон по колонке |
-| `sheet_add_pivot_table` | write | Сводная таблица из диапазона на новом листе |
-| `sheet_set_data_validation` | write | Проверка по списку или диапазону чисел |
-| `sheet_protect_range` | write | Предупреждение или блокировка |
-| `sheet_set_borders` | write | Границы: solid/dotted/dashed |
-
-</details>
-
-<details>
-<summary>📄 Docs (8)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `read_doc` | read | Текст и таблицы |
-| `doc_export_pdf` | read | Экспорт в бинарный PDF |
-| `create_doc` | write | Создать документ |
-| `append_to_doc` | write | Дописать текст |
-| `doc_fill_template` | destructive | Заполнить шаблон (`confirm=true`) |
-| `doc_replace_text` | destructive | Поиск и замена с превью (`confirm=true`) |
-| `docs_insert_image` | write | Вставить картинку по публичному URL |
-| `docs_format_text` | destructive | Жирный/курсив/размер/заголовок для найденного текста (`confirm=true`) |
-
-</details>
-
-<details>
-<summary>🖼 Slides (11)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `slides_create` | write | Создать презентацию |
-| `slides_get` | read | Количество слайдов, ID и текст |
-| `slides_add_slide` | write | Добавить слайд с готовым макетом |
-| `slides_replace_text` | destructive | Замена плейсхолдеров (`confirm=true`) |
-| `slides_insert_image` | write | Вставить картинку по публичному URL |
-| `slides_delete_slide` | destructive | Удалить слайд (`confirm=true`) |
-| `slides_move_slide` | write | Переместить слайд на другую позицию |
-| `slides_set_notes` | write | Заменить заметки докладчика |
-| `slides_add_table` | write | Вставить нативную таблицу на слайд |
-| `slides_list_layouts` | read | Макеты презентации |
-| `slides_add_shape` | write | Прямоугольник/эллипс/текстовое поле с текстом |
-
-</details>
-
-<details>
-<summary>⚙️ Apps Script (10)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `get_script_content` | read | Прочитать файлы проекта |
-| `create_script_project` | write | Создать проект |
-| `prepare_script_update` | write | Подготовить обновление, вернуть `operation_id` |
-| `execute_operation` | write | Применить обновление (сначала бэкап) |
-| `cancel_operation` | write | Отменить подготовленное обновление |
-| `restore_script_backup` | write | Восстановить из бэкапа |
-| `script_run_function` | destructive | Запустить функцию из API-executable деплоя |
-| `script_list_deployments` | read | Деплои проекта |
-| `script_create_deployment` | write | Задеплоить сохранённую версию |
-| `script_update_deployment` | write | Перевести деплой на новую версию |
-
-</details>
-
-<details>
-<summary>📧 Gmail (22)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `get_gmail_profile` | read | Адрес авторизованного пользователя |
-| `list_emails` | read | Список с датой, отправителем и темой |
-| `read_email` | read | Заголовки, метки, вложения и тело письма |
-| `gmail_search_and_summarize` | read | Поиск с краткой сводкой |
-| `gmail_get_thread` | read | Вся переписка |
-| `gmail_get_attachment` | read | Сохранить вложение на диск |
-| `create_draft` | write | Создать черновик |
-| `send_email` | write | Отправить или создать черновик (`draft_mode=true`) |
-| `send_draft` | write | Отправить существующий черновик |
-| `gmail_reply` | write | Ответ в тред (`draft_mode=true` по умолчанию) |
-| `gmail_label_apply` | write | Навесить метку (`dry_run=true`) |
-| `gmail_archive` | write | Архивировать (`confirm=true`) |
-| `delete_email` | destructive | В корзину (`confirm=true`, восстановимо 30 дней) |
-| `batch_delete_emails` | destructive | Несколько в корзину (`dry_run=true`) |
-| `gmail_list_labels` | read | Метки с ID, пользовательские и системные |
-| `gmail_create_label` | write | Создать метку |
-| `gmail_send_with_attachments` | write | Черновик или отправка с файлами (20 МБ) |
-| `gmail_list_drafts` | read | Черновики с получателем и темой |
-| `gmail_delete_draft` | destructive | Удалить черновик (`confirm=true`) |
-| `gmail_list_filters` | read | Фильтры с условиями и действиями |
-| `gmail_create_filter` | write | Фильтр: from/subject/query + метки |
-| `gmail_update_draft` | write | Заменить содержимое черновика |
-
-</details>
-
-<details>
-<summary>🧩 Составные (5)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `report_from_sheet` | write | Диапазон → статистика → Doc с **нативными таблицами** или текст (`output=text`) |
-| `digest` | write | Последние N часов по Gmail, Calendar и Drive → текст или Doc |
-| `compare_tables` | write | Сравнение по ключевой колонке; `output=doc` собирает нативные таблицы |
-| `clone_and_fill` | write | Копия любого файла Drive с заменой плейсхолдеров |
-| `sheet_to_slides` | write | Диапазон → колода: титул + слайд на группу строк |
-
-</details>
-
-<details>
-<summary>📅 Calendar (10)</summary>
-
-| Инструмент | Тип | Описание |
-|---|---|---|
-| `list_events` | read | Ближайшие события со временем и местом |
-| `calendar_find_free_slots` | read | Свободные слоты в окне |
-| `create_event` | write | Создать событие |
-| `calendar_create_meeting` | write | Встреча с участниками (`confirm=true`) |
-| `calendar_update_event` | write | Изменить любое поле; меняется только переданное |
-| `calendar_delete_event` | destructive | Удалить событие (`confirm=true`) |
-| `calendar_respond_to_invite` | write | Принять / отклонить / под вопросом (`confirm=true`) |
-| `calendar_list_calendars` | read | Календари с ролями доступа |
-| `calendar_move_event` | write | Перенести событие в другой календарь |
-| `calendar_set_event_color` | write | Цвет события (`1`–`11`) |
-
-</details>
+| Tool | Safety | Actions | What it does |
+|---|---|---|---|
+| `workspace_search` | read | - | Search Drive, Gmail and Calendar in one call. |
+| `drive_search` | read | - | Search Drive with full query syntax (replaces find_files and drive_search_advanced). |
+| `digest` | read | - | Summarise Gmail, Calendar and Drive for the last N hours. |
+| `compare_tables` | read | - | Diff two sheet ranges by a key column. |
+| `drive_read` | read | metadata, export, list_permissions | Read Drive metadata, permissions and exported files. |
+| `drive_write` | write | create_folder, copy, move, rename, upload, share, restore | Create, copy, move, rename, upload, share and restore Drive files. |
+| `drive_trash` | destructive | - | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
+| `drive_permissions` | destructive | remove, revoke_public | Remove access from a Drive file. |
+| `read_doc` | read | - | Read the contents of a Google Doc. |
+| `docs_write` | write | create, append, insert_image | Create and extend Google Docs. |
+| `docs_edit` | destructive | replace, format | Replace or format text in a Google Doc, with a preview. |
+| `sheets_read` | read | meta, read, export_csv | Read sheet metadata, values and CSV exports. |
+| `sheets_write` | write | create_spreadsheet, add_sheet, update, append, clear, find_replace | Create spreadsheets and write values. |
+| `sheets_format` | write | format, borders, conditional, validation, protect | Format ranges, borders, conditional rules, validation and protection. |
+| `sheets_structure` | write | insert_rows, insert_columns, merge, sort, named_range, filter_view | Insert, merge, sort and organise sheet ranges. |
+| `sheets_delete` | destructive | delete_rows, delete_columns, delete_sheet | Delete rows, columns or a sheet (requires confirm). |
+| `sheets_data` | write | chart, pivot | Charts and pivot tables. |
+| `gmail_read` | read | profile, list, read, thread, attachment, search, labels, filters | Read Gmail messages, threads, attachments, labels and filters. |
+| `gmail_write` | write | send, reply, send_with_attachments, draft_create, draft_update, draft_send, draft_list, archive | Send, reply, draft and archive Gmail messages. |
+| `gmail_settings` | write | label_create, label_apply, filter_create | Manage Gmail labels and filters. |
+| `gmail_delete` | destructive | email, draft | Move messages or drafts to Trash (recoverable). |
+| `calendar_read` | read | events, calendars | Read events and calendars. |
+| `calendar_write` | write | meeting, update, move, respond, color | Create, update, move, answer and colour events. |
+| `calendar_delete` | destructive | - | Delete an event (requires confirm). |
+| `tasks_read` | read | lists, list | Read task lists and tasks. |
+| `tasks_write` | write | create, complete | Create and complete tasks. |
+| `forms_read` | read | get, responses | Read forms and responses. |
+| `forms_write` | write | create, add_questions | Create forms and add questions. |
+| `postmaster_read` | read | domains, traffic | Read Postmaster domains and traffic statistics. |
+| `script_read` | read | content, deployments | Read Apps Script content and deployments. |
+| `script_write` | write | create_project, prepare, execute, cancel, restore, create_deployment, update_deployment | Prepare, execute, restore and deploy Apps Script changes. |
+| `script_run` | destructive | - | Run an Apps Script API function (arbitrary code; confirm required). |
+| `bulk_plan` | read | - | Resolve a selector into a dry-run bulk plan. |
+| `bulk_run` | destructive | - | Execute a reviewed bulk plan as a background job. |
+| `bulk_status` | read | - | Read progress for a bulk job. |
+| `bulk_result` | read | - | Read one page of bulk job results. |
+| `bulk_list` | read | - | List recent bulk jobs. |
+| `bulk_cancel` | write | - | Request cancellation of a running bulk job. |
+| `bulk_undo` | destructive | - | Undo a completed bulk job (move, rename, trash). |
 
 ### Ресурсы
 
@@ -646,14 +438,15 @@ docker run -i --rm \
 
 | Защита | Инструменты |
 |---|---|
-| Требуется `confirm=true` | `delete_email`, `gmail_archive`, `calendar_create_meeting`, `drive_revoke_public`, `doc_fill_template`, `slides_replace_text`, `drive_delete_file`, `drive_remove_permission`, `drive_resolve_comment`, `doc_replace_text`, `slides_delete_slide`, `sheet_delete_sheet`, `sheet_delete_rows`, `drive_empty_trash`, `sheet_delete_columns`, `drive_transfer_ownership`, `docs_format_text`, `gmail_delete_draft`, `calendar_delete_event`, `calendar_respond_to_invite` |
-| `dry_run=true` по умолчанию | `batch_delete_emails`, `sheet_find_replace`, `gmail_label_apply` |
-| Режим черновика | `send_email`, `gmail_reply` |
-| Публичный шаринг заблокирован | `share_file` не даёт `type=anyone` без `allow_public=true` |
-| Без молчаливой перезаписи | `drive_download`, `drive_export`, `gmail_get_attachment` |
-| Стейджинг Apps Script | `prepare_script_update` → `execute_operation` (сначала бэкап) |
-| Аннотации инструментов | у каждого — `readOnlyHint` / `destructiveHint` |
-| Серверные профили | `read-only` / `read-write` / `full` + allow/deny |
+| `confirm=true` | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` |
+| `dry_run` / предпросмотр | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
+| Черновик по умолчанию | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
+| Публичный шаринг | выключен, пока нет `allow_public_sharing=true` **и** `allow_public=true` |
+| Без безвозвратного удаления файлов | Drive только в корзину; `drive_empty_trash` и `drive_transfer_ownership` не экспортируются |
+| Стейджинг Apps Script | `script_write.prepare` → `script_write.execute` (сначала бэкап) |
+| Scope-routing | инструменты без нужного Google-скоупа скрываются на старте |
+| Аннотации | у каждого инструмента `readOnlyHint` / `destructiveHint` |
+| Профили | `core` (по умолчанию), `full`, `read-write`, `read-only` + allow/deny |
 
 > ⚠️ Агент получает доступ ко всему, что разрешает ваш OAuth-токен. Для чувствительных
 > аккаунтов — read-only скоупы и профиль `read-only`: [docs/ru/SECURITY.md](docs/ru/SECURITY.md).
@@ -661,9 +454,15 @@ docker run -i --rm \
 ## Как устроено
 
 ```
-server.py                    MCP-сервер: 132 инструмента, ресурсы, промпты, профили
+server.py                    MCP-протокол и dispatch
 workspace_operator/
-├─ profiles.py               read-only / read-write / full + allow-deny
+├─ toolset/                  типизированный каталог, router, scope/profile surface
+│  ├─ models.py              ToolSpec / ActionSpec / Safety / Surface
+│  ├─ catalog.py             39 консолидированных инструментов и action → handler
+│  ├─ surface.py             фильтрация по профилю и скоупам
+│  ├─ routing.py             валидация action и confirm
+│  └─ scopes.py              выданные Google-скоупы из token file
+├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 конфиг + переменные окружения
 ├─ auth.py                   OAuth 2.0 и кэш токена
 ├─ text.py                   нормализация текста, таймстампов и ошибок
@@ -671,44 +470,19 @@ workspace_operator/
 ├─ security.py               проверки токена и email
 ├─ runtime.py                ретраи, аудит-лог, dry-run
 ├─ cli.py                    doctor / tools / serve
-└─ handlers/
-   ├─ search.py              workspace_search — Drive + Gmail + Calendar
-   ├─ files.py               drive_upload / drive_download / drive_export
-   ├─ formatting.py          сборка запросов sheet_format
-   ├─ gmail_threads.py       треды, вложения, ответы в тред
-   ├─ slides.py              презентации
-   ├─ calendar_writes.py     обновление / удаление / ответы на приглашения
-   ├─ report.py              report_from_sheet: статистика + документ
-   ├─ digest.py              дайджест по почте, календарю и Drive
-   ├─ compare.py             сравнение таблиц по ключевой колонке
-   ├─ template.py            клон файла с заменой плейсхолдеров
-   ├─ deck.py                таблица → презентация
-   ├─ drive_extra.py         метаданные, переименование, корзина, права
-   ├─ comments.py            комментарии Drive: чтение, создание, ответ, решение
-   ├─ doc_edit.py            поиск и замена внутри документа
-   ├─ sheets_extra.py        условное форматирование, графики
-   ├─ sheets_structure.py    листы, строки, объединение ячеек
-   ├─ sheets_more.py         колонки и сортировка
-   ├─ doc_media.py           картинки в документах
-   ├─ doc_format.py          жирный/курсив/заголовки для найденного текста
-   ├─ sheets_pivot.py        сводные таблицы
-   ├─ gmail_drafts.py        список, обновление и удаление черновиков
-   ├─ gmail_filters.py       фильтры: список и создание
-   ├─ sheets_validate.py     валидация, защита, границы
-   ├─ gmail_labels.py        метки и массовые флаги писем
-   ├─ drive.py  sheets.py  docs.py
-   ├─ gmail.py  calendar.py  apps_script.py
-tests/                       юнит-, живые и round-trip проверки
+└─ handlers/                 реализации Google API для каталога
+tests/                       unit, surface и in-memory MCP тесты
 antigravity/                 готовый mcp_config.json
-skills/google-workspace/     Agent Skill: когда какой инструмент
+skills/google-workspace/     Agent Skill: какой инструмент когда использовать
 ```
 
-Принципы:
+Правила:
 
-* каждый обработчик возвращает строку — исключения не выходят в транспорт;
-* запись только через стейджинг, подтверждение или черновик;
-* Apps Script — двухфазный коммит с автоматическим бэкапом;
-* серверные профили держат поверхность маленькой.
+* каталог — единственный источник истины для имён, действий, скоупов и документации;
+* каждое действие сопоставлено ровно одному handler и проверяется до вызова;
+* destructive-действия требуют `confirm=true` и в router, и в handler;
+* ни один инструмент не удаляет файл Drive безвозвратно — граница это корзина;
+* профили и scope-routing уменьшают видимую поверхность.
 
 ## Тестирование
 
@@ -720,12 +494,10 @@ python tests/live_phase2.py                 # 8 проверок партии v1
 python tests/live_phase3.py                 # 8 проверок партии v1.16
 python tests/live_phase4.py                 # 5 проверок партии v1.17
 python tests/live_phase5.py                 # 7 проверок партии v1.18
-python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slides → замена
 ```
 
-Живой набор самоочищается: загружает и удаляет временный файл, создаёт и удаляет
-презентацию и таблицу, создаёт и удаляет черновик ответа, скачивает и удаляет
-вложение. `tests/test_docs.py` держит README, документацию и код согласованными
+Живой набор самоочищается: загружает и удаляет временный файл, создаёт и удаляет таблицу, создаёт и
+удаляет черновик ответа, скачивает и удаляет вложение. `tests/test_docs.py` держит README, документацию и код согласованными
 (количество инструментов, числа профилей, ссылки, примеры).
 
 ## Документация
@@ -752,28 +524,26 @@ python tests/pptx_roundtrip.py deck.pptx    # 5 проверок: pptx → Slide
 
 ## Ограничения
 
-Границы возможностей — часть контракта:
+Границы — часть контракта:
 
-- **Drive**: удаление — это «в корзину»; `drive_empty_trash` — единственный
-  необратимый путь, требует `confirm=true`.
-- **Sheets**: листы, строки, колонки, объединение, сортировка, сводные таблицы,
-  валидация, защита и границы поддержаны; графики базовых типов, условное
-  форматирование — одно правило за вызов.
-- **Docs**: стилизация найденного текста работает; таблицы создаёт инструмент
-  отчёта, но редактировать их по ячейкам потом нельзя.
-- **Slides**: слайды, заметки и нативные таблицы работают; фигур, диаграмм и
-  стилизации отдельных фигур нет.
-- **Один аккаунт на сервер**: один OAuth-токен, мультиаккаунтности нет.
+- **Drive**: удаление означает «в корзину»; безвозвратного удаления и передачи
+  владения нет.
+- **Sheets**: листы, строки, колонки, объединения, сортировка, сводные таблицы,
+  валидация, защита и границы поддерживаются; диаграммы — базовые типы.
+- **Docs**: стилизация работает по совпадениям; шаблонного заполнения нет.
+- **Slides и комментарии Drive** удалены в 2.0; см. migration guide.
+- **Один аккаунт на сервер**: один OAuth-токен, без multi-tenant.
 
 ## План
 
 - [x] Кросс-поиск и профили инструментов
-- [x] Файлы, Slides, запуск Apps Script
+- [x] Файлы, запуск Apps Script
 - [x] Форматирование Sheets
 - [x] Треды, вложения и ответы в Gmail
 - [x] Calendar: обновление, удаление, ответ на приглашения
-- [x] Составные: `report_from_sheet`, `digest`, `compare_tables`, `clone_and_fill`
+- [x] `digest` и `compare_tables`
 - [x] Опциональный HTTP-транспорт (Streamable HTTP, stateless, localhost-first)
+- [x] 2.0: консолидированный surface, scope routing, профиль core
 
 ## Ответственность
 

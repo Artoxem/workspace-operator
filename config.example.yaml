@@ -22,13 +22,15 @@ log_level: "INFO"
 #   read-write — everything except destructive tools (delete, clear, revoke)
 #   read-only  — only read tools (search, read, list, export)
 # Can also be set via MCP_TOOL_PROFILE.
-tool_profile: "full"
+tool_profile: "core"
+scope_routing: true
+allow_public_sharing: false
 
 # Optional explicit allow/deny lists applied on top of the profile.
 # Deny always wins over allow. Use MCP tool names from docs/TOOLS_REFERENCE.md.
 # Env overrides: MCP_ALLOWED_TOOLS="a,b,c" / MCP_DENIED_TOOLS="x,y"
-# allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
-# denied_tools: ["send_email", "share_file", "batch_delete_emails"]
+# allowed_tools: ["workspace_search", "sheets_read", "gmail_read"]
+# denied_tools: ["gmail_write", "drive_write"]
 
 # OAuth scopes define what data the server can access
 # Default: Full access to all services (good for testing)
@@ -42,7 +44,6 @@ scopes:
   - "https://www.googleapis.com/auth/gmail.modify"            # Read/send/delete emails (includes read)
   - "https://www.googleapis.com/auth/gmail.settings.basic"    # Gmail filters
   - "https://www.googleapis.com/auth/calendar"                # Manage calendar events
-  - "https://www.googleapis.com/auth/presentations"           # Google Slides
   - "https://www.googleapis.com/auth/tasks"                       # Google Tasks
   - "https://www.googleapis.com/auth/forms.body"                  # Google Forms (create/edit)
   - "https://www.googleapis.com/auth/forms.responses.readonly"    # Form responses

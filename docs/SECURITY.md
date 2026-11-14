@@ -3,19 +3,25 @@
 The server includes safeguards to reduce accidental destructive actions.
 
 ## Confirmations (confirm)
-- `delete_email`, `gmail_archive`, `calendar_create_meeting`,
-  `drive_revoke_public` require `confirm=true`.
-- `doc_fill_template`, `doc_replace_text`, `docs_format_text` require confirmation
-  to avoid mass replacements.
-- The current confirm-gated list is the «Safety by default» table in the README.
+- `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
+  `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` and `bulk_undo`
+  require `confirm=true`.
+- The router enforces this before the handler runs; handlers keep their own
+  checks as a second layer.
 
-## Dry-run
-- `batch_delete_emails` defaults to dry-run.
-- `sheet_find_replace` defaults to `dry_run=true`.
-- `clear_range` automatically requires confirmation for large ranges.
+## Dry-run and previews
+- `bulk_plan` is always a dry run.
+- `sheets_write` → `find_replace` returns a preview without `confirm=true`.
+- `gmail_settings` → `label_apply` defaults to `dry_run=true`.
+
+## No permanent file deletion
+- `drive_trash` only moves a file to Trash; there is no `drive_empty_trash` and
+  no ownership-transfer tool.
+- Gmail deletion moves messages to Trash.
 
 ## Public access
-- `share_file` blocks `type=anyone` unless `allow_public=true`.
+- Public sharing is disabled by default. `drive_write` → `share` requires both
+  `allow_public_sharing=true` in config and `allow_public=true`.
 
 ## Tool profiles (server-side allow-list)
 
@@ -25,15 +31,16 @@ anything outside the profile with an explicit error.
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `full` | 132 | your own machine, full trust |
-| `read-write` | 113 | daily work — destructive tools hidden |
-| `read-only` | 39 | exploration, demos, shared machines, untrusted agents |
+| `core` | 20 | everyday read/write, no formatting or destructive edits |
+| `full` | 39 | formatting, destructive edits, Forms, Postmaster, Script |
+| `read-write` | 30 | automation without destructive actions |
+| `read-only` | 17 | exploration, demos, shared machines, untrusted agents |
 
 ```yaml
 tool_profile: "read-only"
 # Optional explicit lists, applied on top. Deny beats allow.
-allowed_tools: ["workspace_search", "find_files", "read_sheet"]
-denied_tools: ["gmail_search_and_summarize"]
+allowed_tools: ["workspace_search", "sheets_read", "gmail_read"]
+denied_tools: ["gmail_write", "drive_write"]
 ```
 
 Env overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS="a,b"`, `MCP_DENIED_TOOLS="x,y"`.
@@ -43,7 +50,9 @@ Every key has an environment override:
 |---|---|---|
 | `MCP_CONFIG_FILE` | — | path to `config.yaml` / `config.json` |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | required before any tool call is served |
-| `MCP_TOOL_PROFILE` | `tool_profile` | `full` / `read-write` / `read-only` |
+| `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
+| `MCP_SCOPE_ROUTING` | `scope_routing` | hide tools whose Google scope is missing |
+| `MCP_ALLOW_PUBLIC_SHARING` | `allow_public_sharing` | enable public links (off by default) |
 | `MCP_ALLOWED_TOOLS` | `allowed_tools` | comma-separated allow list |
 | `MCP_DENIED_TOOLS` | `denied_tools` | comma-separated deny list; deny beats allow |
 | `MCP_DRY_RUN` | `dry_run` | `1` turns writes into previews |
@@ -140,7 +149,6 @@ scopes:
   - "https://www.googleapis.com/auth/script.projects"
   - "https://www.googleapis.com/auth/script.deployments"
   - "https://www.googleapis.com/auth/documents"
-  - "https://www.googleapis.com/auth/presentations"
   - "https://www.googleapis.com/auth/gmail.modify"
   - "https://www.googleapis.com/auth/gmail.settings.basic"
   - "https://www.googleapis.com/auth/calendar"
@@ -234,7 +242,7 @@ For questions about specific scopes, see [Google's OAuth 2.0 Scopes documentatio
 - `script_run_function` runs arbitrary Apps Script code with the authority of the
   OAuth token. It is marked `destructiveHint`, so the `read-write` profile hides it;
   the `full` profile exposes it deliberately.
-- `drive_download` and `drive_export` write to the local filesystem on the machine
+- `drive_export` writes to the local filesystem on the machine
   running the server — `save_to` is honoured literally and the absolute path is
   echoed back. Never overwrite without `overwrite=true`.
 - `drive_upload` reads any local file the process can read (100 MB cap); treat the

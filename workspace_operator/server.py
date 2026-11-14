@@ -18,6 +18,9 @@ from . import __version__
 from .config import Config, load_config
 from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
+from .toolset import build_catalog, build_surface, resolve_call, RoutingError
+from .toolset.models import Safety
+from .toolset.scopes import read_granted_scopes
 from .security import require_token_configured
 from .operations import BinaryResult
 from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
@@ -167,9 +170,29 @@ _WRITE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=False)
 _DESTRUCTIVE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=True)
 
 
+_REMOVED_TOOL_NAMES = frozenset(
+    {
+        "clone_and_fill", "report_from_sheet", "sheet_to_slides",
+        "drive_create_comment", "drive_create_shortcut", "drive_download",
+        "drive_empty_trash", "drive_list_comments", "drive_reply_comment",
+        "drive_resolve_comment", "drive_transfer_ownership",
+        "doc_fill_template", "calendar_find_free_slots",
+        "slides_create", "slides_get", "slides_add_slide", "slides_delete_slide",
+        "slides_move_slide", "slides_list_layouts", "slides_replace_text",
+        "slides_add_shape", "slides_add_table", "slides_insert_image",
+        "slides_set_notes", "create_event", "find_files",
+        "batch_delete_emails", "doc_export_pdf",
+    }
+)
+
+
 def _tools() -> List[types.Tool]:
-    """Return the full list of tool definitions with annotations."""
-    return [
+    """Return the retained legacy definitions used by the catalog.
+
+    The five standalone draft tools remain as schema sources for the
+    ``gmail_write`` / ``gmail_delete`` actions; they are not exposed.
+    """
+    tools = [
         # ── Cross-product search ──────────────────────────────────────────
         types.Tool(
             name="workspace_search",
@@ -2533,6 +2556,8 @@ def _tools() -> List[types.Tool]:
         ),
     ]
 
+    return [tool for tool in tools if tool.name not in _REMOVED_TOOL_NAMES]
+
 
 def _prompts() -> List[types.Prompt]:
     """Scenario prompts offered to MCP clients."""
@@ -2681,9 +2706,18 @@ def _prompts() -> List[types.Prompt]:
 
 def create_server(config: Config, logger) -> Server:
     """Build a fully configured MCP server (transport independent)."""
+    legacy_tools = _tools()
+    catalog = build_catalog(legacy_tools)
+    granted_scopes = (
+        read_granted_scopes(config.token_file) if config.scope_routing else None
+    )
     try:
-        profile = resolve_profile(
-            config.tool_profile, config.allowed_tools, config.denied_tools
+        surface = build_surface(
+            catalog,
+            config.tool_profile,
+            granted_scopes,
+            allowed=config.allowed_tools,
+            denied=config.denied_tools,
         )
     except ProfileError as exc:
         raise SystemExit(f"Configuration error: {exc}") from exc
@@ -2692,25 +2726,27 @@ def create_server(config: Config, logger) -> Server:
         "Workspace Operator",
         version=__version__,
         instructions=(
-            "Workspace Operator gives you deep control over Google Workspace: "
-            "Drive, Docs, Sheets, Slides, Gmail, Calendar and Apps Script. "
-            "Start with workspace_search for open-ended questions, read before "
-            "writing, and prefer staged or confirm-gated operations. Tools outside "
-            "the active tool profile are hidden by design."
+            "Workspace Operator exposes Google Workspace through a compact, "
+            "action-based tool surface. Start with workspace_search for unknown "
+            "ids; read before writing; use the bulk_plan/bulk_run flow for more "
+            "than a handful of items. Destructive actions require confirm=true. "
+            "Tools outside the active profile or without their OAuth scope are "
+            "hidden by design."
         ),
     )
-    all_tools = _tools()
-    exposed_tools = profile.filter(all_tools)
+    exposed_tools = surface.mcp_tools()
     exposed_names = frozenset(tool.name for tool in exposed_tools)
+    exposed_specs = surface.by_name
+    profile_name = surface.profile
 
     audit = AuditLog(config.audit_log)
-    tool_index = {tool.name: tool for tool in exposed_tools}
+    tool_index = exposed_specs
 
     logger.info(
-        "Starting with tool %s — %d of %d tools exposed%s%s",
-        profile.describe(),
+        "Starting with profile %s — %d of %d tools exposed%s%s",
+        profile_name,
         len(exposed_tools),
-        len(all_tools),
+        len(legacy_tools),
         " [dry-run]" if config.dry_run else "",
         f" [audit: {config.audit_log}]" if audit.enabled else "",
     )
@@ -2736,7 +2772,7 @@ def create_server(config: Config, logger) -> Server:
                         type="text",
                         text=(
                             f"Tool '{name}' is disabled by the active tool profile "
-                            f"({profile.name}). Adjust tool_profile, allowed_tools or "
+                            f"({profile_name}). Adjust tool_profile, allowed_tools or "
                             "denied_tools in config.yaml to enable it."
                         ),
                     )
@@ -2744,16 +2780,34 @@ def create_server(config: Config, logger) -> Server:
                 isError=True,
             )
 
-        tool = tool_index.get(name)
-        from .profiles import is_read_only as _tool_is_read_only
+        spec = tool_index.get(name)
+        try:
+            plan = resolve_call(
+                spec, arguments, require_confirm=not config.dry_run
+            )
+        except RoutingError as exc:
+            audit.record(
+                name,
+                profile_name,
+                "invalid",
+                0,
+                tuple((arguments or {}).keys()),
+                error=str(exc),
+            )
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=str(exc))],
+                isError=True,
+            )
 
-        is_read_only = bool(tool is not None and _tool_is_read_only(tool))
-        argument_names = tuple((arguments or {}).keys())
+        is_read_only = spec.safety is Safety.READ
+        argument_names = tuple(plan.arguments.keys())
+        if plan.action:
+            argument_names = argument_names + ("action",)
         started = time.perf_counter()
 
         if config.dry_run and not is_read_only:
             logger.info("Dry run: %s was not executed", name)
-            audit.record(name, profile.name, "dry-run", 0, argument_names)
+            audit.record(name, profile_name, "dry-run", 0, argument_names)
             return types.CallToolResult(
                 content=[
                     types.TextContent(
@@ -2770,7 +2824,7 @@ def create_server(config: Config, logger) -> Server:
         try:
             require_token_configured(config.mcp_auth_token)
 
-            def _record_bulk_finish(tool_name, job, _audit=audit, _profile=profile.name):
+            def _record_bulk_finish(tool_name, job, _audit=audit, _profile=profile_name):
                 try:
                     start = datetime.fromisoformat(job.started_at).timestamp()
                     end = (
@@ -3597,12 +3651,12 @@ def create_server(config: Config, logger) -> Server:
                 ),
             }
 
-            if name not in handlers:
-                raise ValueError(f"Unknown tool: {name}")
+            if plan.legacy_name not in handlers:
+                raise ValueError(f"Unknown tool: {plan.legacy_name}")
 
             result = await asyncio.to_thread(
                 call_with_retry,
-                lambda: handlers[name](arguments),
+                lambda: handlers[plan.legacy_name](plan.arguments),
                 config.retry_attempts,
                 logger=logger,
             )
@@ -3630,7 +3684,7 @@ def create_server(config: Config, logger) -> Server:
                 text = humanize_http_error(text)
             audit.record(
                 name,
-                profile.name,
+                profile_name,
                 "error" if is_error else "ok",
                 int((time.perf_counter() - started) * 1000),
                 argument_names,
@@ -3643,7 +3697,7 @@ def create_server(config: Config, logger) -> Server:
         except Exception as e:
             audit.record(
                 name,
-                profile.name,
+                profile_name,
                 "exception",
                 int((time.perf_counter() - started) * 1000),
                 argument_names,

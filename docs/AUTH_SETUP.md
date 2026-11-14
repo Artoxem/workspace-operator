@@ -44,7 +44,6 @@ re-authorization, and deleting `token.json` does not change `mcp_auth_token`.
 | Google Drive API | files, folders, permissions |
 | Google Docs API | documents |
 | Google Sheets API | spreadsheets |
-| Google Slides API | presentations |
 | Gmail API | mail, labels, filters |
 | Google Calendar API | events |
 | Google Apps Script API | script projects, deployments |
@@ -144,7 +143,7 @@ workspace-operator (unsafe)** only if you created this OAuth client yourself.
 
 ## Step 7 — Scopes
 
-The default configuration requests 14 scopes (Drive, Docs, Sheets, Slides,
+The default configuration requests 13 scopes (Drive, Docs, Sheets,
 Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). The full list and the
 read-only variants live in [SECURITY.md](SECURITY.md).
 

@@ -2,7 +2,7 @@
 
 This walkthrough explains the components of Workspace Operator and how they fit
 together. The code snippets show the original skeleton; the shipped server now
-has 132 tools, bulk plan/run/undo, server-side profiles and optional HTTP/Docker
+has 39 consolidated tools, bulk plan/run/undo, server-side profiles and optional HTTP/Docker
 deployment. See [README.md](README.md) for the current surface and
 [docs/TOOLS_REFERENCE.md](docs/TOOLS_REFERENCE.md) for the tool reference.
 
@@ -12,8 +12,8 @@ deployment. See [README.md](README.md) for the current surface and
 
 An **MCP (Model Context Protocol) server** that:
 - Runs over stdio for one client, or Streamable HTTP for several clients
-- Exposes tools across Drive, Docs, Sheets, Slides, Gmail, Calendar, Tasks,
-  Forms, Apps Script and Postmaster (132 in the current release)
+- Exposes tools across Drive, Docs, Sheets, Gmail, Calendar, Tasks,
+  Forms, Apps Script and Postmaster (39 consolidated tools in 2.0)
 - Uses OAuth 2.0 with your own Google Cloud client
 - Applies safety patterns: `confirm`, `dry_run`, plan → run → undo, profiles
 

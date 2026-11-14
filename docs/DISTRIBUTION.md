@@ -4,19 +4,19 @@ How to get Workspace Operator in front of people who run AI agents.
 
 Ready-to-post copy and submission fields: [LAUNCH_PACKAGE.md](LAUNCH_PACKAGE.md).
 
-Current baseline: 132 tools, 14 OAuth scopes, 328 unit tests, PyPI and GHCR
+Current baseline: 39 tools, 13 OAuth scopes, 354 unit tests, PyPI and GHCR
 releases, MIT. Discovery is the bottleneck, not the feature set.
 
 ## 1. Positioning
 
 Use one sentence everywhere:
 
-> **Google Workspace automation for AI agents: 132 tools, local OAuth, and bulk
+> **Google Workspace automation for AI agents: 39 tools, local OAuth, and bulk
 > operations that plan, confirm and undo.**
 
 Three differentiators worth repeating:
 
-1. **Breadth** — Drive, Docs, Sheets, Slides, Gmail, Calendar, Tasks, Forms,
+1. **Breadth** — Drive, Docs, Sheets, Gmail, Calendar, Tasks, Forms,
    Apps Script and Postmaster in one server, not ten.
 2. **Bulk with a safety net** — `plan → confirm → run → undo` for thousands of
    files or messages; a five-item sample, not a wall of text.
@@ -62,7 +62,7 @@ Sequence matters: listings first, then one launch spike, then steady content.
 
 **Show HN** (Tuesday–Thursday, 08:00–10:00 US Eastern):
 
-> Show HN: Workspace Operator – 132 Google Workspace tools for AI agents
+> Show HN: Workspace Operator – 39 Google Workspace tools for AI agents
 >
 > I built an MCP server that gives agents the whole Google Workspace, not just
 > Gmail. The part I care about is bulk: moving 1,000 files is one plan, one
@@ -81,7 +81,7 @@ answer questions; never post the same text in several subreddits on one day.
 3. the architecture: local OAuth, profiles, audit, Docker;
 4. the link and one command to install.
 
-**Habr (RU)** — a technical article: "132 инструмента Google Workspace в одном
+**Habr (RU)** — a technical article: "39 инструментов Google Workspace в одном
 MCP-сервере: как безопасно делать массовые операции". Habr rewards depth and
 honest benchmarks, not a link drop.
 
@@ -101,13 +101,13 @@ compounds through listings and repeated useful content.
 
 Short (one line):
 
-> Google Workspace automation for AI agents: 132 MCP tools with bulk
-> plan/confirm/undo for Drive, Gmail, Docs, Sheets and Slides.
+> Google Workspace automation for AI agents: 39 MCP tools with bulk
+> plan/confirm/undo for Drive, Gmail, Docs, Sheets.
 
 Medium (directories):
 
-> Workspace Operator is a local MCP server for Google Workspace. It exposes 132
-> tools across Drive, Docs, Sheets, Slides, Gmail, Calendar, Tasks, Forms, Apps
+> Workspace Operator is a local MCP server for Google Workspace. It exposes 39
+> tools across Drive, Docs, Sheets, Gmail, Calendar, Tasks, Forms, Apps
 > Script and Postmaster. Bulk operations resolve a selector once, show a
 > five-item plan, then run in the background with progress, cancellation, a
 > result artifact and undo. Runs over stdio or Docker/HTTP with your own OAuth

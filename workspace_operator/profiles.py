@@ -29,10 +29,11 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence, TypeVar
 
 PROFILE_FULL = "full"
+PROFILE_CORE = "core"
 PROFILE_READ_WRITE = "read-write"
 PROFILE_READ_ONLY = "read-only"
 
-VALID_PROFILES = (PROFILE_FULL, PROFILE_READ_WRITE, PROFILE_READ_ONLY)
+VALID_PROFILES = (PROFILE_CORE, PROFILE_FULL, PROFILE_READ_WRITE, PROFILE_READ_ONLY)
 
 T = TypeVar("T")
 
@@ -125,8 +126,8 @@ def resolve_profile(
     """Build a :class:`ToolProfile` from configuration values.
 
     Args:
-        name: One of ``full``, ``read-write``, ``read-only``. ``None`` or an
-            empty string means ``full``.
+        name: One of ``core``, ``full``, ``read-write``, ``read-only``.
+            ``None`` or an empty string means ``full``.
         allowed_tools: Optional allow-list applied on top of the profile.
         denied_tools: Optional deny-list applied last.
 
@@ -141,6 +142,10 @@ def resolve_profile(
         )
 
     allowed = _normalize(allowed_tools)
+    if profile_name == PROFILE_CORE:
+        from .toolset.catalog import CORE_TOOL_NAMES
+
+        allowed = CORE_TOOL_NAMES if allowed is None else allowed & CORE_TOOL_NAMES
     denied = _normalize(denied_tools) or frozenset()
 
     if allowed is not None and denied:

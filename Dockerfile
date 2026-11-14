@@ -9,7 +9,7 @@
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="Workspace Operator" \
-      org.opencontainers.image.description="Google Workspace automation over MCP: 132 tools, bulk operations, staged writes, tool profiles" \
+      org.opencontainers.image.description="Google Workspace automation over MCP: 39 tools, bulk operations, staged writes, tool profiles" \
       org.opencontainers.image.source="https://github.com/Artoxem/workspace-operator" \
       org.opencontainers.image.url="https://pypi.org/project/workspace-operator-mcp/" \
       org.opencontainers.image.licenses="MIT" \

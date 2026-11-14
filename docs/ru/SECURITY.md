@@ -3,19 +3,24 @@
 В сервере есть встроенные защиты, чтобы снизить риск случайных разрушительных действий.
 
 ## Подтверждения (confirm)
-- `delete_email`, `gmail_archive`, `calendar_create_meeting`,
-  `drive_revoke_public` требуют `confirm=true`.
-- `doc_fill_template`, `doc_replace_text`, `docs_format_text` требуют подтверждения,
-  чтобы избежать массовой замены.
-- Актуальный список confirm-инструментов — таблица «Безопасность по умолчанию» в README.
+- `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
+  `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` и `bulk_undo`
+  требуют `confirm=true`.
+- Router проверяет это до handler; в handler остаётся вторая проверка.
 
-## Dry-run
-- `batch_delete_emails` по умолчанию выполняется в dry-run.
-- `sheet_find_replace` по умолчанию `dry_run=true`.
-- `clear_range` автоматически требует подтверждения для больших диапазонов.
+## Dry-run и предпросмотр
+- `bulk_plan` всегда dry-run.
+- `sheets_write` → `find_replace` возвращает предпросмотр без `confirm=true`.
+- `gmail_settings` → `label_apply` по умолчанию `dry_run=true`.
+
+## Без безвозвратного удаления файлов
+- `drive_trash` только перемещает файл в корзину; `drive_empty_trash` и передачи
+  владения нет.
+- Удаление Gmail перемещает письма в корзину.
 
 ## Публичный доступ
-- `share_file` запрещает `type=anyone` без `allow_public=true`.
+- Публичный шаринг выключен по умолчанию. `drive_write` → `share` требует
+  `allow_public_sharing=true` в конфиге **и** `allow_public=true`.
 
 ## Профили инструментов (серверный allow-list)
 
@@ -25,15 +30,16 @@
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `full` | 132 | своя машина, полное доверие |
-| `read-write` | 113 | ежедневная работа — деструктивные скрыты |
-| `read-only` | 39 | разведка, демо, общие машины, недоверенные агенты |
+| `core` | 20 | ежедневное чтение/запись без форматирования и destructive |
+| `full` | 39 | форматирование, destructive, Forms, Postmaster, Script |
+| `read-write` | 30 | автоматизация без destructive |
+| `read-only` | 17 | разведка, демо, общие машины, недоверенные агенты |
 
 ```yaml
 tool_profile: "read-only"
 # Необязательные списки поверх профиля. Запрет важнее разрешения.
-allowed_tools: ["workspace_search", "find_files", "read_sheet"]
-denied_tools: ["gmail_search_and_summarize"]
+allowed_tools: ["workspace_search", "sheets_read", "gmail_read"]
+denied_tools: ["gmail_write", "drive_write"]
 ```
 
 Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS="a,b"`, `MCP_DENIED_TOOLS="x,y"`.
@@ -43,7 +49,9 @@ denied_tools: ["gmail_search_and_summarize"]
 |---|---|---|
 | `MCP_CONFIG_FILE` | — | путь к `config.yaml` / `config.json` |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | обязателен до первого вызова инструмента |
-| `MCP_TOOL_PROFILE` | `tool_profile` | `full` / `read-write` / `read-only` |
+| `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
+| `MCP_SCOPE_ROUTING` | `scope_routing` | скрывать инструменты без нужного Google-скоупа |
+| `MCP_ALLOW_PUBLIC_SHARING` | `allow_public_sharing` | разрешить публичные ссылки (по умолчанию выкл.) |
 | `MCP_ALLOWED_TOOLS` | `allowed_tools` | белый список через запятую |
 | `MCP_DENIED_TOOLS` | `denied_tools` | чёрный список; запрет сильнее разрешения |
 | `MCP_DRY_RUN` | `dry_run` | `1` превращает записи в превью |
@@ -141,7 +149,6 @@ scopes:
   - "https://www.googleapis.com/auth/script.projects"
   - "https://www.googleapis.com/auth/script.deployments"
   - "https://www.googleapis.com/auth/documents"
-  - "https://www.googleapis.com/auth/presentations"
   - "https://www.googleapis.com/auth/gmail.modify"
   - "https://www.googleapis.com/auth/gmail.settings.basic"
   - "https://www.googleapis.com/auth/calendar"
@@ -234,7 +241,7 @@ scopes:
 
 - `script_run_function` выполняет произвольный код Apps Script с правами OAuth-токена.
   Помечен `destructiveHint`, поэтому профиль `read-write` его скрывает; `full` — открывает.
-- `drive_download` и `drive_export` пишут на диск машины, где запущен сервер: `save_to`
+- `drive_export` пишет на диск машины, где запущен сервер: `save_to`
   используется буквально, абсолютный путь возвращается в ответе. Без `overwrite=true`
   существующий файл не перезаписывается.
 - `drive_upload` читает любой локальный файл, доступный процессу (лимит 100 МБ):

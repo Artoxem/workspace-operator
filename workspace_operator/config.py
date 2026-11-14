@@ -15,7 +15,6 @@ DEFAULT_SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.settings.basic",
     "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/presentations",
     "https://www.googleapis.com/auth/tasks",
     "https://www.googleapis.com/auth/forms.body",
     "https://www.googleapis.com/auth/forms.responses.readonly",
@@ -33,7 +32,9 @@ class Config:
     mcp_auth_token: Optional[str]
     scopes: List[str]
     log_level: int = _logging.INFO
-    tool_profile: str = "full"
+    tool_profile: str = "core"
+    scope_routing: bool = True
+    allow_public_sharing: bool = False
     allowed_tools: Optional[List[str]] = None
     denied_tools: Optional[List[str]] = None
     dry_run: bool = False
@@ -116,7 +117,7 @@ def load_config() -> Config:
     log_level = getattr(_logging, log_level_str.upper(), _logging.INFO)
 
     tool_profile = os.environ.get(
-        "MCP_TOOL_PROFILE", str(file_config.get("tool_profile", "full"))
+        "MCP_TOOL_PROFILE", str(file_config.get("tool_profile", "core"))
     )
 
     allowed_tools = _env_list("MCP_ALLOWED_TOOLS") or file_config.get("allowed_tools")
@@ -181,6 +182,15 @@ def load_config() -> Config:
         scopes=scopes,
         log_level=log_level,
         tool_profile=tool_profile,
+        scope_routing=parse_bool(
+            os.environ.get("MCP_SCOPE_ROUTING", file_config.get("scope_routing", True))
+        ),
+        allow_public_sharing=parse_bool(
+            os.environ.get(
+                "MCP_ALLOW_PUBLIC_SHARING",
+                file_config.get("allow_public_sharing", False),
+            )
+        ),
         allowed_tools=allowed_tools,
         denied_tools=denied_tools,
         dry_run=dry_run,

@@ -34,7 +34,7 @@ def make_config(tmp: str, **overrides) -> Config:
 class CatalogTests(unittest.TestCase):
     def test_catalog_matches_tool_count(self):
         catalog = tool_catalog("full")
-        self.assertGreater(len(catalog), 60)
+        self.assertEqual(len(catalog), 39)
 
     def test_profile_filters_catalog(self):
         full = len(tool_catalog("full"))

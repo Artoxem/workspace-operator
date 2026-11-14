@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from . import __version__
 from .config import Config, load_config
 
-PROFILES = ("full", "read-write", "read-only")
+PROFILES = ("core", "full", "read-write", "read-only")
 
 
 @dataclass
@@ -30,21 +30,19 @@ class Check:
     critical: bool = True
 
 
-def tool_catalog(profile: str = "full") -> List[Dict[str, Any]]:
-    from .profiles import is_destructive, is_read_only, resolve_profile
+def tool_catalog(profile: str = "core") -> List[Dict[str, Any]]:
     from .server import _tools
+    from .toolset.catalog import build_catalog
+    from .toolset.surface import build_surface
 
-    tools = _tools()
-    exposed = resolve_profile(profile).filter(tools)
+    surface = build_surface(build_catalog(_tools()), profile)
     catalog: List[Dict[str, Any]] = []
-    for tool in exposed:
-        kind = "read" if is_read_only(tool) else "write"
-        if is_destructive(tool):
-            kind = "destructive"
+    for tool in surface.tools:
         catalog.append(
             {
                 "name": tool.name,
-                "kind": kind,
+                "kind": tool.safety.value,
+                "actions": list(tool.action_names),
                 "description": (tool.description or "").split("\n")[0],
             }
         )
@@ -274,7 +272,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     tools = subparsers.add_parser("tools", help="list the tool catalog")
-    tools.add_argument("--profile", choices=PROFILES, default="full")
+    tools.add_argument("--profile", choices=PROFILES, default="core")
     tools.add_argument("--json", action="store_true")
     tools.set_defaults(func=cmd_tools)
 

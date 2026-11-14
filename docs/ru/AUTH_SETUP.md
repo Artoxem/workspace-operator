@@ -44,7 +44,6 @@ HTTP. Смена `mcp_auth_token` не требует переавторизац
 | Google Drive API | файлы, папки, права |
 | Google Docs API | документы |
 | Google Sheets API | таблицы |
-| Google Slides API | презентации |
 | Gmail API | почта, метки, фильтры |
 | Google Calendar API | события |
 | Google Apps Script API | проекты и деплои скриптов |
@@ -144,7 +143,7 @@ workspace-operator (unsafe)**, только если этот OAuth-клиент
 
 ## Шаг 7 — Scopes
 
-Стандартная конфигурация запрашивает 14 scopes (Drive, Docs, Sheets, Slides,
+Стандартная конфигурация запрашивает 13 scopes (Drive, Docs, Sheets,
 Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). Полный список и
 read-only варианты — в [SECURITY.md](SECURITY.md).
 

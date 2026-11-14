@@ -13,13 +13,16 @@ import yaml
 
 from workspace_operator.profiles import resolve_profile
 from workspace_operator.server import _tools
+from workspace_operator.toolset.catalog import build_catalog
+from workspace_operator.toolset.surface import build_surface
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOLS = _tools()
+TOOLS = build_catalog(_tools())
 TOOL_NAMES = [tool.name for tool in TOOLS]
 TOTAL = len(TOOLS)
-READ_WRITE = len(resolve_profile("read-write").filter(TOOLS))
-READ_ONLY = len(resolve_profile("read-only").filter(TOOLS))
+CORE = len(build_surface(TOOLS, "core"))
+READ_WRITE = len(build_surface(TOOLS, "read-write"))
+READ_ONLY = len(build_surface(TOOLS, "read-only"))
 
 # Release notes and specs describe past versions on purpose.
 HISTORICAL = ("docs/RELEASE_", "docs/SPEC_")
@@ -81,7 +84,8 @@ class DocumentationCoverageTests(unittest.TestCase):
         names = [
             "MCP_CONFIG_FILE", "MCP_AUTH_TOKEN", "MCP_TOOL_PROFILE",
             "MCP_ALLOWED_TOOLS", "MCP_DENIED_TOOLS", "MCP_DRY_RUN",
-            "MCP_AUDIT_LOG", "MCP_RETRY_ATTEMPTS", "GOOGLE_CLIENT_SECRETS_FILE",
+            "MCP_AUDIT_LOG", "MCP_RETRY_ATTEMPTS", "MCP_SCOPE_ROUTING",
+            "MCP_ALLOW_PUBLIC_SHARING", "GOOGLE_CLIENT_SECRETS_FILE",
             "GOOGLE_TOKEN_FILE", "GOOGLE_BACKUP_DIR", "GOOGLE_LOG_FILE",
             "GOOGLE_LOG_LEVEL",
         ]
@@ -106,7 +110,7 @@ class DockerTests(unittest.TestCase):
         config = yaml.safe_load(read("config.docker.yaml"))
         self.assertTrue(str(config["token_file"]).startswith("/home/app/"))
         self.assertTrue(str(config["log_file"]).startswith("/home/app/data"))
-        self.assertIn("presentations", " ".join(config["scopes"]))
+        self.assertNotIn("presentations", " ".join(config["scopes"]))
 
     def test_dockerfile_is_safe(self):
         text = read("Dockerfile")
@@ -134,18 +138,18 @@ class PromptCatalogTests(unittest.TestCase):
 class ProfileCountTests(unittest.TestCase):
     def test_readme_profile_table(self):
         text = read("README.md")
-        for label, value in (("full", TOTAL), ("read-write", READ_WRITE), ("read-only", READ_ONLY)):
+        for label, value in (("core", CORE), ("full", TOTAL), ("read-write", READ_WRITE), ("read-only", READ_ONLY)):
             self.assertIn(f"| `{label}` | {value} |", text)
 
     def test_russian_readme_profile_table(self):
         text = read("README.ru.md")
-        for label, value in (("full", TOTAL), ("read-write", READ_WRITE), ("read-only", READ_ONLY)):
+        for label, value in (("core", CORE), ("full", TOTAL), ("read-write", READ_WRITE), ("read-only", READ_ONLY)):
             self.assertIn(f"| `{label}` | {value} |", text)
 
     def test_security_docs(self):
         for rel in ("docs/SECURITY.md", "docs/ru/SECURITY.md"):
             text = read(rel)
-            for label, value in (("full", TOTAL), ("read-write", READ_WRITE), ("read-only", READ_ONLY)):
+            for label, value in (("core", CORE), ("full", TOTAL), ("read-write", READ_WRITE), ("read-only", READ_ONLY)):
                 with self.subTest(file=rel, profile=label):
                     self.assertIn(f"| `{label}` | {value} |", text)
 
@@ -257,7 +261,7 @@ class ConfigExampleTests(unittest.TestCase):
     def test_config_example_scopes(self):
         data = yaml.safe_load(read("config.example.yaml"))
         self.assertIn("tool_profile", data)
-        self.assertIn(
+        self.assertNotIn(
             "https://www.googleapis.com/auth/presentations", data["scopes"]
         )
 

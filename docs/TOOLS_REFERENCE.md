@@ -1,564 +1,69 @@
-# MCP Tools Reference
+# Tool reference
 
-Below is a list of tools, resources, and prompts available in this MCP server.
-All tool calls require `MCP_AUTH_TOKEN` to be configured on the server.
+Workspace Operator 2.0 exposes 39 consolidated tools. Call a tool with an `action`; actions are validated before dispatch.
 
-## MCP Primitives
+## Profiles
 
-This server exposes three types of MCP primitives:
-
-| Primitive | Description |
-|-----------|-------------|
-| **Tools** | Executable actions (read, write, delete). Triggered by the AI on demand. |
-| **Resources** | Passive data sources that can be attached to context. Read-only snapshots of Google data. |
-| **Prompts** | Reusable prompt templates that fetch live data and prepare it for AI analysis. |
-
-## Tool Annotations
-
-Every tool is annotated with safety hints:
-
-| Annotation | Meaning |
-|------------|---------|
-| `readOnlyHint: true` | The tool only reads data and makes no changes. |
-| `destructiveHint: true` | The tool can permanently delete or overwrite data. |
-| `destructiveHint: false` | The tool writes or modifies data, but the action is reversible or low-risk. |
-
-Compatible MCP clients (e.g. Cursor) use these hints to warn users before destructive actions.
-
-## Tool profiles
-
-`tool_profile` in `config.yaml` decides which tools exist for this deployment.
-Tools outside the profile are not listed by `tools/list` and cannot be called —
-the server answers with an explicit "disabled by the active tool profile" error.
-
-| Profile | Tools | What is exposed |
+| Profile | Tools | Use it for |
 |---|---:|---|
-| `full` (default) | 132 | everything |
-| `read-write` | 113 | everything except `destructiveHint: true` |
-| `read-only` | 39 | only `readOnlyHint: true` |
+| `core` | 20 | default everyday surface |
+| `full` | 39 | everything |
+| `read-write` | 30 | no destructive actions |
+| `read-only` | 17 | reads only |
 
-`allowed_tools` and `denied_tools` are applied on top; deny wins over allow.
+## Tools
 
-```yaml
-tool_profile: "read-write"
-allowed_tools: ["workspace_search", "find_files", "read_sheet", "read_email"]
-denied_tools: ["send_email", "share_file"]
-```
-
-Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
-
-## Usage examples
-
-### Basic operations
-```
-# Get your Gmail address (smoke test)
-Tool: get_gmail_profile
-Result: Authenticated Gmail address: user@example.com
-
-# Search for files in Drive
-Tool: find_files
-Arguments: {"query": "name contains 'budget'"}
-Result: Found files:
-- Budget_2026.xlsx (ID: 1a2b3c...) [application/vnd.google-apps.spreadsheet]
-
-# Read a Google Sheet
-Tool: read_sheet
-Arguments: {
-  "spreadsheet_id": "1a2b3c4d5e...",
-  "range_name": "Sheet1!A1:C10"
-}
-Result: Data from sheet (range Sheet1!A1:C10):
-| Name | Email | Status |
-| John | john@example.com | Active |
-...
-
-# Create a draft email (safe by default)
-Tool: send_email
-Arguments: {
-  "to": "colleague@example.com",
-  "subject": "Meeting notes",
-  "body_text": "Here are the notes from our meeting...",
-  "draft_mode": true
-}
-Result: EMAIL DRAFT CREATED (ID: r1234...)
-Email saved as DRAFT, not sent yet.
-To send: send_email(..., draft_mode=False)
-```
-
-### Safety features
-```
-# Destructive operations require confirmation
-Tool: delete_email
-Arguments: {"message_id": "18abc...", "confirm": false}
-Result: CONFIRMATION REQUIRED
-This will permanently delete email 18abc...
-To proceed, call this tool again with confirm=True
-
-# Large operations use dry-run mode
-Tool: clear_range
-Arguments: {"spreadsheet_id": "1a2b...", "range_name": "Sheet1!A1:Z1000"}
-Result: DRY RUN: Large range detected (26,000 cells)
-Would clear range: Sheet1!A1:Z1000
-To proceed: clear_range(..., confirm=True)
-```
-
-## Cross-product search
-- `workspace_search(query, sources?, limit?, calendar_days_back?, calendar_days_ahead?)`
-  - One query across Drive, Gmail and Calendar, merged and sorted by date.
-  - `sources`: comma-separated list of `drive`, `gmail`, `calendar`. Default: `drive,gmail`.
-  - `limit`: per-source limit, 1–25 (default 10).
-  - Calendar window defaults: 30 days back, 180 days ahead.
-  - Partial failures are reported inline; the rest of the results are still returned.
-
-Example:
-
-```
-Tool: workspace_search
-Arguments: {"query": "Q3 budget", "sources": "drive,gmail,calendar", "limit": 10}
-Result:
-Workspace search: 'Q3 budget' — 6 result(s) [drive (3), gmail (2), calendar (1)]
-
-1. [drive] Budget 2026 — spreadsheet
-   2026-03-02 10:11 UTC | type: spreadsheet | id: 1a2b3c
-   https://docs.google.com/spreadsheets/d/1a2b3c
-```
-
-## Drive files
-- `drive_upload(local_path, name?, parent_id?, mime_type?, convert_to?)`
-  - Upload a local file (limit 100 MB). `convert_to`: `google-docs`, `google-sheets`
-    or `google-slides` converts docx/xlsx/pptx into a native Google file.
-- `drive_download(file_id, save_to?, overwrite?)`
-  - Download a binary file. `save_to` may be a directory (default `~/Downloads`)
-    or a full path. Google-native files are rejected with a hint to use `drive_export`.
-- `drive_export(file_id, format, save_to?, overwrite?)`
-  - Export a native file: `pdf`, `docx`, `xlsx`, `pptx`, `csv`, `txt`, `md`,
-    `html`, `rtf`, `epub`, `odt/ods/odp`, `png/jpeg/svg`, `zip`.
-  - The tool validates the format against the file type and never overwrites
-    without `overwrite=true`.
-
-## Drive
-- `find_files(query)`
-  - Search by name or full Drive query.
-- `create_folder(name, parent_id?)`
-  - Create a folder; `parent_id` is optional.
-- `move_file(file_id, folder_id)`
-  - Move a file to a folder.
-- `share_file(file_id, role, type?, email_address?, allow_public?)`
-  - `type`: `user|group|domain|anyone`, public access only with `allow_public=true`.
-- `drive_search_advanced(query, limit?)`
-  - Full Drive query syntax.
-- `drive_list_permissions(file_id)`
-  - List permissions.
-- `drive_revoke_public(file_id, confirm?)`
-  - Revoke public access, requires `confirm=true`.
-- `drive_copy_file(file_id, name?, parent_id?)`
-  - Copy a file.
-
-## Bulk operations
-Six tools implement plan → run → observe. A plan is an immutable snapshot: later
-uploads or deletes cannot change what was reviewed.
-
-- `bulk_plan(domain='drive', action, selector, options?, allow_large?, sample?)`
-  - `action`: Drive `move`, `trash`, `restore`, `rename`, `share`, `revoke_public`;
-    Gmail `archive`, `label`, `trash`, `restore`, `mark_read`, `mark_unread`;
-    Docs and Slides `replace_text`; Sheets `find_replace`.
-  - `selector`: `query`, `folder_id`, `recursive`, `mime_types`, `name_contains`,
-    `ids`, `exclude_ids`, `modified{after,before}`, `include_trashed`,
-    `include_spam_trash`, `limit`. `ids` cannot be combined with `query`.
-  - `options`: `target_folder_id` for move; `pattern` or `find`/`replace` for rename;
-    `role`, `type`, `email_address`, `domain`, `allow_public`, `send_notification` for
-    share; `add_labels`, `remove_labels` for Gmail label; `find`, `replace`,
-    `match_case`, and for Sheets `sheet_id` (omit = all sheets).
-  - Returns `plan_id`, `matched`, `estimated_bytes`, a five-item sample and warnings.
-  - Cap: 300 items by default; `allow_large=true` raises it to the configured hard
-    limit (10,000 by default). Nothing is changed.
-- `bulk_run(plan_id, confirm?, job_id?)`
-  - Requires `confirm=true` and a non-expired plan (15 minutes by default).
-  - Starts a background job and returns immediately with a `job_id`.
-  - Pass `job_id` to resume an interrupted or cancelled job; finished items are
-    skipped by id.
-- `bulk_status(job_id)`
-  - Compact progress: `state`, `done`, `total`, `ok`, `skipped`, `failed`,
-    `percent`, `result_file`. No per-item data.
-- `bulk_cancel(job_id)`
-  - Sets the cancellation flag; in-flight items finish, pending items are dropped.
-- `bulk_result(job_id, offset=0, limit=50)`
-  - Pages through per-item outcomes (`id`, `name`, `status`, `error`, `new_name`).
-  - The full artifact is a JSON Lines file at `result_file`.
-- `bulk_list(limit=10)`
-  - Recent jobs, newest first.
-- `bulk_undo(job_id, confirm?)`
-  - Reverts a finished move, rename or trash job using the state saved in its
-    result records (previous parents or previous names). Requires `confirm=true`.
-  - Jobs created before 1.20.1 have no saved state and cannot be undone.
-
-Safety and configuration:
-- Trash never means permanent delete; `restore` reverses a trash job.
-- Protected ids and name patterns come from `bulk.protected_ids` /
-  `bulk.protected_patterns` (or `MCP_BULK_PROTECTED_IDS` /
-  `MCP_BULK_PROTECTED_PATTERNS`).
-- Execution uses eight worker threads by default (`bulk.concurrency`), retries
-  transient Google errors, checkpoints every 25 items and writes audit records for
-  the plan and the run (counts only, never values).
-- Shared drives are refused unless `bulk.allow_shared_drives` is enabled.
-- Gmail actions use `messages.batchModify`, up to 1,000 messages per request;
-  permanent deletion is intentionally out of scope (trash only).
-
-## Sheets
-- `read_sheet(spreadsheet_id, range_name)`
-  - Read a range.
-- `append_row(spreadsheet_id, range_name, values[])`
-  - Append a row.
-- `update_sheet(spreadsheet_id, range_name, values[][])`
-  - Update a range with rows.
-- `create_spreadsheet(title)`
-  - Create a spreadsheet.
-- `add_sheet(spreadsheet_id, title)`
-  - Add a sheet (tab).
-- `clear_range(spreadsheet_id, range_name, confirm?)`
-  - Large ranges require `confirm=true`.
-- `sheet_create_filter_view(spreadsheet_id, sheet_id, title, start_row?, end_row?, start_col?, end_col?)`
-  - Create a filter view.
-- `sheet_export_csv(spreadsheet_id, range_name, max_rows?)`
-  - Export a range to CSV.
-- `sheet_find_replace(spreadsheet_id, range_name, find_text, replace_text, dry_run?, match_case?)`
-  - Defaults to `dry_run=true`.
-- `sheet_create_named_range(spreadsheet_id, name, sheet_id, start_row, end_row, start_col, end_col)`
-  - Named range by grid indexes.
-- `get_spreadsheet_meta(spreadsheet_id)`
-  - Spreadsheet metadata.
-
-- `sheet_format(spreadsheet_id, sheet_name?, range?, bold?, italic?, font_size?, number_format?, background_color?, text_color?, horizontal_alignment?, wrap?, column_width?, row_height?, freeze_rows?, freeze_cols?)`
-  - One `batchUpdate` for cell formatting, column/row sizes and frozen panes.
-  - `range`: `A1:C10`, `A:C` or `1:10`; default is the whole sheet. Colours are `#RRGGBB`.
-  - `column_width`/`row_height` are pixels; `freeze_rows`/`freeze_cols` are sheet-level.
-
-## Docs
-- `read_doc(document_id)`
-  - Read document text.
-- `create_doc(title)`
-  - Create a document.
-- `append_to_doc(document_id, text)`
-  - Append text.
-- `doc_fill_template(document_id, replacements, confirm?)`
-  - Fill a template, requires `confirm=true`.
-- `doc_export_pdf(document_id)`
-  - Export document as a binary PDF. Returns an `EmbeddedResource` with MIME type `application/pdf`.
-
-## Slides
-- `slides_create(title)`
-  - Create a presentation, returns its ID and URL.
-- `slides_get(presentation_id)`
-  - Slide count, slide IDs and the text on each slide.
-- `slides_add_slide(presentation_id, layout?, insertion_index?)`
-  - Add a slide; layouts: `TITLE_AND_BODY` (default), `TITLE_ONLY`, `BLANK`,
-    `SECTION_HEADER`, `MAIN_POINT`, …
-- `slides_replace_text(presentation_id, replacements, confirm?)`
-  - Replace placeholders everywhere; without `confirm=true` returns a preview
-    with per-key occurrence counts.
-- `slides_insert_image(presentation_id, slide_id, image_url, width?, height?, left?, top?)`
-  - Image URL must be publicly reachable; size and position are in pixels.
-
-## Gmail
-- `send_email(to, subject, body_text, draft_mode?)`
-  - Defaults to draft mode.
-- `send_draft(draft_id)`
-  - Send a draft.
-- `get_gmail_profile()`
-  - Get authenticated address.
-- `create_draft(to, subject, body_text)`
-  - Create a draft.
-- `list_emails(max_results?, query?)`
-  - List emails with date, sender and subject (plus a cleaned snippet).
-- `read_email(message_id)`
-  - Read a message: From / To / Date / Subject / status / labels / attachments,
-    plus the decoded body (text/plain preferred, HTML converted, 2 500 characters max).
-- `delete_email(message_id, confirm?)`
-  - Moves the message to Trash; requires `confirm=true`. Recoverable for 30 days.
-- `batch_delete_emails(message_ids[], dry_run?)`
-  - Moves up to 1,000 messages per request to Trash; `dry_run=true` by default.
-  - Permanent deletion needs the `https://mail.google.com/` scope, which the
-    default configuration does not request.
-- `gmail_search_and_summarize(query, max_results?)`
-  - Search with a short summary.
-- `gmail_get_thread(thread_id?, message_id?, include_body?)`
-  - Whole conversation with dates, senders, labels and attachments.
-- `gmail_get_attachment(message_id, filename?, attachment_id?, save_to?, overwrite?)`
-  - Saves an attachment to disk; with a single attachment no selector is needed.
-- `gmail_reply(message_id, body_text, reply_all?, draft_mode?)`
-  - Replies inside the thread with `In-Reply-To`/`References`; drafts by default.
-- `gmail_archive(message_id, confirm?)`
-  - Requires `confirm=true`.
-- `gmail_label_apply(message_ids[], label_name, dry_run?, create_if_missing?)`
-  - Defaults to `dry_run=true`.
-
-## Calendar
-- `list_events(calendar_id?, max_results?)`
-  - List upcoming events (from now onwards).
-- `create_event(summary, start_time, end_time, description?, calendar_id?)`
-  - Create an event. `calendar_id` defaults to `"primary"`.
-- `calendar_find_free_slots(calendar_id?, start_time, end_time, duration_minutes?, max_results?)`
-  - Find free slots.
-- `calendar_create_meeting(summary, start_time, end_time, attendees?, description?, location?, confirm?)`
-  - Requires `confirm=true`.
-
-- `calendar_update_event(event_id, calendar_id?, summary?, start_time?, end_time?, description?, location?, attendees?, send_updates?)`
-  - Patch semantics: only the fields you pass are changed. `send_updates`: `all|externalOnly|none`.
-- `calendar_delete_event(event_id, calendar_id?, confirm?, send_updates?)`
-  - Requires `confirm=true`.
-- `calendar_respond_to_invite(event_id, response, calendar_id?, confirm?, send_updates?)`
-  - `response`: `accepted|declined|tentative`; requires `confirm=true`.
-
-## Composite
-- `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?, header?, decimal?, columns?, aggregates?, output?)`
-  - Reads a range, computes per-column statistics and returns a Doc with native
-    tables (default) or plain text.
-  - `header` (true), `decimal` (`auto|comma|dot`), `columns` (names or 1-based indexes),
-    `aggregates` (`sum`, `avg`, `min`, `max`, `median`, `count`), `output` (`doc|text`).
-- `digest(sources?, since_hours?, limit?, output?, doc_title?)`
-  - One digest across `gmail,calendar,drive` for the last N hours (default 24).
-- `compare_tables(spreadsheet_id, range_a, range_b, other_spreadsheet_id?, key_column?, header?, output?, doc_title?)`
-  - Diff by key column (name or 1-based index): added, removed, changed rows;
-    `output=doc` writes them as native tables.
-- `clone_and_fill(file_id, replacements?, name?, folder_id?)`
-  - Copies any Drive file and replaces placeholders in the copy (Docs, Slides, Sheets).
-- `sheet_to_slides(spreadsheet_id, range?, title?, rows_per_slide?, header?)`
-  - Reads a range and builds a presentation: title slide plus one slide per
-    group of rows, each row rendered as «Header: value · Header2: value2».
-
-## Apps Script
-- `report_from_sheet(spreadsheet_id, range?, doc_title?, max_rows?)`
-  - Reads a range, computes per-column statistics (sum/avg/min/max for numeric
-    columns, non-empty/unique for text) and creates a Google Doc with the summary
-    and a fixed-width data preview.
-
-## Apps Script
-- `script_run_function(script_id, function_name, parameters?, dev_mode?)`
-  - Run a function from a project deployed as an API executable. `dev_mode=true`
-    (default) executes the latest saved code. Returns the JSON result or the
-    Apps Script error with its stack trace.
-- `create_script_project(title, parent_id?)`
-  - Create an Apps Script project.
-- `get_script_content(script_id)`
-  - Get project content.
-- `prepare_script_update(script_id, files[])`
-  - Prepare update, returns `operation_id`.
-- `execute_operation(operation_id)`
-  - Execute prepared operation.
-- `cancel_operation(operation_id)`
-  - Cancel prepared operation.
-- `restore_script_backup(backup_path)`
-  - Restore from backup.
-
----
-
-## Tasks
-- `tasks_list_lists()`
-  - Task lists with ids.
-- `tasks_list(tasklist_id='@default', show_completed=false, max_results=50)`
-  - Tasks in a list; completed tasks are hidden unless `show_completed=true`.
-- `tasks_create(title, notes?, due?, tasklist_id='@default')`
-  - `due` is an RFC 3339 timestamp, e.g. `2026-11-20T00:00:00.000Z`.
-- `tasks_complete(task_id, tasklist_id='@default')`
-  - Marks a task completed.
-
-## Forms
-- `forms_create(title, description?)`
-  - Creates a form and returns its id and responder link.
-- `forms_add_questions(form_id, questions[])`
-  - Appends short-answer questions. Each: `{title, description?, required?}`.
-- `forms_get(form_id)`
-  - Title, description, responder link and questions with ids.
-- `forms_list_responses(form_id, max_results=50)`
-  - Responses with answers mapped to question titles (max 100).
-
-## Postmaster
-- `postmaster_list_domains()`
-  - Domains verified in Postmaster Tools and your permission level.
-- `postmaster_traffic_stats(domain, days=7)`
-  - Daily spam rate, domain reputation, DKIM/DMARC/SPF ratios and delivery
-    errors for a verified domain (up to 90 days).
-
-## Resources
-
-Resources are read-only data snapshots that MCP clients can attach directly to the AI context window. No arguments are needed for static resources; parameterised templates require embedding the IDs in the URI.
-
-### Static resources
-
-| URI | Description |
-|-----|-------------|
-| `gdrive://recent` | 20 most recently modified files in Google Drive |
-| `gmail://inbox` | Up to 20 unread messages in the Gmail inbox |
-| `gcalendar://upcoming` | Upcoming events in the primary calendar (next 7 days) |
-
-### Resource templates
-
-| URI template | Description |
-|--------------|-------------|
-| `gdrive://file/{file_id}` | Metadata for a specific Google Drive file |
-| `gsheets://{spreadsheet_id}/{range}` | Data from a specific spreadsheet range, e.g. `gsheets://SPREADSHEET_ID/Sheet1!A1:Z100` |
-| `gdocs://{document_id}` | Full text content of a specific Google Doc |
-
-### Examples
-```
-# Attach recent Drive files to context
-Resource URI: gdrive://recent
-
-# Read a specific spreadsheet range
-Resource URI: gsheets://1a2b3c4d5e.../Sheet1!A1:D20
-
-# Read a specific document
-Resource URI: gdocs://1a2b3c4d5e...
-```
-
----
+| Tool | Safety | Actions | What it does |
+|---|---|---|---|
+| `workspace_search` | read | — | Search Drive, Gmail and Calendar in one call. |
+| `drive_search` | read | — | Search Drive with full query syntax (replaces find_files and drive_search_advanced). |
+| `digest` | read | — | Summarise Gmail, Calendar and Drive for the last N hours. |
+| `compare_tables` | read | — | Diff two sheet ranges by a key column. |
+| `drive_read` | read | `metadata`, `export`, `list_permissions` | Read Drive metadata, permissions and exported files. |
+| `drive_write` | write | `create_folder`, `copy`, `move`, `rename`, `upload`, `share`, `restore` | Create, copy, move, rename, upload, share and restore Drive files. |
+| `drive_trash` | destructive | — | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
+| `drive_permissions` | destructive | `remove`, `revoke_public` | Remove access from a Drive file. |
+| `read_doc` | read | — | Read the contents of a Google Doc. |
+| `docs_write` | write | `create`, `append`, `insert_image` | Create and extend Google Docs. |
+| `docs_edit` | destructive | `replace`, `format` | Replace or format text in a Google Doc, with a preview. |
+| `sheets_read` | read | `meta`, `read`, `export_csv` | Read sheet metadata, values and CSV exports. |
+| `sheets_write` | write | `create_spreadsheet`, `add_sheet`, `update`, `append`, `clear`, `find_replace` | Create spreadsheets and write values. |
+| `sheets_format` | write | `format`, `borders`, `conditional`, `validation`, `protect` | Format ranges, borders, conditional rules, validation and protection. |
+| `sheets_structure` | write | `insert_rows`, `insert_columns`, `merge`, `sort`, `named_range`, `filter_view` | Insert, merge, sort and organise sheet ranges. |
+| `sheets_delete` | destructive | `delete_rows`, `delete_columns`, `delete_sheet` | Delete rows, columns or a sheet (requires confirm). |
+| `sheets_data` | write | `chart`, `pivot` | Charts and pivot tables. |
+| `gmail_read` | read | `profile`, `list`, `read`, `thread`, `attachment`, `search`, `labels`, `filters` | Read Gmail messages, threads, attachments, labels and filters. |
+| `gmail_write` | write | `send`, `reply`, `send_with_attachments`, `draft_create`, `draft_update`, `draft_send`, `draft_list`, `archive` | Send, reply, draft and archive Gmail messages. |
+| `gmail_settings` | write | `label_create`, `label_apply`, `filter_create` | Manage Gmail labels and filters. |
+| `gmail_delete` | destructive | `email`, `draft` | Move messages or drafts to Trash (recoverable). |
+| `calendar_read` | read | `events`, `calendars` | Read events and calendars. |
+| `calendar_write` | write | `meeting`, `update`, `move`, `respond`, `color` | Create, update, move, answer and colour events. |
+| `calendar_delete` | destructive | — | Delete an event (requires confirm). |
+| `tasks_read` | read | `lists`, `list` | Read task lists and tasks. |
+| `tasks_write` | write | `create`, `complete` | Create and complete tasks. |
+| `forms_read` | read | `get`, `responses` | Read forms and responses. |
+| `forms_write` | write | `create`, `add_questions` | Create forms and add questions. |
+| `postmaster_read` | read | `domains`, `traffic` | Read Postmaster domains and traffic statistics. |
+| `script_read` | read | `content`, `deployments` | Read Apps Script content and deployments. |
+| `script_write` | write | `create_project`, `prepare`, `execute`, `cancel`, `restore`, `create_deployment`, `update_deployment` | Prepare, execute, restore and deploy Apps Script changes. |
+| `script_run` | destructive | — | Run an Apps Script API function (arbitrary code; confirm required). |
+| `bulk_plan` | read | — | Resolve a selector into a dry-run bulk plan. |
+| `bulk_run` | destructive | — | Execute a reviewed bulk plan as a background job. |
+| `bulk_status` | read | — | Read progress for a bulk job. |
+| `bulk_result` | read | — | Read one page of bulk job results. |
+| `bulk_list` | read | — | List recent bulk jobs. |
+| `bulk_cancel` | write | — | Request cancellation of a running bulk job. |
+| `bulk_undo` | destructive | — | Undo a completed bulk job (move, rename, trash). |
 
 ## Prompts
 
-Prompts are reusable templates that fetch live Google data and embed it into a structured message ready for AI analysis. They appear in the MCP client's prompt picker.
-
-### `summarize_inbox`
-Fetch recent Gmail messages and prepare them for AI summarization.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `query` | No | `is:unread in:inbox` | Gmail search query |
-| `max_results` | No | `20` | Maximum number of emails to include |
-
-### `analyze_spreadsheet`
-Read a Google Sheet range and prepare the data for AI analysis or visualization.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `spreadsheet_id` | Yes | — | The Google Spreadsheet ID |
-| `range` | No | `Sheet1` | Sheet range to read |
-
-### `plan_week`
-Fetch upcoming calendar events and prepare a weekly planning summary for AI-assisted scheduling.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `days_ahead` | No | `7` | Number of days to look ahead |
-
-### `search_drive`
-Search Google Drive for files and prepare a structured list for AI review or organisation suggestions.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `query` | Yes | — | Drive search query, e.g. `name contains "budget"` |
-| `limit` | No | `20` | Maximum number of results |
-
-### `weekly_review`
-Cross-source review: mail, changed files and the coming agenda for the last N days.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `days_back` | No | `7` | Days to look back |
-
-### `inbox_triage`
-Gmail slice prepared for triage into urgent / waiting / informational / archive.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `query` | No | `is:unread in:inbox` | Gmail search query |
-| `max_results` | No | `15` | Messages to include |
-
-### `sheet_brief`
-Range statistics plus a briefing question — no document is created.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `spreadsheet_id` | Yes | — | Spreadsheet ID |
-| `range` | No | first sheet | A1 range or sheet name |
-
-### `compare_brief`
-Diff of two ranges by a key column, prepared as a reconciliation report.
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `spreadsheet_id` | Yes | — | Spreadsheet ID |
-| `range_a` | Yes | — | Baseline range |
-| `range_b` | Yes | — | New range |
-| `key_column` | No | `1` | Column name or 1-based index |
-
-## Drive extras, comments and advanced editing (v1.14)
-
-| Tool | Arguments | What it does |
-|---|---|---|
-| `drive_get_metadata` | `file_id` | Name, type, size, owner, parents, timestamps, sharing state, link |
-| `drive_rename_file` | `file_id`, `name` | Rename in place |
-| `drive_delete_file` | `file_id`, `confirm` | Move to trash; recoverable for 30 days |
-| `drive_restore_file` | `file_id` | Bring a file back from the trash |
-| `drive_remove_permission` | `file_id`, `permission_id`, `confirm` | Revoke one permission |
-| `drive_list_comments` | `file_id`, `include_resolved` | Threads with replies on a Doc, Sheet or Slide |
-| `drive_create_comment` | `file_id`, `content`, `quoted_text` | Start a thread, optionally quoting text |
-| `drive_reply_comment` | `file_id`, `comment_id`, `content` | Reply inside a thread |
-| `drive_resolve_comment` | `file_id`, `comment_id`, `confirm` | Mark the thread resolved |
-| `doc_replace_text` | `document_id`, `find`, `replace`, `match_case`, `confirm` | Replace all matches; without `confirm` returns a preview with the occurrence count |
-| `sheet_conditional_format` | `spreadsheet_id`, `range`, `condition`, `value`, `value2`, `background_color`, `text_color`, `sheet_name` | Add a colour rule (text, number, emptiness) |
-| `sheet_add_chart` | `spreadsheet_id`, `range`, `chart_type`, `title`, `anchor_row`, `anchor_col`, `width`, `height` | Insert COLUMN/BAR/LINE/AREA/SCATTER/COMBO/STEPPED_AREA/PIE |
-| `slides_delete_slide` | `presentation_id`, `slide_id`, `confirm` | Delete a slide after a preview |
-
-Conditions for `sheet_conditional_format`: `TEXT_CONTAINS`, `TEXT_NOT_CONTAINS`,
-`TEXT_STARTS_WITH`, `TEXT_ENDS_WITH`, `TEXT_EQ`, `NUMBER_GREATER`,
-`NUMBER_GREATER_THAN_EQ`, `NUMBER_LESS`, `NUMBER_LESS_THAN_EQ`, `NUMBER_EQ`,
-`NUMBER_NOT_EQ`, `NUMBER_BETWEEN` (needs `value` and `value2`), `IS_EMPTY`,
-`IS_NOT_EMPTY`. Short aliases such as `CONTAINS` or `GREATER` are accepted.
-
-## Structural editing (v1.15)
-
-| Tool | Arguments | What it does |
-|---|---|---|
-| `sheet_delete_sheet` | `spreadsheet_id`, `sheet_name`, `confirm` | Delete a tab; the last sheet is protected |
-| `sheet_insert_rows` | `spreadsheet_id`, `sheet_name`, `start_row`, `count` | Insert empty rows before a 1-based row |
-| `sheet_delete_rows` | `spreadsheet_id`, `sheet_name`, `start_row`, `count`, `confirm` | Delete rows after a preview |
-| `sheet_merge_cells` | `spreadsheet_id`, `range`, `merge_type`, `sheet_name` | `MERGE_ALL`, `MERGE_ROWS`, `MERGE_COLUMNS` or `UNMERGE` |
-| `slides_move_slide` | `presentation_id`, `slide_id`, `position` | Reorder a slide and report the new order |
-| `slides_set_notes` | `presentation_id`, `slide_id`, `notes` | Replace the speaker notes |
-| `gmail_list_labels` | — | Labels with IDs, user and system |
-| `gmail_create_label` | `name`, visibility args | Create a label (duplicates are rejected by Gmail) |
-| `drive_empty_trash` | `confirm` | Permanently delete the trash — irreversible |
-
-## Columns, media and integrations (v1.16)
-
-| Tool | Arguments | What it does |
-|---|---|---|
-| `sheet_insert_columns` | `spreadsheet_id`, `sheet_name`, `start_column`, `count` | Insert empty columns before a 1-based column |
-| `sheet_delete_columns` | `spreadsheet_id`, `sheet_name`, `start_column`, `count`, `confirm` | Delete columns after a preview |
-| `sheet_sort_range` | `spreadsheet_id`, `range`, `column`, `ascending`, `sheet_name` | Sort a range by a 1-based column inside it |
-| `slides_add_table` | `presentation_id`, `slide_id`, `rows`, `columns`, position/size | Insert a native table (pixels) |
-| `docs_insert_image` | `document_id`, `image_url`, `width`, `height` | Inline image at the end of the body (points) |
-| `calendar_list_calendars` | — | Calendars with access roles |
-| `drive_transfer_ownership` | `file_id`, `email`, `confirm` | Transfer ownership; you lose owner rights |
-| `gmail_send_with_attachments` | `to`, `subject`, `body_text`, `attachments`, `draft_mode` | Draft or send with local files (20 MB total) |
-| `script_list_deployments` | `script_id` | Deployments of an Apps Script project |
-
-`create_event` also accepts `recurrence`: a list of RRULE lines, for example
-`["RRULE:FREQ=WEEKLY;COUNT=4"]`.
-
-## Pivots, styling and integrations (v1.17)
-
-| Tool | Arguments | What it does |
-|---|---|---|
-| `sheet_add_pivot_table` | `spreadsheet_id`, `source_range`, `rows`, `values`, `columns`, `aggregation`, `target_sheet_name` | Build a pivot on a new sheet (SUM/COUNT/AVERAGE/MIN/MAX) |
-| `docs_format_text` | `document_id`, `find`, `bold`, `italic`, `font_size`, `heading`, `confirm` | Style every match; preview without confirm |
-| `gmail_list_drafts` | `limit` | Drafts with recipient and subject |
-| `gmail_delete_draft` | `draft_id`, `confirm` | Delete a draft |
-| `calendar_move_event` | `event_id`, `destination_calendar_id`, `calendar_id` | Move an event between calendars |
-| `slides_list_layouts` | `presentation_id` | Layout names and object IDs |
-| `script_create_deployment` | `script_id`, `description`, `version_number` | Deploy a saved version (latest by default) |
-| `drive_create_shortcut` | `target_id`, `name`, `parent_id` | Shortcut to another file |
-
-## Validation, filters and shapes (v1.18)
-
-| Tool | Arguments | What it does |
-|---|---|---|
-| `sheet_set_data_validation` | `spreadsheet_id`, `range`, `values` or `minimum`+`maximum`, `strict` | List or number-range validation |
-| `sheet_protect_range` | `spreadsheet_id`, `range`, `warning_only`, `editors` | Warning or locked protection |
-| `sheet_set_borders` | `spreadsheet_id`, `range`, `style`, `color`, `sides` | Draw borders |
-| `gmail_list_filters` | — | Filters with criteria and actions |
-| `gmail_create_filter` | `from_address` / `subject` / `query`, `add_labels`, `remove_labels` | Create a filter (label IDs) |
-| `gmail_update_draft` | `draft_id`, `to`, `subject`, `body_text` | Replace draft content |
-| `slides_add_shape` | `presentation_id`, `slide_id`, `shape_type`, `text`, geometry | Shapes and text boxes |
-| `calendar_set_event_color` | `event_id`, `color_id` | Colour an event (`1`–`11`) |
-| `script_update_deployment` | `script_id`, `deployment_id`, `version_number` | Repoint a deployment |
+| Prompt | What it does |
+|---|---|
+| `summarize_inbox` | Fetch recent Gmail messages and prepare them for AI summarization. Optionally filter by a Gmail search query. |
+| `analyze_spreadsheet` | Read a Google Sheet range and prepare the data for AI analysis or visualization. |
+| `plan_week` | Fetch upcoming calendar events and prepare a weekly planning summary for AI-assisted scheduling. |
+| `search_drive` | Search Google Drive for files and prepare a structured list for AI review or organisation suggestions. |
+| `weekly_review` | Cross-source review of the last N days: mail, changed files and the coming agenda, prepared for a weekly summary. |
+| `inbox_triage` | Fetch a Gmail slice and prepare it for triage: urgent, waiting, informational, archive candidates. |
+| `sheet_brief` | Read a spreadsheet range, compute column statistics and prepare a briefing for analysis. |
+| `compare_brief` | Diff two ranges by a key column and prepare a reconciliation report. |

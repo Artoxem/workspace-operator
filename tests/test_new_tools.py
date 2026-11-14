@@ -14,11 +14,7 @@ from workspace_operator.handlers.sheets_structure import (
     _dimension_request,
     merge_cells_handler,
 )
-from workspace_operator.profiles import is_destructive, is_read_only, resolve_profile
-from workspace_operator.server import _tools
-
 LOGGER = logging.getLogger("test")
-BY_NAME = {tool.name: tool for tool in _tools()}
 
 NEW_TOOLS = [
     "drive_get_metadata",
@@ -70,69 +66,6 @@ NEW_TOOLS = [
     "calendar_set_event_color",
     "script_update_deployment",
 ]
-
-
-class CatalogTests(unittest.TestCase):
-    def test_new_tools_are_registered(self):
-        self.assertEqual(len(_tools()), 132)
-        for name in NEW_TOOLS:
-            with self.subTest(tool=name):
-                self.assertIn(name, BY_NAME)
-
-    def test_destructive_tools_are_marked(self):
-        for name in (
-            "drive_delete_file",
-            "drive_remove_permission",
-            "doc_replace_text",
-            "slides_delete_slide",
-            "sheet_delete_sheet",
-            "sheet_delete_rows",
-            "drive_empty_trash",
-            "sheet_delete_columns",
-            "drive_transfer_ownership",
-            "docs_format_text",
-            "gmail_delete_draft",
-        ):
-            with self.subTest(tool=name):
-                self.assertTrue(is_destructive(BY_NAME[name]))
-
-    def test_read_tools_are_marked_read_only(self):
-        for name in (
-            "drive_get_metadata",
-            "drive_list_comments",
-            "gmail_list_labels",
-            "calendar_list_calendars",
-            "script_list_deployments",
-            "gmail_list_drafts",
-            "slides_list_layouts",
-            "gmail_list_filters",
-        ):
-            with self.subTest(tool=name):
-                self.assertTrue(is_read_only(BY_NAME[name]))
-
-    def test_profiles_hide_destructive_batch(self):
-        read_write = {
-            tool.name for tool in resolve_profile("read-write").filter(_tools())
-        }
-        read_only = {
-            tool.name for tool in resolve_profile("read-only").filter(_tools())
-        }
-        for name in (
-            "drive_delete_file",
-            "doc_replace_text",
-            "slides_delete_slide",
-            "sheet_delete_sheet",
-            "drive_empty_trash",
-            "sheet_delete_columns",
-            "drive_transfer_ownership",
-            "docs_format_text",
-            "gmail_delete_draft",
-        ):
-            self.assertNotIn(name, read_write)
-            self.assertNotIn(name, read_only)
-        self.assertIn("drive_get_metadata", read_only)
-        self.assertEqual(len(read_write), 113)
-        self.assertEqual(len(read_only), 39)
 
 
 class ConditionTests(unittest.TestCase):
@@ -225,10 +158,6 @@ class StructureTests(unittest.TestCase):
 
 
 class BatchThreeTests(unittest.TestCase):
-    def test_create_event_takes_recurrence(self):
-        schema = BY_NAME["create_event"].input_schema
-        self.assertIn("recurrence", schema["properties"])
-
     def test_insert_columns_validates_count(self):
         from workspace_operator.handlers.sheets_more import insert_columns_handler
 

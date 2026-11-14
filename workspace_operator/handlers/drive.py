@@ -91,6 +91,12 @@ def share_file_handler(
 ) -> str:
     """Share file with public access protection."""
     try:
+        if type == "anyone" and not getattr(config, "allow_public_sharing", False):
+            return (
+                "Error: public sharing is disabled. Set allow_public_sharing=true "
+                "in config or MCP_ALLOW_PUBLIC_SHARING=1, then retry with "
+                "allow_public=true. Prefer sharing with named users."
+            )
         creds = get_creds(config)
         service = build("drive", "v3", credentials=creds)
 

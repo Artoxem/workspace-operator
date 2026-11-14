@@ -95,7 +95,7 @@ docker run --rm -p 127.0.0.1:8765:8765 \
 | `File not found` | wrong ID, or the account has no access | open the file in the browser as the same account |
 | download fails on a Google Doc/Sheet/Slide | native files have no binary content | use `drive_export` (pdf/docx/xlsx/pptx/csv) |
 | very slow read on a large sheet | whole-sheet request | pass a range (`A1:D100`) |
-| `slides_replace_text` refuses to run | it is destructive and needs consent | add `confirm=true` |
+| A removed 1.x tool returns `unknown tool` | 2.0 uses consolidated tools | use the new name/action from `docs/MIGRATION_2.0.md` |
 
 ## Logs and reporting a bug
 
