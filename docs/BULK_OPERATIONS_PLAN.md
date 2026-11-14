@@ -1,3 +1,5 @@
+> **Historical design note.** This plan predates 2.0. The Slides domain, 1.x tool names and old counts are obsolete; use [MIGRATION_2.0.md](MIGRATION_2.0.md).
+
 # Bulk operations: audit and plan
 
 Status: phases 0–3 implemented (release pending).
