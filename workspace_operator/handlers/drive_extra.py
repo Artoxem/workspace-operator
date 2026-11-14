@@ -96,7 +96,7 @@ def delete_file_handler(
         logger.info("Trashed file %s (%s)", meta.get("name"), file_id)
         return (
             f"Moved to trash: {meta.get('name')}\n"
-            "Restore with drive_write(action="restore") while it is still in the Trash."
+            "Restore with drive_write(action='restore') while it is still in the Trash."
         )
     except Exception as e:
         return f"Error deleting file: {str(e)}"
