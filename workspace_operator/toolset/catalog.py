@@ -616,3 +616,33 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             confirm=True,
         ),
     )
+
+
+def build_aliases(catalog: Iterable[ToolSpec]) -> dict[str, tuple[str, str | None]]:
+    """Map retained 1.x tool names to (consolidated tool, action).
+
+    Aliases are intentionally not exposed in ``tools/list``; the server accepts
+    them for one 2.0.x release to ease migration.
+    """
+    aliases: dict[str, tuple[str, str | None]] = {}
+    for tool in catalog:
+        if tool.legacy and tool.legacy != tool.name:
+            aliases[tool.legacy] = (tool.name, None)
+        for action in tool.actions:
+            if action.legacy != tool.name:
+                aliases[action.legacy] = (tool.name, action.name)
+    return aliases
+
+
+REMOVED_ALIAS_NAMES = frozenset(
+    {
+        "clone_and_fill", "report_from_sheet", "sheet_to_slides",
+        "drive_create_comment", "drive_list_comments", "drive_reply_comment",
+        "drive_resolve_comment", "drive_create_shortcut", "drive_download",
+        "drive_empty_trash", "drive_transfer_ownership", "doc_fill_template",
+        "calendar_find_free_slots", "slides_create", "slides_get",
+        "slides_add_slide", "slides_delete_slide", "slides_move_slide",
+        "slides_list_layouts", "slides_replace_text", "slides_add_shape",
+        "slides_add_table", "slides_insert_image", "slides_set_notes",
+    }
+)

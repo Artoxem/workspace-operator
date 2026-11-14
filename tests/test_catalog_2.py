@@ -4,7 +4,12 @@ import unittest
 
 from workspace_operator.profiles import resolve_profile
 from workspace_operator.server import _tools
-from workspace_operator.toolset.catalog import CORE_TOOL_NAMES, build_catalog
+from workspace_operator.toolset.catalog import (
+    CORE_TOOL_NAMES,
+    REMOVED_ALIAS_NAMES,
+    build_aliases,
+    build_catalog,
+)
 from workspace_operator.toolset.surface import build_surface
 
 REMOVED_STANDALONE = {
@@ -65,6 +70,21 @@ class CatalogTests(unittest.TestCase):
                 properties = source.get("properties") or {}
                 for name in action.required:
                     self.assertIn(name, properties, f"{action.legacy}: {name}")
+
+    def test_retained_legacy_names_have_an_alias(self):
+        aliases = build_aliases(self.catalog)
+        consolidated = set(self.by_name)
+        for tool in self.legacy:
+            if tool.name in consolidated:
+                continue
+            self.assertIn(tool.name, aliases, tool.name)
+            target, _ = aliases[tool.name]
+            self.assertIn(target, self.by_name)
+
+    def test_removed_names_are_explicit(self):
+        self.assertTrue(REMOVED_ALIAS_NAMES)
+        self.assertNotIn("drive_delete_file", REMOVED_ALIAS_NAMES)
+
 
     def test_context_budgets(self):
         core = build_surface(self.catalog, "core")

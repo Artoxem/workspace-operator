@@ -54,7 +54,9 @@ take an `action`. The default profile is `core` (20 tools), not `full`.
 - **Overlaps**: `create_event`, `batch_delete_emails`, `doc_export_pdf`,
   `find_files`, `drive_search_advanced`, and the five standalone draft tools.
 
-Removed calls return an `unknown tool` error. There is no permanent file
+Retained 1.x names are accepted as **hidden aliases** during 2.0.x: they are not
+listed in `tools/list` but resolve to the new tool/action. Calls to removed
+capabilities return a migration error. There is no permanent file
 deletion; use `drive_trash` / Gmail Trash and recover within 30 days.
 
 ## Configuration

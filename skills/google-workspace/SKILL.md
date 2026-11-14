@@ -4,7 +4,7 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmai
 license: MIT
 metadata:
   server: workspace-operator
-  version: "2.0.0"
+  version: "2.0.1"
 ---
 
 # Google Workspace automation

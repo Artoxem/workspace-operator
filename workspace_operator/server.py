@@ -18,7 +18,14 @@ from . import __version__
 from .config import Config, load_config
 from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
-from .toolset import build_catalog, build_surface, resolve_call, RoutingError
+from .toolset import (
+    REMOVED_ALIAS_NAMES,
+    RoutingError,
+    build_aliases,
+    build_catalog,
+    build_surface,
+    resolve_call,
+)
 from .toolset.models import Safety
 from .toolset.scopes import read_granted_scopes
 from .security import require_token_configured
@@ -2737,6 +2744,7 @@ def create_server(config: Config, logger) -> Server:
     exposed_tools = surface.mcp_tools()
     exposed_names = frozenset(tool.name for tool in exposed_tools)
     exposed_specs = surface.by_name
+    aliases = build_aliases(catalog)
     profile_name = surface.profile
 
     audit = AuditLog(config.audit_log)
@@ -2764,7 +2772,41 @@ def create_server(config: Config, logger) -> Server:
         if not arguments:
             arguments = {}
 
-        if name not in exposed_names:
+        spec = tool_index.get(name)
+        if spec is None and name in aliases:
+            target, action = aliases[name]
+            spec = tool_index.get(target)
+            if spec is None:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=(
+                                f"Tool '{name}' maps to '{target}', which is hidden by "
+                                f"the active profile ({profile_name}) or by scope routing."
+                            ),
+                        )
+                    ],
+                    isError=True,
+                )
+            if action:
+                arguments = dict(arguments or {})
+                arguments["action"] = action
+            logger.info("Legacy alias %s -> %s%s", name, target, f":{action}" if action else "")
+        if spec is None:
+            if name in REMOVED_ALIAS_NAMES:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=(
+                                f"Tool '{name}' was removed in Workspace Operator 2.0. "
+                                "See docs/MIGRATION_2.0.md for the replacement."
+                            ),
+                        )
+                    ],
+                    isError=True,
+                )
             logger.warning("Blocked tool call outside profile: %s", name)
             return types.CallToolResult(
                 content=[
@@ -2780,7 +2822,6 @@ def create_server(config: Config, logger) -> Server:
                 isError=True,
             )
 
-        spec = tool_index.get(name)
         try:
             plan = resolve_call(
                 spec, arguments, require_confirm=not config.dry_run

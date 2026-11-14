@@ -119,6 +119,33 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         await self._with_server("core", check)
 
 
+    async def test_legacy_alias_to_destructive_target_needs_confirm(self):
+        async def check(session):
+            result = await session.call_tool("drive_delete_file", {"file_id": "f"})
+            self.assertTrue(result.is_error)
+            self.assertIn("confirm", result.content[0].text.lower())
+
+        await self._with_server("full", check)
+
+    async def test_legacy_alias_hidden_by_profile(self):
+        async def check(session):
+            result = await session.call_tool(
+                "drive_remove_permission", {"file_id": "f", "permission_id": "p"}
+            )
+            self.assertTrue(result.is_error)
+            self.assertIn("hidden", result.content[0].text.lower())
+
+        await self._with_server("core", check)
+
+    async def test_removed_tool_has_migration_error(self):
+        async def check(session):
+            result = await session.call_tool("slides_create", {"title": "x"})
+            self.assertTrue(result.is_error)
+            self.assertIn("removed", result.content[0].text.lower())
+
+        await self._with_server("full", check)
+
+
     async def test_unknown_action_is_reported(self):
         async def check(session):
             result = await session.call_tool("drive_read", {"action": "explode"})
