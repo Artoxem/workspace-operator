@@ -28,7 +28,6 @@ from .models import (
     DRIVE_ACTIONS,
     GMAIL_ACTIONS,
     SHEETS_ACTIONS,
-    SLIDES_ACTIONS,
     BulkError,
     Job,
     Plan,
@@ -83,7 +82,7 @@ def _validate_options(
             )
         return
 
-    if domain in ("docs", "slides", "sheets"):
+    if domain in ("docs", "sheets"):
         find = options.get("find")
         if not isinstance(find, str) or find == "":
             raise BulkError(f"{domain} needs options.find")
@@ -160,7 +159,6 @@ def plan_bulk(
         "drive": DRIVE_ACTIONS,
         "gmail": GMAIL_ACTIONS,
         "docs": DOCS_ACTIONS,
-        "slides": SLIDES_ACTIONS,
         "sheets": SHEETS_ACTIONS,
     }[domain]
     if action not in valid_actions:

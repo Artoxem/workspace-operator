@@ -59,7 +59,7 @@ class ExportTableTests(unittest.TestCase):
                 self.assertEqual(missing, set())
 
     def test_common_formats_present(self):
-        for fmt in ("pdf", "docx", "xlsx", "pptx", "csv"):
+        for fmt in ("pdf", "docx", "xlsx", "csv"):
             self.assertIn(fmt, EXPORT_MIME)
 
 

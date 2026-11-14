@@ -2,8 +2,8 @@
 
 Three tools cover the gap between the machine the MCP server runs on and Drive:
 
-* ``drive_upload``   — local file → Drive (optional conversion to Docs/Sheets/Slides)
-* ``drive_download`` — binary Drive file → local path
+* ``drive_upload``   — local file → Drive (optional conversion to Docs or Sheets)
+* ``drive_export`` — Google-native file → local path
 * ``drive_export``   — Google-native file (Doc/Sheet/Slide) → local file in a chosen format
 
 Paths are always expanded and reported as absolute; nothing is overwritten
@@ -28,20 +28,16 @@ MAX_TRANSFER_BYTES = 100 * 1024 * 1024
 CONVERT_TARGETS = {
     "google-docs": "application/vnd.google-apps.document",
     "google-sheets": "application/vnd.google-apps.spreadsheet",
-    "google-slides": "application/vnd.google-apps.presentation",
     "docs": "application/vnd.google-apps.document",
     "sheets": "application/vnd.google-apps.spreadsheet",
-    "slides": "application/vnd.google-apps.presentation",
 }
 
 EXPORT_MIME = {
     "pdf": "application/pdf",
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "odt": "application/vnd.oasis.opendocument.text",
     "ods": "application/vnd.oasis.opendocument.spreadsheet",
-    "odp": "application/vnd.oasis.opendocument.presentation",
     "csv": "text/csv",
     "tsv": "text/tab-separated-values",
     "txt": "text/plain",
@@ -62,9 +58,6 @@ EXPORT_FORMATS_BY_TYPE = {
     },
     "application/vnd.google-apps.spreadsheet": {
         "pdf", "xlsx", "ods", "csv", "tsv", "zip",
-    },
-    "application/vnd.google-apps.presentation": {
-        "pdf", "pptx", "odp", "txt",
     },
     "application/vnd.google-apps.drawing": {
         "pdf", "png", "jpeg", "svg",
@@ -182,53 +175,6 @@ def drive_upload_handler(
         return f"Error uploading file: {str(e)}"
 
 
-def drive_download_handler(
-    config: Config,
-    logger: logging.Logger,
-    file_id: str,
-    save_to: Optional[str] = None,
-    overwrite: bool = False,
-) -> str:
-    try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
-
-        meta = (
-            service.files()
-            .get(fileId=file_id, fields="id,name,mimeType,size")
-            .execute()
-        )
-        mime = meta.get("mimeType", "")
-
-        if mime.startswith("application/vnd.google-apps."):
-            formats = EXPORT_FORMATS_BY_TYPE.get(mime)
-            hint = (
-                f"Valid formats for this type: {', '.join(sorted(formats))}."
-                if formats
-                else "Use drive_export with a supported format."
-            )
-            return (
-                f"Error: '{meta.get('name')}' is a Google-native file ({mime}) "
-                f"and cannot be downloaded as bytes. {hint}"
-            )
-
-        target = resolve_target(save_to, meta.get("name") or file_id)
-        if target.exists() and not overwrite:
-            return conflict_message(target)
-        ensure_parent(target)
-
-        request = service.files().get_media(fileId=file_id)
-        with io.FileIO(target, "wb") as handle:
-            downloader = MediaIoBaseDownload(handle, request)
-            done = False
-            while not done:
-                _, done = downloader.next_chunk()
-
-        size = target.stat().st_size
-        logger.info("Downloaded %s → %s", file_id, target)
-        return f"Saved {target} ({_human_size(size)}) from '{meta.get('name')}'."
-    except Exception as e:
-        return f"Error downloading file: {str(e)}"
 
 
 def drive_export_handler(
@@ -260,7 +206,7 @@ def drive_export_handler(
         if not native.startswith("application/vnd.google-apps."):
             return (
                 f"Error: '{meta.get('name')}' is a binary file ({native}); "
-                "use drive_download instead."
+                "use drive_read(action='export') instead."
             )
 
         allowed = EXPORT_FORMATS_BY_TYPE.get(native)

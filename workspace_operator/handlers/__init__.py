@@ -17,40 +17,24 @@ from .calendar_writes import (
     calendar_respond_to_invite_handler,
     calendar_update_event_handler,
 )
-from .report import report_from_sheet_handler
 from .digest import digest_handler
 from .compare import compare_tables_handler
-from .template import clone_and_fill_handler
-from .deck import sheet_to_slides_handler
 from .calendar import (
     calendar_create_meeting_handler,
     set_event_color_handler,
     list_calendars_handler,
     move_event_handler,
-    calendar_find_free_slots_handler,
-    create_event_handler,
     list_events_handler,
 )
 from .docs import (
     append_to_doc_handler,
     create_doc_handler,
-    doc_export_pdf_handler,
-    doc_fill_template_handler,
     document_to_text,
     read_doc_handler,
 )
-from .comments import (
-    create_comment_handler,
-    list_comments_handler,
-    reply_comment_handler,
-    resolve_comment_handler,
-)
 from .doc_edit import replace_text_handler
 from .drive_extra import (
-    create_shortcut_handler,
     delete_file_handler,
-    transfer_ownership_handler,
-    empty_trash_handler,
     get_metadata_handler,
     remove_permission_handler,
     rename_file_handler,
@@ -93,12 +77,10 @@ from .drive import (
     drive_list_permissions_handler,
     drive_revoke_public_handler,
     drive_search_advanced_handler,
-    find_files_handler,
     move_file_handler,
     share_file_handler,
 )
 from .gmail import (
-    batch_delete_emails_handler,
     send_with_attachments_handler,
     create_draft_handler,
     delete_email_handler,
@@ -124,7 +106,7 @@ from .sheets import (
     sheet_find_replace_handler,
     update_sheet_handler,
 )
-from .files import drive_download_handler, drive_export_handler, drive_upload_handler
+from .files import drive_export_handler, drive_upload_handler
 from .gmail_threads import (
     gmail_get_attachment_handler,
     gmail_get_thread_handler,
@@ -157,22 +139,8 @@ from .bulk import (
     bulk_undo_handler,
 )
 from .search import workspace_search_handler
-from .slides import (
-    add_shape_handler,
-    add_table_handler,
-    list_layouts_handler,
-    delete_slide_handler,
-    move_slide_handler,
-    set_notes_handler,
-    slides_add_slide_handler,
-    slides_create_handler,
-    slides_get_handler,
-    slides_insert_image_handler,
-    slides_replace_text_handler,
-)
 
 __all__ = [
-    "find_files_handler",
     "read_sheet_handler",
     "append_row_handler",
     "update_sheet_handler",
@@ -185,8 +153,6 @@ __all__ = [
     "read_doc_handler",
     "create_doc_handler",
     "append_to_doc_handler",
-    "doc_fill_template_handler",
-    "doc_export_pdf_handler",
     "create_spreadsheet_handler",
     "add_sheet_handler",
     "clear_range_handler",
@@ -202,13 +168,10 @@ __all__ = [
     "list_emails_handler",
     "read_email_handler",
     "delete_email_handler",
-    "batch_delete_emails_handler",
     "gmail_search_and_summarize_handler",
     "gmail_archive_handler",
     "gmail_label_apply_handler",
     "list_events_handler",
-    "create_event_handler",
-    "calendar_find_free_slots_handler",
     "calendar_create_meeting_handler",
     "create_folder_handler",
     "move_file_handler",
@@ -220,15 +183,8 @@ __all__ = [
     "workspace_search_handler",
     "document_to_text",
     "drive_upload_handler",
-    "drive_download_handler",
     "drive_export_handler",
     "script_run_function_handler",
-    "slides_create_handler",
-    "slides_get_handler",
-    "slides_add_slide_handler",
-    "slides_replace_text_handler",
-    "slides_insert_image_handler",
-    "delete_slide_handler",
     "format_sheet_handler",
     "gmail_get_attachment_handler",
     "gmail_get_thread_handler",
@@ -236,20 +192,13 @@ __all__ = [
     "calendar_update_event_handler",
     "calendar_delete_event_handler",
     "calendar_respond_to_invite_handler",
-    "report_from_sheet_handler",
     "digest_handler",
     "compare_tables_handler",
-    "clone_and_fill_handler",
-    "sheet_to_slides_handler",
     "get_metadata_handler",
     "rename_file_handler",
     "delete_file_handler",
     "restore_file_handler",
     "remove_permission_handler",
-    "list_comments_handler",
-    "create_comment_handler",
-    "reply_comment_handler",
-    "resolve_comment_handler",
     "replace_text_handler",
     "conditional_format_handler",
     "add_chart_handler",
@@ -257,19 +206,14 @@ __all__ = [
     "insert_rows_handler",
     "delete_rows_handler",
     "merge_cells_handler",
-    "move_slide_handler",
-    "set_notes_handler",
     "list_labels_handler",
     "create_label_handler",
     "modify_messages_handler",
-    "empty_trash_handler",
     "insert_columns_handler",
     "delete_columns_handler",
     "sort_range_handler",
-    "add_table_handler",
     "insert_image_handler",
     "list_calendars_handler",
-    "transfer_ownership_handler",
     "send_with_attachments_handler",
     "list_deployments_handler",
     "add_pivot_table_handler",
@@ -277,16 +221,13 @@ __all__ = [
     "list_drafts_handler",
     "delete_draft_tool",
     "calendar_move_event_handler",
-    "slides_list_layouts_handler",
     "create_deployment_handler",
-    "create_shortcut_handler",
     "set_data_validation_handler",
     "protect_range_handler",
     "set_borders_handler",
     "list_filters_handler",
     "create_filter_handler",
     "update_draft_handler",
-    "add_shape_handler",
     "set_event_color_handler",
     "update_deployment_handler",
     "bulk_plan_handler",

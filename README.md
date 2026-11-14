@@ -31,7 +31,7 @@ Google over your own OAuth client, and gives an AI agent the operations that tur
 "read my inbox" into "do the work and let me undo it": staged Apps Script updates, file transfer,
 sheet formatting, threaded replies and attachments.
 
-**39 tools · 3 resources · 3 resource templates · 8 prompts**, every tool annotated
+**39 tools · 3 resources · 3 resource templates · 7 prompts**, every tool annotated
 with `readOnlyHint` / `destructiveHint`.
 
 Nothing here is tied to a specific account, spreadsheet or document: every tool
@@ -492,19 +492,12 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 359 unit tests, no network
-python tests/live_smoke.py                  # 51 checks against a real account
-python tests/live_new_tools.py              # 15 checks for the v1.14 batch
-python tests/live_phase2.py                 # 8 checks for the v1.15 batch
-python tests/live_phase3.py                 # 8 checks for the v1.16 batch
-python tests/live_phase4.py                 # 5 checks for the v1.17 batch
-python tests/live_phase5.py                 # 7 checks for the v1.18 batch
+python -m unittest discover -s tests -v     # 290 unit and in-memory MCP tests
 ```
 
-The live suite is self-cleaning: it uploads and trashes a temp file, creates and
-trashes a presentation and a spreadsheet, drafts and deletes a reply, downloads an
-attachment and removes it. `tests/test_docs.py` keeps this README, the docs and the
-code in sync (tool counts, profile numbers, links, examples).
+The suite covers the catalog, action router, profiles, scope filtering, HTTP
+security decisions, handlers and documentation sync. Live Google calls are not
+part of CI; use `/mcp/full` with a test document when you want a manual smoke.
 
 ## Documentation
 

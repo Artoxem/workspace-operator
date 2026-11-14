@@ -11,14 +11,14 @@ EXPECTED = {
     "search_drive",
     "weekly_review",
     "inbox_triage",
-    "sheet_brief",
+    
     "compare_brief",
 }
 
 
 class PromptCatalogTests(unittest.TestCase):
     def test_count(self):
-        self.assertEqual(len(_prompts()), 8)
+        self.assertEqual(len(_prompts()), 7)
 
     def test_names_unique_and_expected(self):
         names = [prompt.name for prompt in _prompts()]
@@ -36,7 +36,7 @@ class PromptCatalogTests(unittest.TestCase):
         def required(name):
             return [arg.name for arg in by_name[name].arguments if arg.required]
 
-        self.assertEqual(required("sheet_brief"), ["spreadsheet_id"])
+        
         self.assertEqual(required("compare_brief"), ["spreadsheet_id", "range_a", "range_b"])
         self.assertEqual(required("weekly_review"), [])
         self.assertEqual(required("inbox_triage"), [])

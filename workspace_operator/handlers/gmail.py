@@ -302,53 +302,6 @@ def delete_email_handler(
         return f"Error moving email to trash: {str(e)}"
 
 
-def batch_delete_emails_handler(
-    config: Config, logger: logging.Logger, message_ids: List[str], dry_run: bool = True
-) -> str:
-    """Move many emails to Trash with dry-run mode."""
-    try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
-
-        if dry_run:
-            preview = "🔍 DRY RUN MODE — no emails will be changed\n\n"
-            preview += f"Would move {len(message_ids)} email(s) to Trash:\n\n"
-
-            previews_to_show = min(10, len(message_ids))
-            for msg_id in message_ids[:previews_to_show]:
-                try:
-                    msg = (
-                        service.users()
-                        .messages()
-                        .get(userId="me", id=msg_id, format="minimal")
-                        .execute()
-                    )
-                    snippet = clean_text(msg.get("snippet", "No preview"), limit=100)
-                    preview += f"  • {msg_id}: {snippet}\n"
-                except Exception:
-                    preview += f"  • {msg_id}: (unable to load preview)\n"
-
-            if len(message_ids) > previews_to_show:
-                preview += f"\n... and {len(message_ids) - previews_to_show} more\n"
-
-            preview += "\n⚠️ To move these emails to Trash, call with dry_run=False"
-            logger.info("Batch trash dry-run: %s emails", len(message_ids))
-            return preview
-
-        moved = 0
-        for start in range(0, len(message_ids), 1000):
-            chunk = message_ids[start : start + 1000]
-            service.users().messages().batchModify(
-                userId="me",
-                body={"ids": chunk, "addLabelIds": ["TRASH"], "removeLabelIds": []},
-            ).execute()
-            moved += len(chunk)
-        logger.info("Batch moved %s emails to trash", moved)
-        return f"✅ Moved {moved} email(s) to Trash. Recoverable for 30 days."
-
-    except Exception as e:
-        logger.error("Error batch moving emails to trash: %s", str(e))
-        return f"Error: moving emails to trash: {str(e)}"
 
 
 def gmail_search_and_summarize_handler(

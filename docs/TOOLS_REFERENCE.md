@@ -65,5 +65,4 @@ Workspace Operator 2.0 exposes 39 consolidated tools. Call a tool with an `actio
 | `search_drive` | Search Google Drive for files and prepare a structured list for AI review or organisation suggestions. |
 | `weekly_review` | Cross-source review of the last N days: mail, changed files and the coming agenda, prepared for a weekly summary. |
 | `inbox_triage` | Fetch a Gmail slice and prepare it for triage: urgent, waiting, informational, archive candidates. |
-| `sheet_brief` | Read a spreadsheet range, compute column statistics and prepare a briefing for analysis. |
 | `compare_brief` | Diff two ranges by a key column and prepare a reconciliation report. |

@@ -470,7 +470,7 @@ class TextDomainTests(unittest.TestCase):
                 service.plan_bulk(
                     config,
                     LOGGER,
-                    "slides",
+                    "docs",
                     "replace_text",
                     selector={"ids": ["f1"]},
                     options={"replace": "new"},

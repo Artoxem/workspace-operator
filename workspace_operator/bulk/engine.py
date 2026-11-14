@@ -262,7 +262,7 @@ def _apply_item(
             )
         return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
 
-    if domain in ("docs", "slides") and action == "replace_text":
+    if domain == "docs" and action == "replace_text":
         find = str(options.get("find") or "")
         replace = str(options.get("replace") or "")
         request = {
@@ -274,22 +274,13 @@ def _apply_item(
                 "replaceText": replace,
             }
         }
-        if domain == "docs":
-            response = _with_retry(
-                lambda: _api(config, "docs", "v1")
-                .documents()
-                .batchUpdate(documentId=file_id, body={"requests": [request]})
-                .execute(),
-                logger,
-            )
-        else:
-            response = _with_retry(
-                lambda: _api(config, "slides", "v1")
-                .presentations()
-                .batchUpdate(presentationId=file_id, body={"requests": [request]})
-                .execute(),
-                logger,
-            )
+        response = _with_retry(
+            lambda: _api(config, "docs", "v1")
+            .documents()
+            .batchUpdate(documentId=file_id, body={"requests": [request]})
+            .execute(),
+            logger,
+        )
         occurrences = sum(
             int(reply.get("replaceAllText", {}).get("occurrencesChanged", 0))
             for reply in response.get("replies", [])

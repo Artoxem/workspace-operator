@@ -9,34 +9,6 @@ from ..security import validate_email
 from ..text import format_timestamp
 
 
-def find_files_handler(config: Config, logger: logging.Logger, query: str) -> str:
-    try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
-
-        if "contains" not in query and "=" not in query:
-            q = f"name contains '{query}' and trashed = false"
-        else:
-            q = query
-
-        results = service.files().list(
-            q=q, pageSize=10, fields="nextPageToken, files(id, name, mimeType)"
-        ).execute()
-
-        items = results.get("files", [])
-
-        if not items:
-            return "No files found."
-
-        output = "Found files:\n"
-        for item in items:
-            output += (
-                f"- {item['name']} (ID: {item['id']}) [{item['mimeType']}]\n"
-            )
-
-        return output
-    except Exception as e:
-        return f"Error searching files: {str(e)}"
 
 
 def create_folder_handler(

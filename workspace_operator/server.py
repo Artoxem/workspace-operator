@@ -50,7 +50,6 @@ from .handlers import (
     tasks_create_handler,
     tasks_list_handler,
     tasks_list_lists_handler,
-    add_shape_handler,
     create_filter_handler,
     list_filters_handler,
     protect_range_handler,
@@ -61,13 +60,10 @@ from .handlers import (
     update_draft_handler,
     add_pivot_table_handler,
     create_deployment_handler,
-    create_shortcut_handler,
     delete_draft_tool,
     format_text_handler,
     list_drafts_handler,
-    list_layouts_handler,
     move_event_handler,
-    add_table_handler,
     delete_columns_handler,
     insert_columns_handler,
     insert_image_handler,
@@ -75,53 +71,38 @@ from .handlers import (
     list_deployments_handler,
     send_with_attachments_handler,
     sort_range_handler,
-    transfer_ownership_handler,
     delete_rows_handler,
     delete_sheet_handler,
-    empty_trash_handler,
     insert_rows_handler,
     list_labels_handler,
     create_label_handler,
     merge_cells_handler,
     modify_messages_handler,
-    move_slide_handler,
-    set_notes_handler,
     add_chart_handler,
     conditional_format_handler,
-    create_comment_handler,
     delete_file_handler,
-    delete_slide_handler,
     get_metadata_handler,
-    list_comments_handler,
     remove_permission_handler,
     rename_file_handler,
-    reply_comment_handler,
     replace_text_handler,
-    resolve_comment_handler,
     restore_file_handler,
     add_sheet_handler,
     append_row_handler,
     append_to_doc_handler,
-    batch_delete_emails_handler,
     calendar_create_meeting_handler,
-    calendar_find_free_slots_handler,
     cancel_operation_handler,
     clear_range_handler,
     create_doc_handler,
     create_draft_handler,
-    create_event_handler,
     create_folder_handler,
     create_script_project_handler,
     create_spreadsheet_handler,
     delete_email_handler,
-    doc_export_pdf_handler,
-    doc_fill_template_handler,
     drive_copy_file_handler,
     drive_list_permissions_handler,
     drive_revoke_public_handler,
     drive_search_advanced_handler,
     execute_operation_handler,
-    find_files_handler,
     get_gmail_profile_handler,
     get_script_content_handler,
     get_spreadsheet_meta_handler,
@@ -153,20 +134,11 @@ from .handlers import (
     calendar_delete_event_handler,
     calendar_respond_to_invite_handler,
     calendar_update_event_handler,
-    report_from_sheet_handler,
     digest_handler,
     compare_tables_handler,
-    clone_and_fill_handler,
-    sheet_to_slides_handler,
-    drive_download_handler,
     drive_export_handler,
     drive_upload_handler,
     script_run_function_handler,
-    slides_add_slide_handler,
-    slides_create_handler,
-    slides_get_handler,
-    slides_insert_image_handler,
-    slides_replace_text_handler,
 )
 
 # ---------------------------------------------------------------------------
@@ -177,20 +149,6 @@ _WRITE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=False)
 _DESTRUCTIVE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=True)
 
 
-_REMOVED_TOOL_NAMES = frozenset(
-    {
-        "clone_and_fill", "report_from_sheet", "sheet_to_slides",
-        "drive_create_comment", "drive_create_shortcut", "drive_download",
-        "drive_empty_trash", "drive_list_comments", "drive_reply_comment",
-        "drive_resolve_comment", "drive_transfer_ownership",
-        "doc_fill_template", "calendar_find_free_slots",
-        "slides_create", "slides_get", "slides_add_slide", "slides_delete_slide",
-        "slides_move_slide", "slides_list_layouts", "slides_replace_text",
-        "slides_add_shape", "slides_add_table", "slides_insert_image",
-        "slides_set_notes", "create_event", "find_files",
-        "batch_delete_emails", "doc_export_pdf",
-    }
-)
 
 
 def _tools() -> List[types.Tool]:
@@ -243,16 +201,6 @@ def _tools() -> List[types.Tool]:
             annotations=_READ_ONLY,
         ),
         # ── Google Drive ──────────────────────────────────────────────────
-        types.Tool(
-            name="find_files",
-            description="Search for files on Google Drive. Query example: 'name contains \"System\"'",
-            inputSchema={
-                "type": "object",
-                "properties": {"query": {"type": "string"}},
-                "required": ["query"],
-            },
-            annotations=_READ_ONLY,
-        ),
         types.Tool(
             name="drive_search_advanced",
             description="Advanced Google Drive search with full query syntax",
@@ -367,7 +315,7 @@ def _tools() -> List[types.Tool]:
             name="drive_upload",
             description=(
                 "Upload a local file to Google Drive. Use convert_to to turn a "
-                "docx/xlsx/pptx into a native Google Doc, Sheet or Slide."
+                "docx/xlsx into a native Google Doc or Sheet."
             ),
             inputSchema={
                 "type": "object",
@@ -390,7 +338,7 @@ def _tools() -> List[types.Tool]:
                     },
                     "convert_to": {
                         "type": "string",
-                        "enum": ["google-docs", "google-sheets", "google-slides"],
+                        "enum": ["google-docs", "google-sheets"],
                         "description": "Convert to a native Google file on upload",
                     },
                 },
@@ -399,30 +347,10 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
         types.Tool(
-            name="drive_download",
-            description=(
-                "Download a binary Google Drive file to disk. Google-native files "
-                "(Docs, Sheets, Slides) must be converted with drive_export first."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "save_to": {
-                        "type": "string",
-                        "description": "File or directory path (default: ~/Downloads)",
-                    },
-                    "overwrite": {"type": "boolean", "default": False},
-                },
-                "required": ["file_id"],
-            },
-            annotations=_READ_ONLY,
-        ),
-        types.Tool(
             name="drive_export",
             description=(
-                "Export a Google Doc, Sheet or Presentation to a local file: pdf, "
-                "docx, xlsx, pptx, csv, txt and more."
+                "Export a Google Doc or Sheet to a local file: pdf, "
+                "docx, xlsx, csv, txt and more."
             ),
             inputSchema={
                 "type": "object",
@@ -430,7 +358,7 @@ def _tools() -> List[types.Tool]:
                     "file_id": {"type": "string"},
                     "format": {
                         "type": "string",
-                        "description": "pdf | docx | xlsx | pptx | csv | txt | md | html | …",
+                        "description": "pdf | docx | xlsx | csv | txt | md | html | …",
                     },
                     "save_to": {
                         "type": "string",
@@ -697,116 +625,6 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
-        types.Tool(
-            name="doc_fill_template",
-            description="Fill a Google Doc template by replacing placeholders. Requires confirm=True.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "document_id": {"type": "string"},
-                    "replacements": {"type": "object"},
-                    "confirm": {"type": "boolean", "default": False},
-                },
-                "required": ["document_id", "replacements"],
-            },
-            annotations=_DESTRUCTIVE,
-        ),
-        types.Tool(
-            name="doc_export_pdf",
-            description="Export a Google Doc to PDF and return it as binary (EmbeddedResource)",
-            inputSchema={
-                "type": "object",
-                "properties": {"document_id": {"type": "string"}},
-                "required": ["document_id"],
-            },
-            annotations=_READ_ONLY,
-        ),
-        # ── Google Slides ─────────────────────────────────────────────────
-        types.Tool(
-            name="slides_create",
-            description="Create a new Google Slides presentation",
-            inputSchema={
-                "type": "object",
-                "properties": {"title": {"type": "string"}},
-                "required": ["title"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
-            name="slides_get",
-            description=(
-                "Read a presentation: title, slide count, slide IDs and the text "
-                "on each slide"
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {"presentation_id": {"type": "string"}},
-                "required": ["presentation_id"],
-            },
-            annotations=_READ_ONLY,
-        ),
-        types.Tool(
-            name="slides_add_slide",
-            description="Add a slide to a presentation using a predefined layout",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "layout": {
-                        "type": "string",
-                        "default": "TITLE_AND_BODY",
-                        "description": "Predefined layout, e.g. TITLE_AND_BODY, TITLE_ONLY, BLANK",
-                    },
-                    "insertion_index": {
-                        "type": "integer",
-                        "description": "Where to insert the slide (default: at the end)",
-                    },
-                },
-                "required": ["presentation_id"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
-            name="slides_replace_text",
-            description=(
-                "Replace placeholder text across a presentation. Requires "
-                "confirm=true; without it returns a preview of what will change."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "replacements": {
-                        "type": "object",
-                        "description": "Map of placeholder → value",
-                    },
-                    "confirm": {"type": "boolean", "default": False},
-                },
-                "required": ["presentation_id", "replacements"],
-            },
-            annotations=_DESTRUCTIVE,
-        ),
-        types.Tool(
-            name="slides_insert_image",
-            description=(
-                "Insert an image from a public URL onto a slide. Size and position "
-                "are in pixels and optional."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "slide_id": {"type": "string"},
-                    "image_url": {"type": "string"},
-                    "width": {"type": "number"},
-                    "height": {"type": "number"},
-                    "left": {"type": "number"},
-                    "top": {"type": "number"},
-                },
-                "required": ["presentation_id", "slide_id", "image_url"],
-            },
-            annotations=_WRITE,
-        ),
 
         # ── Apps Script ───────────────────────────────────────────────────
         types.Tool(
@@ -1005,27 +823,6 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
         types.Tool(
-            name="report_from_sheet",
-            description=(
-                "Composite: read a sheet range, compute column statistics and "
-                "create a Google Doc report with the summary and a data preview."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "spreadsheet_id": {"type": "string"},
-                    "range": {
-                        "type": "string",
-                        "description": "A1 range or sheet name (default: first sheet)",
-                    },
-                    "doc_title": {"type": "string"},
-                    "max_rows": {"type": "integer", "default": 25},
-                },
-                "required": ["spreadsheet_id"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
             name="digest",
             description=(
                 "Composite: one digest across Gmail, Calendar and Drive for the last "
@@ -1074,44 +871,7 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
-        types.Tool(
-            name="clone_and_fill",
-            description=(
-                "Composite: copy any Drive file as a template and replace "
-                "placeholders in the copy (Docs, Slides, Sheets)."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "replacements": {"type": "object"},
-                    "name": {"type": "string", "description": "Name of the new file"},
-                    "folder_id": {"type": "string"},
-                },
-                "required": ["file_id"],
-            },
-            annotations=_WRITE,
-        ),
 
-        types.Tool(
-            name="sheet_to_slides",
-            description=(
-                "Composite: read a sheet range and build a presentation — a title "
-                "slide plus one bullet slide per group of rows."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "spreadsheet_id": {"type": "string"},
-                    "range": {"type": "string", "description": "A1 range or sheet name"},
-                    "title": {"type": "string"},
-                    "rows_per_slide": {"type": "integer", "default": 8},
-                    "header": {"type": "boolean", "default": True},
-                },
-                "required": ["spreadsheet_id"],
-            },
-            annotations=_WRITE,
-        ),
 
         # ── Gmail ─────────────────────────────────────────────────────────
         types.Tool(
@@ -1228,27 +988,6 @@ def _tools() -> List[types.Tool]:
             annotations=_DESTRUCTIVE,
         ),
         types.Tool(
-            name="batch_delete_emails",
-            description="Move multiple emails to Trash by ID. Defaults to dry_run=True.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "message_ids": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "List of message IDs to delete",
-                    },
-                    "dry_run": {
-                        "type": "boolean",
-                        "description": "If true (default), shows preview without deleting. Set to false to actually delete.",
-                        "default": True,
-                    },
-                },
-                "required": ["message_ids"],
-            },
-            annotations=_DESTRUCTIVE,
-        ),
-        types.Tool(
             name="gmail_archive",
             description="Archive a Gmail message (remove INBOX). Requires confirm=True.",
             inputSchema={
@@ -1347,57 +1086,6 @@ def _tools() -> List[types.Tool]:
                 "required": [],
             },
             annotations=_READ_ONLY,
-        ),
-        types.Tool(
-            name="calendar_find_free_slots",
-            description="Find free time slots in a calendar",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "calendar_id": {"type": "string", "default": "primary"},
-                    "start_time": {
-                        "type": "string",
-                        "description": "ISO format start time",
-                    },
-                    "end_time": {
-                        "type": "string",
-                        "description": "ISO format end time",
-                    },
-                    "duration_minutes": {"type": "integer", "default": 30},
-                    "max_results": {"type": "integer", "default": 5},
-                },
-                "required": ["start_time", "end_time"],
-            },
-            annotations=_READ_ONLY,
-        ),
-        types.Tool(
-            name="create_event",
-            description="Create a calendar event",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "summary": {"type": "string"},
-                    "start_time": {
-                        "type": "string",
-                        "description": "ISO format start time",
-                    },
-                    "end_time": {
-                        "type": "string",
-                        "description": "ISO format end time",
-                    },
-                    "description": {"type": "string"},
-                    "calendar_id": {"type": "string", "default": "primary"},
-                    "recurrence": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": (
-                            "RRULE lines, e.g. ['RRULE:FREQ=WEEKLY;COUNT=4']"
-                        ),
-                    },
-                },
-                "required": ["summary", "start_time", "end_time"],
-            },
-            annotations=_WRITE,
         ),
         types.Tool(
             name="calendar_create_meeting",
@@ -1502,73 +1190,6 @@ def _tools() -> List[types.Tool]:
             annotations=_DESTRUCTIVE,
         ),
         types.Tool(
-            name="drive_list_comments",
-            description=(
-                "List comments and replies on a Google Doc, Sheet or Slide."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "include_resolved": {
-                        "type": "boolean",
-                        "description": "Include resolved threads (default: true)",
-                        "default": True,
-                    },
-                },
-                "required": ["file_id"],
-            },
-            annotations=_READ_ONLY,
-        ),
-        types.Tool(
-            name="drive_create_comment",
-            description=(
-                "Add a comment to a Google Doc, Sheet or Slide, optionally quoting "
-                "text from the document."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "content": {"type": "string", "description": "Comment text"},
-                    "quoted_text": {
-                        "type": "string",
-                        "description": "Optional text to quote in the comment",
-                    },
-                },
-                "required": ["file_id", "content"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
-            name="drive_reply_comment",
-            description="Reply to an existing comment thread.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "comment_id": {"type": "string"},
-                    "content": {"type": "string"},
-                },
-                "required": ["file_id", "comment_id", "content"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
-            name="drive_resolve_comment",
-            description="Mark a comment thread as resolved. Requires confirm=true.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "comment_id": {"type": "string"},
-                    "confirm": {"type": "boolean", "default": False},
-                },
-                "required": ["file_id", "comment_id"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
             name="doc_replace_text",
             description=(
                 "Find and replace text in a Google Doc. Without confirm=true it "
@@ -1649,23 +1270,6 @@ def _tools() -> List[types.Tool]:
             },
             annotations=_WRITE,
         ),
-        types.Tool(
-            name="slides_delete_slide",
-            description=(
-                "Delete a slide from a presentation. Requires confirm=true; without "
-                "it returns which slide would be removed."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "slide_id": {"type": "string"},
-                    "confirm": {"type": "boolean", "default": False},
-                },
-                "required": ["presentation_id", "slide_id"],
-            },
-            annotations=_DESTRUCTIVE,
-        ),
 
         types.Tool(
             name="sheet_delete_sheet",
@@ -1739,34 +1343,6 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
         types.Tool(
-            name="slides_move_slide",
-            description="Move a slide to a new 1-based position and report the new order.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "slide_id": {"type": "string"},
-                    "position": {"type": "integer", "description": "1-based target position"},
-                },
-                "required": ["presentation_id", "slide_id", "position"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
-            name="slides_set_notes",
-            description="Replace the speaker notes of a slide.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "slide_id": {"type": "string"},
-                    "notes": {"type": "string", "description": "New notes text"},
-                },
-                "required": ["presentation_id", "slide_id", "notes"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
             name="gmail_list_labels",
             description="List Gmail labels with their IDs, split into user and system labels.",
             inputSchema={"type": "object", "properties": {}, "required": []},
@@ -1793,19 +1369,6 @@ def _tools() -> List[types.Tool]:
                 "required": ["name"],
             },
             annotations=_WRITE,
-        ),
-        types.Tool(
-            name="drive_empty_trash",
-            description=(
-                "Permanently delete everything in the Drive trash. Irreversible; "
-                "requires confirm=true."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {"confirm": {"type": "boolean", "default": False}},
-                "required": [],
-            },
-            annotations=_DESTRUCTIVE,
         ),
 
         types.Tool(
@@ -1860,25 +1423,6 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
         types.Tool(
-            name="slides_add_table",
-            description="Insert a native table onto a slide (size and position in pixels).",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "slide_id": {"type": "string"},
-                    "rows": {"type": "integer"},
-                    "columns": {"type": "integer"},
-                    "left": {"type": "number", "default": 0},
-                    "top": {"type": "number", "default": 0},
-                    "width": {"type": "number", "default": 600},
-                    "height": {"type": "number", "default": 300},
-                },
-                "required": ["presentation_id", "slide_id", "rows", "columns"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
             name="docs_insert_image",
             description=(
                 "Insert an inline image from a public URL at the end of a document; "
@@ -1901,23 +1445,6 @@ def _tools() -> List[types.Tool]:
             description="List calendars available to the account with access roles.",
             inputSchema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
-        ),
-        types.Tool(
-            name="drive_transfer_ownership",
-            description=(
-                "Transfer file ownership to another account. Requires confirm=true; "
-                "you lose owner rights."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_id": {"type": "string"},
-                    "email": {"type": "string"},
-                    "confirm": {"type": "boolean", "default": False},
-                },
-                "required": ["file_id", "email"],
-            },
-            annotations=_DESTRUCTIVE,
         ),
         types.Tool(
             name="gmail_send_with_attachments",
@@ -2042,16 +1569,6 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
         types.Tool(
-            name="slides_list_layouts",
-            description="List the layouts available in a presentation.",
-            inputSchema={
-                "type": "object",
-                "properties": {"presentation_id": {"type": "string"}},
-                "required": ["presentation_id"],
-            },
-            annotations=_READ_ONLY,
-        ),
-        types.Tool(
             name="script_create_deployment",
             description=(
                 "Create an Apps Script deployment from a saved version (latest when "
@@ -2065,20 +1582,6 @@ def _tools() -> List[types.Tool]:
                     "version_number": {"type": "integer", "default": 0},
                 },
                 "required": ["script_id"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
-            name="drive_create_shortcut",
-            description="Create a Drive shortcut to an existing file or folder.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "target_id": {"type": "string"},
-                    "name": {"type": "string"},
-                    "parent_id": {"type": "string"},
-                },
-                "required": ["target_id"],
             },
             annotations=_WRITE,
         ),
@@ -2193,28 +1696,6 @@ def _tools() -> List[types.Tool]:
             annotations=_WRITE,
         ),
         types.Tool(
-            name="slides_add_shape",
-            description=(
-                "Add a shape to a slide: RECTANGLE, ROUND_RECTANGLE, ELLIPSE, "
-                "TEXT_BOX or TRIANGLE, with optional text."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "presentation_id": {"type": "string"},
-                    "slide_id": {"type": "string"},
-                    "shape_type": {"type": "string", "default": "RECTANGLE"},
-                    "text": {"type": "string"},
-                    "left": {"type": "number", "default": 0},
-                    "top": {"type": "number", "default": 0},
-                    "width": {"type": "number", "default": 300},
-                    "height": {"type": "number", "default": 120},
-                },
-                "required": ["presentation_id", "slide_id"],
-            },
-            annotations=_WRITE,
-        ),
-        types.Tool(
             name="calendar_set_event_color",
             description='Set an event colour by Google Calendar colour id ("1"–"11").',
             inputSchema={
@@ -2246,7 +1727,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="bulk_plan",
             description=(
-                "Resolve a Drive, Gmail, Docs, Slides or Sheets selector into a reviewed "
+                "Resolve a Drive, Gmail, Docs or Sheets selector into a reviewed "
                 "plan (dry run). Returns a "
                 "plan_id, matched count, total size, a small sample and warnings. "
                 "Cap: 300 items by default; allow_large raises it to the hard limit. "
@@ -2257,7 +1738,7 @@ def _tools() -> List[types.Tool]:
                 "properties": {
                     "domain": {
                         "type": "string",
-                        "enum": ["drive", "gmail", "docs", "slides", "sheets"],
+                        "enum": ["drive", "gmail", "docs", "sheets"],
                         "default": "drive",
                     },
                     "action": {
@@ -2563,7 +2044,7 @@ def _tools() -> List[types.Tool]:
         ),
     ]
 
-    return [tool for tool in tools if tool.name not in _REMOVED_TOOL_NAMES]
+    return tools
 
 
 def _prompts() -> List[types.Prompt]:
@@ -2669,25 +2150,6 @@ def _prompts() -> List[types.Prompt]:
                 types.PromptArgument(
                     name="max_results",
                     description="Maximum messages to include (default: 15)",
-                    required=False,
-                ),
-            ],
-        ),
-        types.Prompt(
-            name="sheet_brief",
-            description=(
-                "Read a spreadsheet range, compute column statistics and prepare a "
-                "briefing for analysis."
-            ),
-            arguments=[
-                types.PromptArgument(
-                    name="spreadsheet_id",
-                    description="The Google Spreadsheet ID",
-                    required=True,
-                ),
-                types.PromptArgument(
-                    name="range",
-                    description="A1 range or sheet name (default: first sheet)",
                     required=False,
                 ),
             ],
@@ -2993,13 +2455,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("mime_type"),
                     a.get("convert_to"),
                 ),
-                "drive_download": lambda a: drive_download_handler(
-                    config,
-                    logger,
-                    a.get("file_id"),
-                    a.get("save_to"),
-                    a.get("overwrite", False),
-                ),
                 "drive_export": lambda a: drive_export_handler(
                     config,
                     logger,
@@ -3007,37 +2462,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("format"),
                     a.get("save_to"),
                     a.get("overwrite", False),
-                ),
-                "slides_create": lambda a: slides_create_handler(
-                    config, logger, a.get("title")
-                ),
-                "slides_get": lambda a: slides_get_handler(
-                    config, logger, a.get("presentation_id")
-                ),
-                "slides_add_slide": lambda a: slides_add_slide_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("layout", "TITLE_AND_BODY"),
-                    a.get("insertion_index"),
-                ),
-                "slides_replace_text": lambda a: slides_replace_text_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("replacements") or {},
-                    a.get("confirm", False),
-                ),
-                "slides_insert_image": lambda a: slides_insert_image_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("slide_id"),
-                    a.get("image_url"),
-                    a.get("width"),
-                    a.get("height"),
-                    a.get("left"),
-                    a.get("top"),
                 ),
                 "script_run_function": lambda a: script_run_function_handler(
                     config,
@@ -3047,7 +2471,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("parameters"),
                     a.get("dev_mode", True),
                 ),
-                "find_files": lambda a: find_files_handler(config, logger, a.get("query")),
                 "read_sheet": lambda a: read_sheet_handler(
                     config, logger, a.get("spreadsheet_id"), a.get("range_name")
                 ),
@@ -3079,12 +2502,6 @@ def create_server(config: Config, logger) -> Server:
                 "create_doc": lambda a: create_doc_handler(config, logger, a.get("title")),
                 "append_to_doc": lambda a: append_to_doc_handler(
                     config, logger, a.get("document_id"), a.get("text")
-                ),
-                "doc_fill_template": lambda a: doc_fill_template_handler(
-                    config, logger, a.get("document_id"), a.get("replacements"), a.get("confirm", False)
-                ),
-                "doc_export_pdf": lambda a: doc_export_pdf_handler(
-                    config, logger, a.get("document_id")
                 ),
                 "create_spreadsheet": lambda a: create_spreadsheet_handler(
                     config, logger, a.get("title")
@@ -3193,19 +2610,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("confirm", False),
                     a.get("send_updates", "all"),
                 ),
-                "report_from_sheet": lambda a: report_from_sheet_handler(
-                    config,
-                    logger,
-                    a.get("spreadsheet_id"),
-                    a.get("range"),
-                    a.get("doc_title"),
-                    a.get("max_rows", 25),
-                    a.get("header", True),
-                    a.get("decimal", "auto"),
-                    a.get("columns"),
-                    a.get("aggregates"),
-                    a.get("output", "doc"),
-                ),
                 "digest": lambda a: digest_handler(
                     config,
                     logger,
@@ -3226,23 +2630,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("header", True),
                     a.get("output", "text"),
                     a.get("doc_title"),
-                ),
-                "clone_and_fill": lambda a: clone_and_fill_handler(
-                    config,
-                    logger,
-                    a.get("file_id"),
-                    a.get("replacements") or {},
-                    a.get("name"),
-                    a.get("folder_id"),
-                ),
-                "sheet_to_slides": lambda a: sheet_to_slides_handler(
-                    config,
-                    logger,
-                    a.get("spreadsheet_id"),
-                    a.get("range"),
-                    a.get("title"),
-                    a.get("rows_per_slide", 8),
-                    a.get("header", True),
                 ),
                 "gmail_get_thread": lambda a: gmail_get_thread_handler(
                     config,
@@ -3272,9 +2659,6 @@ def create_server(config: Config, logger) -> Server:
                 "delete_email": lambda a: delete_email_handler(
                     config, logger, a.get("message_id"), a.get("confirm", False)
                 ),
-                "batch_delete_emails": lambda a: batch_delete_emails_handler(
-                    config, logger, a.get("message_ids"), a.get("dry_run", True)
-                ),
                 "gmail_search_and_summarize": lambda a: gmail_search_and_summarize_handler(
                     config, logger, a.get("query"), a.get("max_results", 50)
                 ),
@@ -3291,25 +2675,6 @@ def create_server(config: Config, logger) -> Server:
                 ),
                 "list_events": lambda a: list_events_handler(
                     config, logger, a.get("calendar_id", "primary"), a.get("max_results", 10)
-                ),
-                "create_event": lambda a: create_event_handler(
-                    config,
-                    logger,
-                    a.get("summary"),
-                    a.get("start_time"),
-                    a.get("end_time"),
-                    a.get("description", ""),
-                    a.get("calendar_id", "primary"),
-                    a.get("recurrence"),
-                ),
-                "calendar_find_free_slots": lambda a: calendar_find_free_slots_handler(
-                    config,
-                    logger,
-                    a.get("calendar_id", "primary"),
-                    a.get("start_time"),
-                    a.get("end_time"),
-                    a.get("duration_minutes", 30),
-                    a.get("max_results", 5),
                 ),
                 "calendar_create_meeting": lambda a: calendar_create_meeting_handler(
                     config,
@@ -3368,30 +2733,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("permission_id"),
                     a.get("confirm", False),
                 ),
-                "drive_list_comments": lambda a: list_comments_handler(
-                    config, logger, a.get("file_id"), a.get("include_resolved", True)
-                ),
-                "drive_create_comment": lambda a: create_comment_handler(
-                    config,
-                    logger,
-                    a.get("file_id"),
-                    a.get("content"),
-                    a.get("quoted_text"),
-                ),
-                "drive_reply_comment": lambda a: reply_comment_handler(
-                    config,
-                    logger,
-                    a.get("file_id"),
-                    a.get("comment_id"),
-                    a.get("content"),
-                ),
-                "drive_resolve_comment": lambda a: resolve_comment_handler(
-                    config,
-                    logger,
-                    a.get("file_id"),
-                    a.get("comment_id"),
-                    a.get("confirm", False),
-                ),
                 "doc_replace_text": lambda a: replace_text_handler(
                     config,
                     logger,
@@ -3427,13 +2768,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("width", 600),
                     a.get("height", 371),
                 ),
-                "slides_delete_slide": lambda a: delete_slide_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("slide_id"),
-                    a.get("confirm", False),
-                ),
                 "sheet_delete_sheet": lambda a: delete_sheet_handler(
                     config,
                     logger,
@@ -3466,20 +2800,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("merge_type", "MERGE_ALL"),
                     a.get("sheet_name"),
                 ),
-                "slides_move_slide": lambda a: move_slide_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("slide_id"),
-                    a.get("position"),
-                ),
-                "slides_set_notes": lambda a: set_notes_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("slide_id"),
-                    a.get("notes", ""),
-                ),
                 "gmail_list_labels": lambda a: list_labels_handler(config, logger),
                 "gmail_create_label": lambda a: create_label_handler(
                     config,
@@ -3487,9 +2807,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("name"),
                     a.get("label_list_visibility", "labelShow"),
                     a.get("message_list_visibility", "show"),
-                ),
-                "drive_empty_trash": lambda a: empty_trash_handler(
-                    config, logger, a.get("confirm", False)
                 ),
                 "sheet_insert_columns": lambda a: insert_columns_handler(
                     config,
@@ -3517,18 +2834,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("ascending", True),
                     a.get("sheet_name"),
                 ),
-                "slides_add_table": lambda a: add_table_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("slide_id"),
-                    a.get("rows"),
-                    a.get("columns"),
-                    a.get("left", 0),
-                    a.get("top", 0),
-                    a.get("width", 600),
-                    a.get("height", 300),
-                ),
                 "docs_insert_image": lambda a: insert_image_handler(
                     config,
                     logger,
@@ -3539,13 +2844,6 @@ def create_server(config: Config, logger) -> Server:
                 ),
                 "calendar_list_calendars": lambda a: list_calendars_handler(
                     config, logger
-                ),
-                "drive_transfer_ownership": lambda a: transfer_ownership_handler(
-                    config,
-                    logger,
-                    a.get("file_id"),
-                    a.get("email"),
-                    a.get("confirm", False),
                 ),
                 "gmail_send_with_attachments": lambda a: send_with_attachments_handler(
                     config,
@@ -3596,22 +2894,12 @@ def create_server(config: Config, logger) -> Server:
                     a.get("destination_calendar_id"),
                     a.get("calendar_id", "primary"),
                 ),
-                "slides_list_layouts": lambda a: list_layouts_handler(
-                    config, logger, a.get("presentation_id")
-                ),
                 "script_create_deployment": lambda a: create_deployment_handler(
                     config,
                     logger,
                     a.get("script_id"),
                     a.get("description", ""),
                     a.get("version_number", 0),
-                ),
-                "drive_create_shortcut": lambda a: create_shortcut_handler(
-                    config,
-                    logger,
-                    a.get("target_id"),
-                    a.get("name", ""),
-                    a.get("parent_id"),
                 ),
                 "sheet_set_data_validation": lambda a: set_data_validation_handler(
                     config,
@@ -3662,18 +2950,6 @@ def create_server(config: Config, logger) -> Server:
                     a.get("to"),
                     a.get("subject"),
                     a.get("body_text"),
-                ),
-                "slides_add_shape": lambda a: add_shape_handler(
-                    config,
-                    logger,
-                    a.get("presentation_id"),
-                    a.get("slide_id"),
-                    a.get("shape_type", "RECTANGLE"),
-                    a.get("text", ""),
-                    a.get("left", 0),
-                    a.get("top", 0),
-                    a.get("width", 300),
-                    a.get("height", 120),
                 ),
                 "calendar_set_event_color": lambda a: set_event_color_handler(
                     config,
@@ -4220,42 +3496,6 @@ def create_server(config: Config, logger) -> Server:
                                 "on someone else, informational, and archive candidates. "
                                 "For each, give one line of reasoning. Do not send or delete "
                                 "anything — propose actions only."
-                            ),
-                        ),
-                    )
-                ],
-            )
-
-        elif name == "sheet_brief":
-            spreadsheet_id = args.get("spreadsheet_id", "")
-            if not spreadsheet_id:
-                raise ValueError("spreadsheet_id is required for the sheet_brief prompt")
-            report = await asyncio.to_thread(
-                report_from_sheet_handler,
-                config,
-                logger,
-                spreadsheet_id,
-                args.get("range"),
-                None,
-                25,
-                True,
-                "auto",
-                None,
-                None,
-                "text",
-            )
-            return types.GetPromptResult(
-                description=f"Sheet brief — {spreadsheet_id[:12]}…",
-                messages=[
-                    types.PromptMessage(
-                        role="user",
-                        content=types.TextContent(
-                            type="text",
-                            text=(
-                                f"{report}\n\n"
-                                "Brief me on this table: what the columns mean, notable "
-                                "outliers, data-quality issues, and two questions I should "
-                                "ask the owner of this data."
                             ),
                         ),
                     )

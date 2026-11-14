@@ -53,36 +53,5 @@ class DeleteEmailTests(unittest.TestCase):
         self.assertIn("Trash", text)
 
 
-class BatchDeleteTests(unittest.TestCase):
-    def test_dry_run_does_not_modify(self):
-        service = fake_service()
-        with mock.patch.object(gmail_module, "get_creds", return_value=None), mock.patch.object(
-            gmail_module, "build", return_value=service
-        ):
-            text = gmail_module.batch_delete_emails_handler(
-                CONFIG, LOGGER, ["m1", "m2"], dry_run=True
-            )
-        service.users.return_value.messages.return_value.batchModify.assert_not_called()
-        self.assertIn("DRY RUN", text)
-
-    def test_batch_moves_to_trash_in_chunks(self):
-        service = fake_service()
-        ids = [f"m{index}" for index in range(1001)]
-        with mock.patch.object(gmail_module, "get_creds", return_value=None), mock.patch.object(
-            gmail_module, "build", return_value=service
-        ):
-            text = gmail_module.batch_delete_emails_handler(
-                CONFIG, LOGGER, ids, dry_run=False
-            )
-        self.assertEqual(
-            service.users.return_value.messages.return_value.batchModify.call_count, 2
-        )
-        first_body = service.users.return_value.messages.return_value.batchModify.call_args_list[0].kwargs["body"]
-        self.assertEqual(first_body["addLabelIds"], ["TRASH"])
-        self.assertEqual(len(first_body["ids"]), 1000)
-        service.users.return_value.messages.return_value.batchDelete.assert_not_called()
-        self.assertIn("1001", text)
-
-
 if __name__ == "__main__":
     unittest.main()

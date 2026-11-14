@@ -16,56 +16,6 @@ from workspace_operator.handlers.sheets_structure import (
 )
 LOGGER = logging.getLogger("test")
 
-NEW_TOOLS = [
-    "drive_get_metadata",
-    "drive_rename_file",
-    "drive_delete_file",
-    "drive_restore_file",
-    "drive_remove_permission",
-    "drive_list_comments",
-    "drive_create_comment",
-    "drive_reply_comment",
-    "drive_resolve_comment",
-    "doc_replace_text",
-    "sheet_conditional_format",
-    "sheet_add_chart",
-    "slides_delete_slide",
-    "sheet_delete_sheet",
-    "sheet_insert_rows",
-    "sheet_delete_rows",
-    "sheet_merge_cells",
-    "slides_move_slide",
-    "slides_set_notes",
-    "gmail_list_labels",
-    "gmail_create_label",
-    "drive_empty_trash",
-    "sheet_insert_columns",
-    "sheet_delete_columns",
-    "sheet_sort_range",
-    "slides_add_table",
-    "docs_insert_image",
-    "calendar_list_calendars",
-    "drive_transfer_ownership",
-    "gmail_send_with_attachments",
-    "script_list_deployments",
-    "sheet_add_pivot_table",
-    "docs_format_text",
-    "gmail_list_drafts",
-    "gmail_delete_draft",
-    "calendar_move_event",
-    "slides_list_layouts",
-    "script_create_deployment",
-    "drive_create_shortcut",
-    "sheet_set_data_validation",
-    "sheet_protect_range",
-    "sheet_set_borders",
-    "gmail_list_filters",
-    "gmail_create_filter",
-    "gmail_update_draft",
-    "slides_add_shape",
-    "calendar_set_event_color",
-    "script_update_deployment",
-]
 
 
 class ConditionTests(unittest.TestCase):
@@ -182,21 +132,6 @@ class BatchThreeTests(unittest.TestCase):
                 "a@example.com", "s", "b", ["/definitely/missing.txt"]
             )
 
-    def test_slides_table_validates_shape(self):
-        from workspace_operator.handlers.slides import add_table_handler
-
-        message = add_table_handler(
-            config=None,
-            logger=LOGGER,
-            presentation_id="id",
-            slide_id="slide",
-            rows=0,
-            columns=2,
-        )
-        self.assertTrue(message.startswith("Error: rows"))
-
-
-class BatchFourTests(unittest.TestCase):
     def test_find_ranges_maps_offsets(self):
         from workspace_operator.handlers.doc_format import find_ranges
 
@@ -281,20 +216,6 @@ class BatchFiveTests(unittest.TestCase):
         )
         self.assertTrue(message.startswith("Error: color_id"))
 
-    def test_shape_type_is_validated(self):
-        from workspace_operator.handlers.slides import add_shape_handler
-
-        message = add_shape_handler(
-            config=None,
-            logger=LOGGER,
-            presentation_id="id",
-            slide_id="slide",
-            shape_type="STAR",
-        )
-        self.assertTrue(message.startswith("Error: shape_type"))
-
-
-class ExcerptTests(unittest.TestCase):
     def test_excerpt_is_centred_on_the_match(self):
         text = "x" * 100 + "NEEDLE" + "y" * 100
         excerpt = _excerpt(text, "needle", match_case=False)
