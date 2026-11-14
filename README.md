@@ -73,7 +73,7 @@ Operator is for "change the workspace and be able to roll it back".
 | 📮 Postmaster | 1 | domains and deliverability stats |
 | ⚙️ Apps Script | 3 | read, staged writes, run (admin) |
 
-Plus 3 resources, 3 resource templates and 8 prompts — see the
+Plus 3 resources, 3 resource templates and 7 prompts — see the
 [tool catalog](#-tool-catalog).
 
 ## Who it is for
@@ -364,8 +364,6 @@ docker run -i --rm \
 
 Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
-
 ## Tool catalog
 
 39 consolidated tools. The default `core` profile exposes 20; `full` adds formatting, destructive edits, Forms, Postmaster and Script actions.
@@ -509,8 +507,10 @@ part of CI; use `/mcp/full` with a test document when you want a manual smoke.
 | [SECURITY.md](docs/SECURITY.md) | Scopes, profiles, safety model |
 | [IDE_SETUP.md](docs/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → cause → fix, including Docker |
+| [PROFILES.md](docs/PROFILES.md) | Choosing core/full/read-only |
+| [MIGRATION_2.0.md](docs/MIGRATION_2.0.md) | 1.x → 2.0 mapping |
 | [LEARN.md](LEARN.md) | How this server was built |
-| [docs/](docs/) | Release notes and specs for every version |
+| [VERSIONS.md](docs/VERSIONS.md) | Version history and release summary |
 
 ### 🇷🇺 На русском
 | Документ | Описание |

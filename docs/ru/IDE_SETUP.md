@@ -110,7 +110,7 @@ VS Code использует ключ `servers` и явный `type`:
       "env": {
         "MCP_CONFIG_FILE": "C:/Users/you/config.yaml",
         "MCP_AUTH_TOKEN": "your_token_here",
-        "MCP_TOOL_PROFILE": "read-write"
+        "MCP_TOOL_PROFILE": "core"
       },
       "timeoutSeconds": 300,
       "tools": { "workspace_search": { "eager": true } }

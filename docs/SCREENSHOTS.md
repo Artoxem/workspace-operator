@@ -48,7 +48,7 @@ data, tokens.
 
 **Question:** "Which APIs do I enable?"
 
-- **APIs & Services → Enabled APIs & services**, filtered to the ten APIs from
+- **APIs & Services → Enabled APIs & services**, filtered to the APIs from
   `AUTH_SETUP.md`.
 - File: `docs/images/cloud-apis.png`.
 - Used in: `docs/AUTH_SETUP.md`, Step 2.

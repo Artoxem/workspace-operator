@@ -311,10 +311,11 @@ def delete_email_handler(..., confirm: bool = False) -> str:
 **Pattern B — dry-run:**
 
 ```python
-def batch_delete_emails_handler(..., dry_run: bool = True) -> str:
-    if dry_run:
-        return f"DRY RUN: Would delete {len(ids)} emails. Set dry_run=False to proceed."
-    # perform delete
+def delete_email_handler(..., confirm: bool = False) -> str:
+    if not confirm:
+        return "Would move this email to Trash. Call again with confirm=True."
+    service.users().messages().trash(userId="me", id=message_id).execute()
+    return "Moved to Trash; recoverable for 30 days."
 ```
 
 **Pattern C — large range check:**

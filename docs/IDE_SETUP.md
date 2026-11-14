@@ -112,7 +112,7 @@ All three surfaces read the same file: `~/.gemini/config/mcp_config.json`
       "env": {
         "MCP_CONFIG_FILE": "C:/Users/you/config.yaml",
         "MCP_AUTH_TOKEN": "your_token_here",
-        "MCP_TOOL_PROFILE": "read-write"
+        "MCP_TOOL_PROFILE": "core"
       },
       "timeoutSeconds": 300,
       "tools": { "workspace_search": { "eager": true } }

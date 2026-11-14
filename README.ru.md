@@ -70,7 +70,7 @@ Workspace Operator — для «измени рабочее пространст
 | 📮 Postmaster | 1 | домены и статистика доставляемости |
 | ⚙️ Apps Script | 3 | чтение, стейджинг, запуск (admin) |
 
-Плюс 3 ресурса, 3 шаблона ресурсов и 8 промптов — см. [каталог](#-каталог-инструментов).
+Плюс 3 ресурса, 3 шаблона ресурсов и 7 промптов — см. [каталог](#-каталог-инструментов).
 
 ## Кому подходит
 
@@ -359,8 +359,6 @@ docker run -i --rm \
 
 Что-то не работает? Смотрите [docs/ru/TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md).
 
-Что-то не работает? Смотрите [docs/ru/TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md).
-
 ## Каталог инструментов
 
 39 consolidated tools. The default `core` profile exposes 20; `full` adds formatting, destructive edits, Forms, Postmaster and Script actions.
@@ -503,6 +501,8 @@ python -m unittest discover -s tests -v     # 290 unit и in-memory MCP тест
 | [SECURITY.md](docs/ru/SECURITY.md) | Скоупы, профили, модель безопасности |
 | [IDE_SETUP.md](docs/ru/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
 | [TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md) | Симптом → причина → решение, включая Docker |
+| [PROFILES.md](docs/ru/PROFILES.md) | Выбор core/full/read-only |
+| [MIGRATION_2.0.md](docs/ru/MIGRATION_2.0.md) | Переход с 1.x на 2.0 |
 
 ### 🇬🇧 English
 | Document | Description |
@@ -513,7 +513,7 @@ python -m unittest discover -s tests -v     # 290 unit и in-memory MCP тест
 | [IDE_SETUP.md](docs/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → fix, including Docker |
 | [LEARN.md](LEARN.md) | How this server was built |
-| [docs/](docs/) | Release notes and specs |
+| [VERSIONS.md](docs/VERSIONS.md) | История версий и сводка релизов |
 
 ## Ограничения
 

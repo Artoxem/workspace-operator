@@ -4,7 +4,7 @@ How to get Workspace Operator in front of people who run AI agents.
 
 Ready-to-post copy and submission fields: [LAUNCH_PACKAGE.md](LAUNCH_PACKAGE.md).
 
-Current baseline: 39 tools, 13 OAuth scopes, 354 unit tests, PyPI and GHCR
+Current baseline: 39 tools, 13 OAuth scopes, 290 unit tests, PyPI and GHCR
 releases, MIT. Discovery is the bottleneck, not the feature set.
 
 ## 1. Positioning
@@ -39,7 +39,7 @@ remote MCP preview and single-service servers.
 - [ ] Two screenshots: a plan with counts, a finished job with undo.
 - [ ] "Works with" line: Claude Desktop, Cursor, Continue, Cline, DeepSeek
       Harness, any MCP client.
-- [ ] `CHANGELOG.md` and pinned release notes.
+- [ ] `docs/VERSIONS.md` plus GitHub Releases as the detailed archive.
 
 ## 3. Tier 1: directories and registries
 
