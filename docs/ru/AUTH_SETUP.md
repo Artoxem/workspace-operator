@@ -144,8 +144,9 @@ workspace-operator (unsafe)**, только если этот OAuth-клиент
 ## Шаг 7 — Scopes
 
 Стандартная конфигурация запрашивает 13 scopes (Drive, Docs, Sheets,
-Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). Полный список и
-read-only варианты — в [SECURITY.md](SECURITY.md).
+Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). Полный список, read-only варианты и таблица
+«скоуп → инструменты» — в [SECURITY.md](SECURITY.md) и
+[PROFILES.md](PROFILES.md#скоупы-и-инструменты).
 
 Чтобы сузить доступ, отредактируйте `scopes:` в `config.yaml`, удалите
 `token.json` и снова запустите `workspace-operator doctor`. Doctor сравнит

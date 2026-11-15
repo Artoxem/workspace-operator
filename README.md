@@ -5,7 +5,8 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Gmail · Calendar · Tasks · Forms · Apps Script — one local
-MCP server with 39 tools, staged writes and server-side tool profiles.
+MCP server with **39 consolidated tools** (20 in the default `core` profile),
+staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
@@ -256,6 +257,9 @@ denied_tools: ["gmail_write", "drive_write"]
 
 Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
 A blocked call returns a clear explanation instead of failing silently.
+
+Profiles are the second filter. At startup the server also hides tools whose
+Google OAuth scope is missing; see [Scopes and tools](docs/PROFILES.md#scopes-and-tools).
 
 See [choosing a profile](docs/PROFILES.md) and the [2.0 migration guide](docs/MIGRATION_2.0.md).
 

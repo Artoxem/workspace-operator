@@ -84,22 +84,86 @@ denied_tools: ["gmail_write"]
 
 Имена — новые консолидированные, не из 1.x. Запрет всегда важнее разрешения.
 
-## Scope-routing
+## Скоупы и инструменты
 
-На старте сервер читает Google-скоупы из `token.json` и скрывает инструменты
-без нужного скоупа. Если token file отсутствует или список пуст, фильтрация
-пропускается с предупреждением.
+Видимый набор определяют два независимых фильтра:
 
-Примеры:
+1. **OAuth-скоупы** — что реально разрешает Google.
+2. **Профиль** — что отдаёт сервер (`read-only`, `core`, `read-write`, `full`).
 
-- нет `presentations` → нет Slides (в 2.0 их и так нет);
-- только `drive.readonly` → `drive_write`, `drive_trash`, `drive_permissions`
-  скрыты;
-- только `gmail.readonly` → `gmail_write`, `gmail_settings`, `gmail_delete`
-  скрыты.
+Scope-routing выполняется первым на старте: инструменты без нужного
+Google-скоупа не показываются и не вызываются. Затем применяется профиль;
+`allowed_tools` / `denied_tools` сужают его дальше.
 
-`workspace_search`, `digest`, `compare_tables` и `bulk_*` кросс-доменные и
-остаются видимыми; при недоступном источнике они вернут частичную ошибку.
+Если `token.json` отсутствует или в нём нет списка скоупов, routing
+пропускается с предупреждением: сервер пока не знает выданные скоупы.
+
+| OAuth-скоуп(ы) | Какие инструменты видны |
+|---|---|
+| нет (кросс-доменные) | `workspace_search`, `digest`, `compare_tables`, `bulk_*` |
+| `drive` или `drive.readonly` | `drive_search`, `drive_read` |
+| `drive` | плюс `drive_write`, `drive_trash`, `drive_permissions` |
+| `documents` или `documents.readonly` | `read_doc` |
+| `documents` | плюс `docs_write`, `docs_edit` |
+| `spreadsheets` или `spreadsheets.readonly` | `sheets_read` |
+| `spreadsheets` | плюс `sheets_write`, `sheets_format`, `sheets_structure`, `sheets_delete`, `sheets_data` |
+| `gmail.modify` или `gmail.readonly` | `gmail_read` |
+| `gmail.modify` | плюс `gmail_write`, `gmail_delete` |
+| `gmail.modify` + `gmail.settings.basic` | `gmail_settings` (нужны оба) |
+| `calendar` или `calendar.readonly` | `calendar_read` |
+| `calendar` | плюс `calendar_write`, `calendar_delete` |
+| `tasks` или `tasks.readonly` | `tasks_read` |
+| `tasks` | плюс `tasks_write` |
+| `forms.body` + `forms.responses.readonly` | `forms_read`, `forms_write` (нужны оба) |
+| `postmaster.domain` + `postmaster.traffic.readonly` | `postmaster_read` (нужны оба) |
+| `script.projects` + `script.deployments` | `script_read`, `script_write`, `script_run` (нужны оба) |
+
+Включение Google API — отдельный переключатель: скоуп может быть выдан, а API
+выключен, тогда вызов вернёт 403. Включайте APIs по
+[AUTH_SETUP.md](AUTH_SETUP.md).
+
+### Минимальные наборы
+
+```yaml
+# Только Drive
+scopes:
+  - "https://www.googleapis.com/auth/drive"
+```
+
+```yaml
+# Gmail чтение/запись, без администрирования меток и фильтров
+scopes:
+  - "https://www.googleapis.com/auth/gmail.modify"
+```
+
+```yaml
+# Docs + Sheets только чтение
+scopes:
+  - "https://www.googleapis.com/auth/documents.readonly"
+  - "https://www.googleapis.com/auth/spreadsheets.readonly"
+```
+
+Для остальных доменов нужны скоупы из таблицы. Убрали скоуп — инструменты
+скрылись; добавили — переавторизуйтесь, и они вернутся.
+
+### Если инструмента нет
+
+1. Запустите `workspace-operator doctor` — он покажет недостающие скоупы.
+2. Сравните `token.json` со таблицей выше.
+3. Удалите `token.json`, запустите `workspace-operator doctor`, подтвердите доступ.
+4. Проверьте профиль: `workspace-operator tools --profile core`.
+
+Роутинг применяется один раз при старте. После изменения скоупов перезапустите
+сервер или переподключите клиент.
+
+### Роутинг выключен
+
+`MCP_SCOPE_ROUTING=0` отключает скрытие. Инструменты могут быть видны, но
+вернут `403 insufficientPermissions`; режим только для отладки.
+
+Кросс-доменные `workspace_search`, `digest`, `compare_tables`, `bulk_*` не
+имеют одного обязательного скоупа и остаются видимыми; при недоступном
+источнике они возвращают частичную ошибку.
 
 ## Проверить, что активно
 

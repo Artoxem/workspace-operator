@@ -84,22 +84,86 @@ denied_tools: ["gmail_write"]
 
 Names are the consolidated tool names, not 1.x names. A denied name always wins.
 
-## Scope routing
+## Scopes and tools
 
-At startup the server reads the Google scopes from `token.json` and hides tools
-whose scope is not granted. If the token file is missing or has no scope list,
-routing is skipped and a warning is logged.
+Two independent filters decide what the agent sees:
 
-Examples:
+1. **OAuth scopes** — what Google will actually allow.
+2. **Profile** — what this server exposes (`read-only`, `core`, `read-write`, `full`).
 
-- no `presentations` scope → no Slides tools (Slides were removed in 2.0 anyway);
-- only `drive.readonly` → `drive_write`, `drive_trash`, `drive_permissions` are
-  hidden;
-- only `gmail.readonly` → `gmail_write`, `gmail_settings`, `gmail_delete` are
-  hidden.
+Scope routing runs first at startup: tools whose required Google scope is missing
+are not listed and cannot be called. The profile is applied to the remaining
+tools; `allowed_tools` / `denied_tools` narrow it further.
 
-`workspace_search`, `digest`, `compare_tables` and `bulk_*` are cross-domain and
-stay visible; they report partial errors if a source is inaccessible.
+If `token.json` is missing or has no scope list, routing is skipped with a
+warning: the server cannot know the granted scopes yet.
+
+| OAuth scope(s) | Tools that become visible |
+|---|---|
+| none (cross-domain) | `workspace_search`, `digest`, `compare_tables`, `bulk_*` |
+| `drive` or `drive.readonly` | `drive_search`, `drive_read` |
+| `drive` | plus `drive_write`, `drive_trash`, `drive_permissions` |
+| `documents` or `documents.readonly` | `read_doc` |
+| `documents` | plus `docs_write`, `docs_edit` |
+| `spreadsheets` or `spreadsheets.readonly` | `sheets_read` |
+| `spreadsheets` | plus `sheets_write`, `sheets_format`, `sheets_structure`, `sheets_delete`, `sheets_data` |
+| `gmail.modify` or `gmail.readonly` | `gmail_read` |
+| `gmail.modify` | plus `gmail_write`, `gmail_delete` |
+| `gmail.modify` + `gmail.settings.basic` | `gmail_settings` (both required) |
+| `calendar` or `calendar.readonly` | `calendar_read` |
+| `calendar` | plus `calendar_write`, `calendar_delete` |
+| `tasks` or `tasks.readonly` | `tasks_read` |
+| `tasks` | plus `tasks_write` |
+| `forms.body` + `forms.responses.readonly` | `forms_read`, `forms_write` (both required) |
+| `postmaster.domain` + `postmaster.traffic.readonly` | `postmaster_read` (both required) |
+| `script.projects` + `script.deployments` | `script_read`, `script_write`, `script_run` (both required) |
+
+Google API enablement is a separate switch: a scope can be granted while the API
+is disabled, and the call then fails with 403. Enable the APIs listed in
+[AUTH_SETUP.md](AUTH_SETUP.md).
+
+### Minimal scope sets
+
+```yaml
+# Drive only
+scopes:
+  - "https://www.googleapis.com/auth/drive"
+```
+
+```yaml
+# Gmail read/write, no settings/labels administration
+scopes:
+  - "https://www.googleapis.com/auth/gmail.modify"
+```
+
+```yaml
+# Docs + Sheets read-only
+scopes:
+  - "https://www.googleapis.com/auth/documents.readonly"
+  - "https://www.googleapis.com/auth/spreadsheets.readonly"
+```
+
+Other domains need the scopes from the table. Removing a scope also hides its
+tools; add it and re-authorize to bring them back.
+
+### If a tool is missing
+
+1. Run `workspace-operator doctor` — it prints missing configured scopes.
+2. Check `token.json` scopes against the table above.
+3. Delete `token.json`, run `workspace-operator doctor`, approve the new consent.
+4. Check the effective profile: `workspace-operator tools --profile core`.
+
+Routing is applied once at startup. After changing scopes, restart or reconnect
+the server.
+
+### Routing off
+
+`MCP_SCOPE_ROUTING=0` disables hiding. Tools may then be visible but still fail
+with `403 insufficientPermissions`; this mode is for debugging only.
+
+Cross-domain tools (`workspace_search`, `digest`, `compare_tables`, `bulk_*`)
+have no single required scope and stay visible; they report partial errors when a
+source is inaccessible.
 
 ## Check what is active
 

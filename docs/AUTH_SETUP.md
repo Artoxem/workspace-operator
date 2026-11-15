@@ -144,8 +144,9 @@ workspace-operator (unsafe)** only if you created this OAuth client yourself.
 ## Step 7 — Scopes
 
 The default configuration requests 13 scopes (Drive, Docs, Sheets,
-Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). The full list and the
-read-only variants live in [SECURITY.md](SECURITY.md).
+Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). The full list, read-only variants and the
+scope → tools matrix live in [SECURITY.md](SECURITY.md) and
+[PROFILES.md](PROFILES.md#scopes-and-tools).
 
 To narrow access, edit `scopes:` in `config.yaml`, delete `token.json` and run
 `workspace-operator doctor` again. The doctor compares configured scopes with

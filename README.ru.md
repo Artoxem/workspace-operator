@@ -5,7 +5,8 @@
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
 Drive · Docs · Sheets · Gmail · Calendar · Tasks · Forms · Apps Script — один
-локальный MCP-сервер с 39 инструментами, многошаговыми записями и профилями на стороне сервера.
+локальный MCP-сервер с **39 консолидированными инструментами** (20 в профиле `core` по
+умолчанию), многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
@@ -251,6 +252,9 @@ denied_tools: ["gmail_write", "drive_write"]
 
 Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
 Заблокированный вызов возвращает понятное объяснение, а не молчит.
+
+Профиль — второй фильтр. На старте сервер также скрывает инструменты без
+нужного Google OAuth-скоупа; см. [Скоупы и инструменты](docs/ru/PROFILES.md#скоупы-и-инструменты).
 
 См. [выбор профиля](docs/ru/PROFILES.md) и [переход на 2.0](docs/ru/MIGRATION_2.0.md).
 
