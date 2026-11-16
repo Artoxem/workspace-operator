@@ -12,6 +12,8 @@ log_file: "/home/app/data/mcp_operations.log"
 mcp_auth_token: "change_me"
 
 tool_profile: "core"
+approval_dir: "/home/app/data/approvals"
+approval_ttl: 900
 scope_routing: true
 allow_public_sharing: false
 

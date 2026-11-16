@@ -15,6 +15,7 @@ from mcp.server.lowlevel.helper_types import ReadResourceContents
 import mcp.types as types
 
 from . import __version__
+from .approvals import ApprovalError, ApprovalStore, challenge_text
 from .config import Config, load_config
 from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
@@ -2198,9 +2199,11 @@ def create_server(config: Config, logger) -> Server:
             "Workspace Operator exposes Google Workspace through a compact, "
             "action-based tool surface. Start with workspace_search for unknown "
             "ids; read before writing; use the bulk_plan/bulk_run flow for more "
-            "than a handful of items. Destructive actions require confirm=true. "
-            "Tools outside the active profile or without their OAuth scope are "
-            "hidden by design."
+            "than a handful of items. Destructive actions first return "
+            "APPROVAL_REQUIRED with an approval_id: ask the user to run "
+            "`workspace-operator approvals approve <id>`, then retry the exact "
+            "call with that approval_id. Tools outside the active profile or "
+            "without their OAuth scope are hidden by design."
         ),
     )
     exposed_tools = surface.mcp_tools()
@@ -2210,6 +2213,7 @@ def create_server(config: Config, logger) -> Server:
     profile_name = surface.profile
 
     audit = AuditLog(config.audit_log)
+    approvals = ApprovalStore(config)
     tool_index = exposed_specs
 
     logger.info(
@@ -2286,7 +2290,9 @@ def create_server(config: Config, logger) -> Server:
 
         try:
             plan = resolve_call(
-                spec, arguments, require_confirm=not config.dry_run
+                spec,
+                arguments,
+                require_confirm=not config.dry_run and spec.safety is not Safety.DESTRUCTIVE,
             )
         except RoutingError as exc:
             audit.record(
@@ -2323,6 +2329,58 @@ def create_server(config: Config, logger) -> Server:
                     )
                 ]
             )
+
+        if spec.safety is Safety.DESTRUCTIVE:
+            try:
+                approval_id = plan.arguments.get("approval_id")
+                if not approval_id:
+                    record = approvals.request(name, plan.action, plan.arguments)
+                    audit.record(
+                        name,
+                        profile_name,
+                        "approval-required",
+                        0,
+                        argument_names + ("approval_id",),
+                    )
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=challenge_text(record))]
+                    )
+                ok, reason = approvals.consume(
+                    str(approval_id), name, plan.action, plan.arguments
+                )
+                if not ok:
+                    record = approvals.request(name, plan.action, plan.arguments)
+                    audit.record(
+                        name,
+                        profile_name,
+                        "approval-rejected",
+                        0,
+                        argument_names,
+                        error=reason,
+                    )
+                    return types.CallToolResult(
+                        content=[
+                            types.TextContent(
+                                type="text",
+                                text=(
+                                    f"Approval could not be used: {reason}\n\n"
+                                    + challenge_text(record)
+                                ),
+                            )
+                        ]
+                    )
+                plan.arguments["confirm"] = True
+            except ApprovalError as exc:
+                audit.record(name, profile_name, "approval-error", 0, argument_names, error=str(exc))
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=f"Approval error: {exc}. The action was not executed.",
+                        )
+                    ],
+                    isError=True,
+                )
 
         try:
             require_token_configured(config.mcp_auth_token)

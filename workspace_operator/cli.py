@@ -236,6 +236,42 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_approvals(args: argparse.Namespace) -> int:
+    from .approvals import ApprovalError, ApprovalStore, render_records
+
+    config = load_config()
+    store = ApprovalStore(config)
+    action = args.approval_action
+    try:
+        if action == "list":
+            records = store.list_pending()
+            print(render_records(records))
+            return 0
+        if action == "show":
+            record = store.get(args.approval_id)
+            for key in (
+                "id", "status", "tool", "action", "summary",
+                "created_at", "expires_at", "approved_at", "used_at",
+            ):
+                if record.get(key):
+                    print(f"{key}: {record[key]}")
+            return 0
+        if action == "approve":
+            record = store.approve(args.approval_id)
+            print(f"APPROVED {record['id']}: {record['summary']}")
+            print("The agent may now retry the exact call with this approval_id.")
+            return 0
+        if action == "deny":
+            record = store.deny(args.approval_id)
+            print(f"DENIED {record['id']}: {record['summary']}")
+            return 0
+    except ApprovalError as exc:
+        print(f"error: {exc}")
+        return 1
+    print("error: unknown approvals command")
+    return 2
+
+
 def cmd_version(_: argparse.Namespace) -> int:
     print(__version__)
     return 0
@@ -283,6 +319,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="skip token refresh and network probes",
     )
     doctor.set_defaults(func=cmd_doctor)
+
+    approvals = subparsers.add_parser(
+        "approvals", help="approve or deny destructive tool calls"
+    )
+    approval_sub = approvals.add_subparsers(dest="approval_action", required=True)
+    approval_sub.add_parser("list", help="list pending approvals").set_defaults(
+        func=cmd_approvals
+    )
+    approval_show = approval_sub.add_parser("show", help="show one approval")
+    approval_show.add_argument("approval_id")
+    approval_show.set_defaults(func=cmd_approvals)
+    approval_approve = approval_sub.add_parser("approve", help="approve one call")
+    approval_approve.add_argument("approval_id")
+    approval_approve.set_defaults(func=cmd_approvals)
+    approval_deny = approval_sub.add_parser("deny", help="deny one call")
+    approval_deny.add_argument("approval_id")
+    approval_deny.set_defaults(func=cmd_approvals)
 
     subparsers.add_parser("version", help="print the version").set_defaults(func=cmd_version)
 

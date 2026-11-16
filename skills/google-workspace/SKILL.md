@@ -1,10 +1,10 @@
 ---
 name: google-workspace-automation
-description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmail, Calendar, Tasks, Forms and Apps Script work. Search before reading, read before writing, and use action-based tools with confirm=true for destructive changes.
+description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmail, Calendar, Tasks, Forms and Apps Script work. Search before reading, read before writing, and use action-based tools and complete the human approval flow for destructive changes.
 license: MIT
 metadata:
   server: workspace-operator
-  version: "2.0.6"
+  version: "2.1.0"
 ---
 
 # Google Workspace automation
@@ -48,9 +48,12 @@ Never guess an ID, sheet name or range.
   `draft_mode=true`. Set `draft_mode=false` only when the user explicitly asks.
 - `sheets_write` → `find_replace` returns a preview without `confirm=true`;
   `gmail_settings` → `label_apply` defaults to `dry_run=true`.
-- These actions require `confirm=true`:
+- These actions first return `APPROVAL_REQUIRED`:
   `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
+  Show the `approval_id` to the user and ask them to run
+  `workspace-operator approvals approve <id>`; then retry the exact call with
+  that `approval_id`. Do not fabricate an id. `confirm=true` alone is not enough.
 - Public sharing is disabled by default; `drive_write` → `share` needs both
   `allow_public_sharing=true` in config and `allow_public=true`.
 - There is no permanent Drive deletion: `drive_trash` only moves to Trash.
@@ -85,7 +88,8 @@ Never guess an ID, sheet name or range.
 For more than a handful of items, never loop single-item tools:
 
 1. `bulk_plan` — resolve a selector, show the count and sample.
-2. `bulk_run` — requires `confirm=true`; runs in the background.
+2. `bulk_run` — first returns `APPROVAL_REQUIRED`; the user approves locally,
+   then retry with `approval_id`; runs in the background.
 3. `bulk_status`, `bulk_result` — follow progress and per-item results.
 4. `bulk_undo` — reverses move, rename and trash where possible.
 

@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Artoxem/workspace-operator",
   "title": "Workspace Operator",
-  "description": "Google Workspace automation for AI agents: 39 tools, safe bulk operations, undo.",
-  "version": "2.0.6",
+  "description": "Google Workspace automation for AI agents: 39 tools, human-approved deletes, bulk undo.",
+  "version": "2.1.0",
   "repository": {
     "url": "https://github.com/Artoxem/workspace-operator",
     "source": "github"
@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "workspace-operator-mcp",
-      "version": "2.0.6",
+      "version": "2.1.0",
       "transport": {
         "type": "stdio"
       },

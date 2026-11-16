@@ -2,7 +2,9 @@
 
 В сервере есть встроенные защиты, чтобы снизить риск случайных разрушительных действий.
 
-## Подтверждения (confirm)
+## Подтверждения и approval человека
+- Destructive-вызовы сначала возвращают `APPROVAL_REQUIRED`; человек выполняет `workspace-operator approvals approve <id>`, агент повторяет вызов с одноразовым `approval_id`.
+- Approval привязан к хешу tool/action/аргументов, истекает по `approval_ttl` и используется один раз.
 - `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` и `bulk_undo`
   требуют `confirm=true`.
@@ -50,6 +52,8 @@ denied_tools: ["gmail_write", "drive_write"]
 | `MCP_CONFIG_FILE` | — | путь к `config.yaml` / `config.json` |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | обязателен до первого вызова инструмента |
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
+| `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; mount it read-write |
+| `MCP_APPROVAL_TTL` | `approval_ttl` | approval lifetime in seconds |
 | `MCP_SCOPE_ROUTING` | `scope_routing` | скрывать инструменты без нужного Google-скоупа |
 | `MCP_ALLOW_PUBLIC_SHARING` | `allow_public_sharing` | разрешить публичные ссылки (по умолчанию выкл.) |
 | `MCP_ALLOWED_TOOLS` | `allowed_tools` | белый список через запятую |

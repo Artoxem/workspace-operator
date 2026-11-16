@@ -2,7 +2,9 @@
 
 The server includes safeguards to reduce accidental destructive actions.
 
-## Confirmations (confirm)
+## Confirmations and human approval
+- Destructive calls first return `APPROVAL_REQUIRED`; a human must run `workspace-operator approvals approve <id>`. The agent retries with the one-time `approval_id`.
+- Approval is bound to a hash of the tool/action/arguments, expires after `approval_ttl` and is single-use.
 - `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` and `bulk_undo`
   require `confirm=true`.
@@ -51,6 +53,8 @@ Every key has an environment override:
 | `MCP_CONFIG_FILE` | — | path to `config.yaml` / `config.json` |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | required before any tool call is served |
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
+| `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; mount it read-write |
+| `MCP_APPROVAL_TTL` | `approval_ttl` | approval lifetime in seconds |
 | `MCP_SCOPE_ROUTING` | `scope_routing` | hide tools whose Google scope is missing |
 | `MCP_ALLOW_PUBLIC_SHARING` | `allow_public_sharing` | enable public links (off by default) |
 | `MCP_ALLOWED_TOOLS` | `allowed_tools` | comma-separated allow list |

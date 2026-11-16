@@ -280,6 +280,7 @@ python -m workspace_operator serve      # stdio server
 | **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes and API reachability; exits 1 when a critical check fails |
 | **Scope routing** | `MCP_SCOPE_ROUTING=1` (default) | Hides tools whose Google scope is missing; `0` disables hiding for debugging |
 | **Public sharing** | `MCP_ALLOW_PUBLIC_SHARING=0` (default) | Public links stay blocked unless explicitly enabled |
+| **Approval queue** | `workspace-operator approvals list` | Shows pending destructive calls; `approve <id>` / `deny <id>` releases or blocks the exact hashed call |
 
 In dry-run the read-only tools still work, so an agent can explore data while every
 write is turned into an explicit preview.
@@ -450,7 +451,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Guard | Applies to |
 |---|---|
-| `confirm=true` | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` |
+| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — first call returns `APPROVAL_REQUIRED`; approve locally, then retry with `approval_id` |
 | `dry_run` / preview | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Draft mode by default | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Public sharing | disabled unless `allow_public_sharing=true` **and** `allow_public=true` |
@@ -492,14 +493,14 @@ Design rules:
 
 * the catalog is the single source of truth for names, actions, scopes and docs;
 * every action maps to exactly one handler and is validated before dispatch;
-* destructive actions require `confirm=true` at the router and in the handler;
+* destructive actions require a human `approval_id` (and are still confirm-gated);
 * no tool permanently deletes a Drive file; Trash is the boundary;
 * server-side profiles and scope routing keep the exposed surface small.
 
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 293 unit and in-memory MCP tests
+python -m unittest discover -s tests -v     # 303 unit and in-memory MCP tests
 ```
 
 The suite covers the catalog, action router, profiles, scope filtering, HTTP
@@ -518,6 +519,7 @@ part of CI; use `/mcp/full` with a test document when you want a manual smoke.
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → cause → fix, including Docker |
 | [PROFILES.md](docs/PROFILES.md) | Choosing core/full/read-only |
 | [MIGRATION_2.0.md](docs/MIGRATION_2.0.md) | 1.x → 2.0 mapping |
+| [APPROVALS.md](docs/APPROVALS.md) | Human approval flow for destructive calls |
 | [LEARN.md](LEARN.md) | How this server was built |
 | [VERSIONS.md](docs/VERSIONS.md) | Version history and release summary |
 

@@ -42,6 +42,8 @@ class Config:
     retry_attempts: int = 3
     http_tokens: Optional[Dict[str, str]] = None
     bulk_dir: Optional[str] = None
+    approval_dir: Optional[str] = None
+    approval_ttl: int = 900
     bulk_max_items: int = 300
     bulk_hard_limit: int = 10000
     bulk_concurrency: int = 8
@@ -158,6 +160,11 @@ def load_config() -> Config:
             return default
 
     bulk_dir = os.environ.get("MCP_BULK_DIR", bulk_config.get("dir"))
+    approval_dir = os.environ.get("MCP_APPROVAL_DIR", file_config.get("approval_dir"))
+    try:
+        approval_ttl = int(os.environ.get("MCP_APPROVAL_TTL", file_config.get("approval_ttl", 900)))
+    except (TypeError, ValueError):
+        approval_ttl = 900
     bulk_protected_ids = (
         _env_list("MCP_BULK_PROTECTED_IDS") or bulk_config.get("protected_ids") or []
     )
@@ -198,6 +205,8 @@ def load_config() -> Config:
         retry_attempts=retry_attempts,
         http_tokens=http_tokens,
         bulk_dir=bulk_dir,
+        approval_dir=approval_dir,
+        approval_ttl=approval_ttl,
         bulk_max_items=_bulk_int("MCP_BULK_MAX_ITEMS", "max_items", 300),
         bulk_hard_limit=_bulk_int("MCP_BULK_HARD_LIMIT", "hard_limit", 10000),
         bulk_concurrency=_bulk_int("MCP_BULK_CONCURRENCY", "concurrency", 8),

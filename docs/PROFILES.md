@@ -178,7 +178,7 @@ values.
 
 ## Safety defaults
 
-- destructive actions require `confirm=true`;
+- destructive actions require a human `approval_id`; `confirm=true` alone is not enough;
 - Drive deletion is Trash only; no `drive_empty_trash`;
 - public sharing requires `allow_public_sharing=true` and `allow_public=true`;
 - `dry_run` turns writes into previews;

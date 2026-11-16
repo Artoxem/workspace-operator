@@ -3,20 +3,24 @@
 import asyncio
 import json
 import logging
+import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from mcp import ClientSession
 from mcp.shared.memory import create_client_server_memory_streams
 
+from workspace_operator.approvals import ApprovalStore
 from workspace_operator.config import Config
 from workspace_operator.server import create_server
+import workspace_operator.server as server_module
 
 LOGGER = logging.getLogger("test.server")
 
 
-def config(profile: str, token_file: str = "missing-token.json", scope_routing: bool = False) -> Config:
+def config(profile: str, token_file: str = "missing-token.json", scope_routing: bool = False, approval_dir: str = "data/approvals-test") -> Config:
     return Config(
         client_secrets_file="missing-secrets.json",
         token_file=token_file,
@@ -26,12 +30,19 @@ def config(profile: str, token_file: str = "missing-token.json", scope_routing: 
         scopes=[],
         tool_profile=profile,
         scope_routing=scope_routing,
+        approval_dir=approval_dir,
     )
 
 
 class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
     async def _with_server(self, profile: str, assertions, token_file: str = "missing-token.json", scope_routing: bool = False):
-        server = create_server(config(profile, token_file, scope_routing), LOGGER)
+        server = create_server(
+            config(profile, token_file, scope_routing, self.tmp.name), LOGGER
+        )
         async with create_client_server_memory_streams() as (client, srv):
             task = asyncio.create_task(
                 server.run(
@@ -100,32 +111,74 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         await self._with_server("full", check)
 
-    async def test_confirmation_error_is_protocol_error(self):
+    async def test_destructive_returns_approval_challenge(self):
         async def check(session):
             result = await session.call_tool(
                 "docs_edit", {"action": "replace", "document_id": "d", "find": "x", "replace": "y"}
             )
-            self.assertTrue(result.is_error)
-            self.assertIn("confirm", result.content[0].text.lower())
+            self.assertFalse(result.is_error)
+            self.assertIn("APPROVAL REQUIRED", result.content[0].text)
+            self.assertIn("approval_id", result.content[0].text)
 
         await self._with_server("full", check)
 
-    async def test_direct_destructive_requires_confirm(self):
+    async def test_direct_destructive_returns_approval_challenge(self):
         async def check(session):
             result = await session.call_tool("drive_trash", {"file_id": "f"})
-            self.assertTrue(result.is_error)
-            self.assertIn("confirm", result.content[0].text.lower())
+            self.assertFalse(result.is_error)
+            self.assertIn("APPROVAL REQUIRED", result.content[0].text)
 
         await self._with_server("core", check)
 
-
-    async def test_legacy_alias_to_destructive_target_needs_confirm(self):
+    async def test_legacy_alias_to_destructive_returns_challenge(self):
         async def check(session):
             result = await session.call_tool("drive_delete_file", {"file_id": "f"})
-            self.assertTrue(result.is_error)
-            self.assertIn("confirm", result.content[0].text.lower())
+            self.assertFalse(result.is_error)
+            self.assertIn("APPROVAL REQUIRED", result.content[0].text)
 
         await self._with_server("full", check)
+
+    async def test_approved_call_executes_and_is_one_time(self):
+        cfg = config("core", approval_dir=self.tmp.name)
+
+        async def check(session):
+            first = await session.call_tool("drive_trash", {"file_id": "f"})
+            match = re.search(r"apr_[0-9a-f]+", first.content[0].text)
+            self.assertIsNotNone(match)
+            approval_id = match.group(0)
+            ApprovalStore(cfg).approve(approval_id)
+            with mock.patch.object(
+                server_module, "delete_file_handler", return_value="DELETED"
+            ):
+                executed = await session.call_tool(
+                    "drive_trash", {"file_id": "f", "approval_id": approval_id}
+                )
+                self.assertFalse(executed.is_error)
+                self.assertIn("DELETED", executed.content[0].text)
+                reused = await session.call_tool(
+                    "drive_trash", {"file_id": "f", "approval_id": approval_id}
+                )
+                self.assertFalse(reused.is_error)
+                self.assertIn("already used", reused.content[0].text.lower())
+
+        await self._with_server("core", check)
+
+    async def test_approval_is_bound_to_arguments(self):
+        cfg = config("core", approval_dir=self.tmp.name)
+
+        async def check(session):
+            first = await session.call_tool("drive_trash", {"file_id": "f1"})
+            match = re.search(r"apr_[0-9a-f]+", first.content[0].text)
+            self.assertIsNotNone(match)
+            approval_id = match.group(0)
+            ApprovalStore(cfg).approve(approval_id)
+            changed = await session.call_tool(
+                "drive_trash", {"file_id": "f2", "approval_id": approval_id}
+            )
+            self.assertFalse(changed.is_error)
+            self.assertIn("changed", changed.content[0].text.lower())
+
+        await self._with_server("core", check)
 
     async def test_legacy_alias_hidden_by_profile(self):
         async def check(session):

@@ -76,6 +76,26 @@ def _schema_for_actions(
     }
 
 
+
+_APPROVAL_PROPERTY = {
+    "type": "string",
+    "description": (
+        "Opaque approval id returned by a previous APPROVAL_REQUIRED result. "
+        "Ask the user to approve it locally, then retry the exact same call."
+    ),
+}
+
+
+def _with_approval(schema: Dict[str, Any]) -> Dict[str, Any]:
+    if "approval_id" in (schema.get("properties") or {}):
+        return schema
+    updated = dict(schema)
+    properties = dict(updated.get("properties") or {})
+    properties["approval_id"] = _APPROVAL_PROPERTY
+    updated["properties"] = properties
+    return updated
+
+
 def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
     """Return the 2.0 catalog for the given legacy definitions."""
     legacy = _legacy_index(tools)
@@ -103,10 +123,13 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
     ) -> ToolSpec:
         scopes, mode = scope_rule
         rendered = ", ".join(action.name for action in actions)
+        schema = _schema_for_actions(actions, legacy)
+        if safety is Safety.DESTRUCTIVE:
+            schema = _with_approval(schema)
         return ToolSpec(
             name=name,
             description=f"{description} Actions: {rendered}.",
-            input_schema=_schema_for_actions(actions, legacy),
+            input_schema=schema,
             annotations=annotations_for(safety),
             domain=domain,
             safety=safety,
@@ -138,6 +161,8 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
                 },
             )
             schema["properties"] = properties
+        if safety is Safety.DESTRUCTIVE:
+            schema = _with_approval(schema)
         return ToolSpec(
             name=name,
             description=description,

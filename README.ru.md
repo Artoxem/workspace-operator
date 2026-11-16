@@ -275,6 +275,7 @@ python -m workspace_operator serve      # stdio-сервер
 | **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, скоупы и доступность API; код 1 при критичной ошибке |
 | **Scope routing** | `MCP_SCOPE_ROUTING=1` (по умолчанию) | Скрывает инструменты без нужного Google-скоупа; `0` отключает скрытие для отладки |
 | **Публичный шаринг** | `MCP_ALLOW_PUBLIC_SHARING=0` (по умолчанию) | Публичные ссылки заблокированы, пока не включены явно |
+| **Очередь подтверждений** | `workspace-operator approvals list` | Показывает ожидающие destructive-вызовы; `approve <id>` / `deny <id>` разрешает или блокирует конкретный вызов |
 
 В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
 данные, пока каждая запись превращается в явное превью.
@@ -445,7 +446,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Защита | Инструменты |
 |---|---|
-| `confirm=true` | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` |
+| `confirm=true` + подтверждение человека | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — первый вызов возвращает `APPROVAL_REQUIRED`; подтвердите локально и повторите с `approval_id` |
 | `dry_run` / предпросмотр | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Черновик по умолчанию | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Публичный шаринг | выключен, пока нет `allow_public_sharing=true` **и** `allow_public=true` |
@@ -487,14 +488,14 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 
 * каталог — единственный источник истины для имён, действий, скоупов и документации;
 * каждое действие сопоставлено ровно одному handler и проверяется до вызова;
-* destructive-действия требуют `confirm=true` и в router, и в handler;
+* destructive-действия требуют approval человека (`approval_id`) и confirm;
 * ни один инструмент не удаляет файл Drive безвозвратно — граница это корзина;
 * профили и scope-routing уменьшают видимую поверхность.
 
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 293 unit и in-memory MCP тестов
+python -m unittest discover -s tests -v     # 303 unit и in-memory MCP тестов
 ```
 
 Набор покрывает каталог, роутер действий, профили, scope-фильтрацию, HTTP-
@@ -513,6 +514,7 @@ python -m unittest discover -s tests -v     # 293 unit и in-memory MCP тест
 | [TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md) | Симптом → причина → решение, включая Docker |
 | [PROFILES.md](docs/ru/PROFILES.md) | Выбор core/full/read-only |
 | [MIGRATION_2.0.md](docs/ru/MIGRATION_2.0.md) | Переход с 1.x на 2.0 |
+| [APPROVALS.md](docs/ru/APPROVALS.md) | Подтверждение destructive-вызовов |
 | [VERSIONS.md](docs/VERSIONS.md) | История версий и сводка релизов |
 
 ### 🇬🇧 English

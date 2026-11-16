@@ -177,7 +177,7 @@ curl http://127.0.0.1:8765/healthz
 
 ## Безопасные значения по умолчанию
 
-- destructive-действия требуют `confirm=true`;
+- destructive-действия требуют approval человека (`approval_id`); одного `confirm=true` недостаточно;
 - удаление Drive — только корзина, без `drive_empty_trash`;
 - публичный шаринг требует `allow_public_sharing=true` и `allow_public=true`;
 - `dry_run` превращает запись в предпросмотр;
