@@ -55,6 +55,7 @@ Every key has an environment override:
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
 | `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; mount it read-write |
 | `MCP_APPROVAL_TTL` | `approval_ttl` | approval lifetime in seconds |
+| `MCP_APPROVAL_URL` | `approval_url` | base URL for the browser approval page |
 | `MCP_SCOPE_ROUTING` | `scope_routing` | hide tools whose Google scope is missing |
 | `MCP_ALLOW_PUBLIC_SHARING` | `allow_public_sharing` | enable public links (off by default) |
 | `MCP_ALLOWED_TOOLS` | `allowed_tools` | comma-separated allow list |

@@ -2273,6 +2273,11 @@ def create_server(config: Config, logger) -> Server:
             logger.warning("Elicitation unavailable, falling back to approval_id: %s", exc)
             return None
 
+
+    def _approval_link(record):
+        base = (getattr(config, "approval_url", None) or "").rstrip("/")
+        return f"{base}/approvals/{record['id']}" if base else None
+
     async def handle_call_tool(
         name: str, arguments: dict | None, ctx=None
     ) -> types.CallToolResult:
@@ -2402,7 +2407,7 @@ def create_server(config: Config, logger) -> Server:
                             argument_names + ("approval_id",),
                         )
                         return types.CallToolResult(
-                            content=[types.TextContent(type="text", text=challenge_text(record))]
+                            content=[types.TextContent(type="text", text=challenge_text(record, _approval_link(record)))]
                         )
                     ok, reason = approvals.consume(
                         str(approval_id), name, plan.action, plan.arguments
@@ -2423,7 +2428,7 @@ def create_server(config: Config, logger) -> Server:
                                     type="text",
                                     text=(
                                         f"Approval could not be used: {reason}\n\n"
-                                        + challenge_text(record)
+                                        + challenge_text(record, _approval_link(record))
                                     ),
                                 )
                             ]

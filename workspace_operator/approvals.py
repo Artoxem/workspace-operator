@@ -266,7 +266,7 @@ class ApprovalStore:
             return True, ""
 
 
-def challenge_text(record: Dict[str, Any]) -> str:
+def challenge_text(record: Dict[str, Any], approve_url: str | None = None) -> str:
     payload = json.dumps(
         {
             "status": "approval_required",
@@ -280,10 +280,17 @@ def challenge_text(record: Dict[str, Any]) -> str:
         indent=2,
         sort_keys=True,
     )
+    browser = (
+        f"Or open this page in a browser and click Approve/Deny:\n\n"
+        f"    {approve_url}\n\n"
+        if approve_url
+        else ""
+    )
     return (
         "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n"
         f"{payload}\n\n"
-        "Ask the user to approve exactly this call locally:\n\n"
+        + browser
+        + "Ask the user to approve exactly this call locally:\n\n"
         f"    workspace-operator approvals approve {record['id']}\n\n"
         "Then repeat the same tool call with this `approval_id`. "
         "Do not fabricate an id: approval is one-time and bound to the arguments. "

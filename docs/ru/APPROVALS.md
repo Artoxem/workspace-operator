@@ -19,14 +19,16 @@ Workspace Operator оставляет destructive-инструменты аге�
 отменяет.
 
    Если клиент не поддерживает elicitation, сервер **ничего не меняет** и
-   возвращает обычный результат с `approval_id`:
+   возвращает обычный результат с `approval_id`; в HTTP-режиме — ещё и ссылку
+   на локальную страницу:
 
    ```text
    ⚠️ APPROVAL REQUIRED — the action has NOT run.
    {"status": "approval_required", "approval_id": "apr_…", ...}
    ```
 
-3. В fallback-сценарии агент показывает `approval_id` пользователю, и тот подтверждает локально:
+3. В fallback-сценарии агент показывает `approval_id`/ссылку пользователю.
+   Пользователь нажимает **Approve** на локальной странице или запускает CLI:
 
    ```bash
    workspace-operator approvals list
@@ -96,9 +98,23 @@ docker compose exec workspace-operator workspace-operator approvals list
 ```yaml
 approval_dir: "data/approvals"  # в контейнере: /home/app/data/approvals
 approval_ttl: 900               # секунды
+approval_url: "http://127.0.0.1:8765"  # база для браузерной страницы
 ```
 
-Переменные: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`.
+Переменные: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`.
+
+## Браузерная страница
+
+В HTTP-режиме challenge содержит ссылку:
+
+```text
+http://127.0.0.1:8765/approvals/apr_…
+```
+
+Откройте её, проверьте summary и нажмите **Approve** или **Deny**. Страница
+рассчитана на loopback и не имеет отдельной аутентификации; не открывайте HTTP-
+сервер в недоверенную сеть без TLS/auth-прокси. После подтверждения вернитесь в
+чат и попросите агента повторить вызов с `approval_id`.
 
 ## Что требует подтверждения
 

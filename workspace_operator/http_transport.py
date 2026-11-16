@@ -15,6 +15,7 @@ process simple.
 """
 
 import hmac
+import html
 import json
 import logging
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -26,7 +27,8 @@ from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.datastructures import Headers
-from starlette.responses import JSONResponse
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.routing import Mount, Route
 
 from .runtime import current_client
@@ -123,7 +125,13 @@ def _manager_for(server, options: HttpOptions) -> StreamableHTTPSessionManager:
     )
 
 
-def build_asgi_app(servers, options: HttpOptions, version: str) -> Starlette:
+def build_asgi_app(
+    servers,
+    options: HttpOptions,
+    version: str,
+    approval_store=None,
+    approval_url: str | None = None,
+) -> Starlette:
     """Build the HTTP app.
 
     ``servers`` is either one MCP ``Server`` (the legacy default) or a mapping
@@ -143,6 +151,68 @@ def build_asgi_app(servers, options: HttpOptions, version: str) -> Starlette:
                 "stateless": True,
             }
         )
+
+    async def approval_page(request: Request):
+        if approval_store is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        approval_id = request.path_params.get("approval_id", "")
+        try:
+            record = approval_store.get(approval_id)
+        except Exception:
+            return HTMLResponse(
+                "<h1>Approval not found</h1><p>This approval id is unknown or expired.</p>",
+                status_code=404,
+                headers={"Cache-Control": "no-store"},
+            )
+        status = record.get("status", "?")
+        summary = html.escape(str(record.get("summary", "")))
+        expires = html.escape(str(record.get("expires_at", "")))
+        action_forms = ""
+        if status == "pending":
+            action_forms = f"""
+            <form method="post" action="/approvals/{html.escape(approval_id)}/approve">
+              <button type="submit" style="background:#2f6fdc;color:white;border:0;border-radius:8px;padding:10px 18px;font:inherit;cursor:pointer">Approve</button>
+            </form>
+            <form method="post" action="/approvals/{html.escape(approval_id)}/deny" style="margin-top:8px">
+              <button type="submit" style="background:#3a1d1d;color:#f1b0b0;border:1px solid #5a2a2a;border-radius:8px;padding:9px 18px;font:inherit;cursor:pointer">Deny</button>
+            </form>"""
+        return HTMLResponse(
+            f"""<!doctype html><meta charset="utf-8"><title>Approve action</title>
+            <style>body{{background:#101014;color:#e8e8ee;font:15px/1.5 system-ui;max-width:640px;margin:48px auto;padding:0 20px}}
+            code{{background:#17171d;border:1px solid #26262f;border-radius:6px;padding:2px 6px}}
+            .card{{background:#17171d;border:1px solid #26262f;border-radius:12px;padding:20px;margin-top:18px}}
+            .status{{color:#f0c674}}</style>
+            <h1>Workspace Operator approval</h1>
+            <div class="card">
+              <p><strong>Action:</strong> {summary}</p>
+              <p><strong>Status:</strong> {html.escape(status)}</p>
+              <p><strong>Expires:</strong> {expires}</p>
+              <p><code>{html.escape(approval_id)}</code></p>
+              {action_forms}
+              <p style="color:#9a9aa8;margin-top:18px">After approving, return to the chat and tell the agent to retry the exact call with this <code>approval_id</code>. Nothing runs until then.</p>
+            </div>""",
+            headers={"Cache-Control": "no-store"},
+        )
+
+    async def approval_action(request: Request):
+        if approval_store is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        approval_id = request.path_params.get("approval_id", "")
+        action = request.path_params.get("action", "")
+        try:
+            if action == "approve":
+                approval_store.approve(approval_id, actor="web")
+            elif action == "deny":
+                approval_store.deny(approval_id, actor="web")
+            else:
+                return JSONResponse({"error": "not found"}, status_code=404)
+        except Exception as exc:
+            return HTMLResponse(
+                f"<h1>Approval failed</h1><p>{html.escape(str(exc))}</p>",
+                status_code=400,
+                headers={"Cache-Control": "no-store"},
+            )
+        return RedirectResponse(f"/approvals/{approval_id}", status_code=303)
 
     class McpEndpoint:
         """Raw ASGI endpoint: the session manager writes its own response."""
@@ -182,6 +252,8 @@ def build_asgi_app(servers, options: HttpOptions, version: str) -> Starlette:
     app = Starlette(
         routes=[
             Route("/healthz", healthz, methods=["GET"]),
+            Route("/approvals/{approval_id}", approval_page, methods=["GET"]),
+            Route("/approvals/{approval_id}/{action}", approval_action, methods=["POST"]),
             Mount("/", app=McpEndpoint()),
         ],
         lifespan=lifespan,
@@ -216,7 +288,15 @@ def serve_http(server, config, logger: logging.Logger, options: HttpOptions, ver
                 replace(config, tool_profile=profile), logger
             )
 
-    app = build_asgi_app(servers, options, version)
+    from .approvals import ApprovalStore
+
+    app = build_asgi_app(
+        servers,
+        options,
+        version,
+        approval_store=ApprovalStore(config),
+        approval_url=getattr(config, "approval_url", None),
+    )
     where = "localhost only" if options.host in LOOPBACK else "NETWORK EXPOSED"
     print(
         f"Workspace Operator {version} — Streamable HTTP on "

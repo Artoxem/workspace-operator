@@ -18,14 +18,16 @@ to delete something; it cannot approve its own request.
 the chat: **Approve this action?** Accepting runs it once; declining cancels it.
 
    If the client does not support elicitation, the server does **not** touch
-   Drive and returns a normal tool result with an `approval_id`:
+   Drive and returns a normal tool result with an `approval_id`. In HTTP mode it
+   also returns a browser link:
 
    ```text
    ⚠️ APPROVAL REQUIRED — the action has NOT run.
    {"status": "approval_required", "approval_id": "apr_…", ...}
    ```
 
-3. In the fallback flow, the agent shows that id to the user, who approves locally:
+3. In the fallback flow, the agent shows that id/link to the user. The user
+   clicks **Approve** on the local page, or runs the CLI:
 
    ```bash
    workspace-operator approvals list
@@ -94,9 +96,23 @@ docker compose exec workspace-operator workspace-operator approvals list
 ```yaml
 approval_dir: "data/approvals"  # container: /home/app/data/approvals
 approval_ttl: 900               # seconds
+approval_url: "http://127.0.0.1:8765"  # browser page base
 ```
 
-Environment: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`.
+Environment: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`.
+
+## Browser page
+
+When the HTTP transport is used, the challenge includes:
+
+```text
+http://127.0.0.1:8765/approvals/apr_…
+```
+
+Open it, check the summary, and click **Approve** or **Deny**. The page is
+loopback-oriented and unauthenticated by design; do not expose the HTTP server
+to an untrusted network without a TLS/auth proxy. After approving, return to the
+chat and tell the agent to retry with the `approval_id`.
 
 ## What is gated
 

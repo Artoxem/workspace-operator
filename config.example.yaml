@@ -24,7 +24,8 @@ log_level: "INFO"
 # Can also be set via MCP_TOOL_PROFILE.
 tool_profile: "core"
 approval_dir: "data/approvals"   # human approval queue
-approval_ttl: 900             # seconds
+approval_ttl: 900
+approval_url: "http://127.0.0.1:8765"             # seconds
 scope_routing: true
 allow_public_sharing: false
 

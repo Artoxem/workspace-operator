@@ -83,8 +83,9 @@ class ApprovalStoreTests(unittest.TestCase):
 
     def test_challenge_is_machine_readable(self):
         record = self.store.request("drive_trash", None, {"file_id": "f1"})
-        text = challenge_text(record)
+        text = challenge_text(record, f"http://127.0.0.1:8765/approvals/{record['id']}")
         self.assertIn("APPROVAL REQUIRED", text)
+        self.assertIn("http://127.0.0.1:8765/approvals/", text)
         self.assertIn(record["id"], text)
         self.assertIn("workspace-operator approvals approve", text)
 
