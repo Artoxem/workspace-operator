@@ -93,7 +93,7 @@ docker run --rm -p 127.0.0.1:8765:8765 \
 | the tool returns a preview instead of acting | dry-run is on | unset `MCP_DRY_RUN` / `dry_run: false` |
 | `403 quota exceeded`, `rateLimitExceeded` | Google limits | wait; raise `MCP_RETRY_ATTEMPTS`; narrow the range |
 | `File not found` | wrong ID, or the account has no access | open the file in the browser as the same account |
-| download fails on a Google Doc/Sheet/Slide | native files have no binary content | use `drive_export` (pdf/docx/xlsx/pptx/csv) |
+| download/export fails on a Google Doc or Sheet | native files have no binary content | use `drive_read(action="export")` (pdf/docx/xlsx/csv) |
 | very slow read on a large sheet | whole-sheet request | pass a range (`A1:D100`) |
 | A removed 1.x tool returns `unknown tool` | 2.0 uses consolidated tools | use the new name/action from `docs/MIGRATION_2.0.md` |
 

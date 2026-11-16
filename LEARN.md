@@ -311,11 +311,10 @@ def delete_email_handler(..., confirm: bool = False) -> str:
 **Pattern B — dry-run:**
 
 ```python
-def delete_email_handler(..., confirm: bool = False) -> str:
-    if not confirm:
-        return "Would move this email to Trash. Call again with confirm=True."
-    service.users().messages().trash(userId="me", id=message_id).execute()
-    return "Moved to Trash; recoverable for 30 days."
+def label_apply_handler(..., dry_run: bool = True) -> str:
+    if dry_run:
+        return f"DRY RUN: would label {len(ids)} messages."
+    # apply labels
 ```
 
 **Pattern C — large range check:**

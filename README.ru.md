@@ -47,10 +47,10 @@ Workspace Operator работает на вашей машине,
 | Доступность | Developer Preview | **публично, MIT** |
 | Путь данных | эндпоинт MCP Google | **ваша машина, ваш OAuth-клиент** |
 | Apps Script | — | **создание · чтение · стейджинг · запуск · отмена · откат · вызов функции** |
-| Локальные файлы | — | **загрузка, скачивание, экспорт в pdf/docx/xlsx/pptx** |
+| Локальные файлы | — | **загрузка, экспорт в pdf/docx/xlsx/csv** |
 | Форматирование Sheets | — | **жирный, цвета, форматы чисел, ширины, закрепление** |
 | Треды Gmail | отдельные письма | **треды, вложения, ответы в тред** |
-| Профили инструментов на сервере | IAM / allow-list админа | **read-only / read-write / full + allow-deny** |
+| Профили инструментов на сервере | IAM / allow-list админа | **read-only / core / read-write / full + allow-deny** |
 
 Официальные серверы — правильный выбор для «спроси у почты».
 Workspace Operator — для «измени рабочее пространство так, чтобы можно было откатить».
@@ -273,6 +273,8 @@ python -m workspace_operator serve      # stdio-сервер
 | **Аудит-лог** | `MCP_AUDIT_LOG=~/.google/audit.jsonl` | Одна JSON-строка на вызов: инструмент, профиль, статус, длительность, **имена** аргументов (без значений) |
 | **Ретраи** | `MCP_RETRY_ATTEMPTS=3` | Транзиентные ошибки Google (429/5xx) повторяются с экспоненциальной паузой |
 | **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, скоупы и доступность API; код 1 при критичной ошибке |
+| **Scope routing** | `MCP_SCOPE_ROUTING=1` (по умолчанию) | Скрывает инструменты без нужного Google-скоупа; `0` отключает скрытие для отладки |
+| **Публичный шаринг** | `MCP_ALLOW_PUBLIC_SHARING=0` (по умолчанию) | Публичные ссылки заблокированы, пока не включены явно |
 
 В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
 данные, пока каждая запись превращается в явное превью.
@@ -282,6 +284,10 @@ python -m workspace_operator serve      # stdio-сервер
 ```bash
 python -m workspace_operator serve --http --port 8765
 ```
+
+Профили доступны как стабильные пути: `/mcp` (профиль из конфига, обычно
+`core`), `/mcp/read`, `/mcp/read-write` и `/mcp/full`. Подключайте клиента к
+нужной поверхности; список стабилен для соединения.
 
 * по умолчанию слушает `127.0.0.1` — из сети недоступен;
 * каждый запрос требует `Authorization: Bearer <mcp_auth_token>`; дополнительные
@@ -507,6 +513,7 @@ python -m unittest discover -s tests -v     # 290 unit и in-memory MCP тест
 | [TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md) | Симптом → причина → решение, включая Docker |
 | [PROFILES.md](docs/ru/PROFILES.md) | Выбор core/full/read-only |
 | [MIGRATION_2.0.md](docs/ru/MIGRATION_2.0.md) | Переход с 1.x на 2.0 |
+| [VERSIONS.md](docs/VERSIONS.md) | История версий и сводка релизов |
 
 ### 🇬🇧 English
 | Document | Description |
@@ -516,8 +523,10 @@ python -m unittest discover -s tests -v     # 290 unit и in-memory MCP тест
 | [SECURITY.md](docs/SECURITY.md) | Scopes, profiles, safety model |
 | [IDE_SETUP.md](docs/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → fix, including Docker |
+| [PROFILES.md](docs/PROFILES.md) | Choosing core/full/read-only |
+| [MIGRATION_2.0.md](docs/MIGRATION_2.0.md) | 1.x → 2.0 mapping |
 | [LEARN.md](LEARN.md) | How this server was built |
-| [VERSIONS.md](docs/VERSIONS.md) | История версий и сводка релизов |
+| [VERSIONS.md](docs/VERSIONS.md) | Version history and release summary |
 
 ## Ограничения
 

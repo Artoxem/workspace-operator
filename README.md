@@ -50,10 +50,10 @@ takes identifiers and ranges, and all examples use synthetic data.
 | Availability | Developer Preview | **public, MIT** |
 | Data path | Google MCP endpoint | **your machine, your OAuth client** |
 | Apps Script | — | **create · read · stage · execute · cancel · restore · run function** |
-| Local files | — | **upload, download, export to pdf/docx/xlsx/pptx** |
+| Local files | — | **upload, export to pdf/docx/xlsx/csv** |
 | Sheets formatting | — | **bold, colours, number formats, widths, freeze** |
 | Gmail threads | single messages | **threads, attachments, in-thread replies** |
-| Server-side tool profiles | IAM / admin allow-list | **read-only / read-write / full + allow-deny** |
+| Server-side tool profiles | IAM / admin allow-list | **read-only / core / read-write / full + allow-deny** |
 
 Official servers are the right default for "ask my mail a question". Workspace
 Operator is for "change the workspace and be able to roll it back".
@@ -278,6 +278,8 @@ python -m workspace_operator serve      # stdio server
 | **Audit log** | `MCP_AUDIT_LOG=~/.google/audit.jsonl` | One JSON line per call: tool, profile, status, duration, argument **names** (never values) |
 | **Retries** | `MCP_RETRY_ATTEMPTS=3` | Transient Google API errors (429/5xx) are retried with exponential backoff |
 | **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes and API reachability; exits 1 when a critical check fails |
+| **Scope routing** | `MCP_SCOPE_ROUTING=1` (default) | Hides tools whose Google scope is missing; `0` disables hiding for debugging |
+| **Public sharing** | `MCP_ALLOW_PUBLIC_SHARING=0` (default) | Public links stay blocked unless explicitly enabled |
 
 In dry-run the read-only tools still work, so an agent can explore data while every
 write is turned into an explicit preview.
@@ -287,6 +289,10 @@ write is turned into an explicit preview.
 ```bash
 python -m workspace_operator serve --http --port 8765
 ```
+
+Profiles are exposed as stable paths: `/mcp` (config profile, default `core`),
+`/mcp/read`, `/mcp/read-write` and `/mcp/full`. Connect each client to the
+surface it needs; the list stays stable for that connection.
 
 * binds `127.0.0.1` by default — not reachable from the network;
 * every request needs `Authorization: Bearer <mcp_auth_token>`; extra per-client
@@ -523,6 +529,10 @@ part of CI; use `/mcp/full` with a test document when you want a manual smoke.
 | [TOOLS_REFERENCE.md](docs/ru/TOOLS_REFERENCE.md) | Справочник инструментов |
 | [SECURITY.md](docs/ru/SECURITY.md) | Скоупы, профили, модель безопасности |
 | [IDE_SETUP.md](docs/ru/IDE_SETUP.md) | Antigravity, Cursor, Windsurf, VS Code |
+| [TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md) | Симптом → причина → решение |
+| [PROFILES.md](docs/ru/PROFILES.md) | Выбор core/full/read-only |
+| [MIGRATION_2.0.md](docs/ru/MIGRATION_2.0.md) | Переход с 1.x на 2.0 |
+| [VERSIONS.md](docs/VERSIONS.md) | История версий и сводка релизов |
 
 ## Limitations
 
