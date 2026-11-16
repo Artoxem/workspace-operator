@@ -14,14 +14,19 @@ Workspace Operator оставляет destructive-инструменты аге�
    {"name": "drive_trash", "arguments": {"file_id": "..."}}
    ```
 
-2. Сервер **ничего не меняет** и возвращает обычный результат:
+2. Если клиент поддерживает MCP elicitation, сервер спрашивает пользователя
+прямо в чате: **Подтвердить действие?** Accept выполняет его один раз, decline
+отменяет.
+
+   Если клиент не поддерживает elicitation, сервер **ничего не меняет** и
+   возвращает обычный результат с `approval_id`:
 
    ```text
    ⚠️ APPROVAL REQUIRED — the action has NOT run.
    {"status": "approval_required", "approval_id": "apr_…", ...}
    ```
 
-3. Агент показывает `approval_id` пользователю. Пользователь подтверждает локально:
+3. В fallback-сценарии агент показывает `approval_id` пользователю, и тот подтверждает локально:
 
    ```bash
    workspace-operator approvals list
@@ -44,6 +49,8 @@ Workspace Operator оставляет destructive-инструменты аге�
 
 Успех, pending, deny, expiry, повторное использование и несовпадение аргументов
 возвращаются как обычные tool-результаты с инструкцией. MCP-сессия не падает.
+In-chat elicitation — основной путь; CLI используется только как fallback для
+клиентов без поддержки elicitation.
 
 ## Привязка и срок
 

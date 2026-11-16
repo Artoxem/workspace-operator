@@ -15,7 +15,7 @@ from mcp.server.lowlevel.helper_types import ReadResourceContents
 import mcp.types as types
 
 from . import __version__
-from .approvals import ApprovalError, ApprovalStore, challenge_text
+from .approvals import ApprovalError, ApprovalStore, challenge_text, summarize
 from .config import Config, load_config
 from .logging import setup_logging
 from .profiles import ProfileError, resolve_profile
@@ -2200,9 +2200,9 @@ def create_server(config: Config, logger) -> Server:
             "action-based tool surface. Start with workspace_search for unknown "
             "ids; read before writing; use the bulk_plan/bulk_run flow for more "
             "than a handful of items. Destructive actions first return "
-            "APPROVAL_REQUIRED with an approval_id: ask the user to run "
-            "`workspace-operator approvals approve <id>`, then retry the exact "
-            "call with that approval_id. Tools outside the active profile or "
+            "APPROVAL_REQUIRED; if the client supports elicitation the user is "
+            "asked in-chat, otherwise ask them to run "
+            "`workspace-operator approvals approve <id>` and retry with approval_id. Tools outside the active profile or "
             "without their OAuth scope are hidden by design."
         ),
     )
@@ -2232,8 +2232,49 @@ def create_server(config: Config, logger) -> Server:
     async def handle_list_tools() -> List[types.Tool]:
         return exposed_tools
 
+
+    async def _elicit_approval(ctx, name, plan, argument_names):
+        """Ask the human in the client UI when the client supports elicitation."""
+        if ctx is None:
+            return None
+        try:
+            capabilities = getattr(ctx.session, "client_capabilities", None)
+            elicitation = getattr(capabilities, "elicitation", None)
+            if getattr(elicitation, "form", None) is None:
+                return None
+            summary = __import__("workspace_operator.approvals", fromlist=["summarize"]).summarize(
+                name, plan.action, plan.arguments
+            )
+            result = await ctx.session.elicit_form(
+                message=(
+                    "Approve this destructive Workspace Operator action?\n\n"
+                    f"{summary}\n\n"
+                    "The action will run once and is bound to these arguments."
+                ),
+                requested_schema={
+                    "type": "object",
+                    "properties": {
+                        "approve": {
+                            "type": "boolean",
+                            "title": "Approve",
+                            "description": "Run this exact destructive action.",
+                        }
+                    },
+                    "required": ["approve"],
+                },
+                related_request_id=getattr(ctx, "request_id", None),
+            )
+            if result.action == "accept" and (result.content or {}).get("approve") is True:
+                return "approved"
+            if result.action == "accept":
+                return "declined"
+            return "declined" if result.action == "decline" else "cancelled"
+        except Exception as exc:  # noqa: BLE001 - fallback must never break a call
+            logger.warning("Elicitation unavailable, falling back to approval_id: %s", exc)
+            return None
+
     async def handle_call_tool(
-        name: str, arguments: dict | None
+        name: str, arguments: dict | None, ctx=None
     ) -> types.CallToolResult:
         if not arguments:
             arguments = {}
@@ -2331,56 +2372,74 @@ def create_server(config: Config, logger) -> Server:
             )
 
         if spec.safety is Safety.DESTRUCTIVE:
-            try:
-                approval_id = plan.arguments.get("approval_id")
-                if not approval_id:
-                    record = approvals.request(name, plan.action, plan.arguments)
-                    audit.record(
-                        name,
-                        profile_name,
-                        "approval-required",
-                        0,
-                        argument_names + ("approval_id",),
-                    )
-                    return types.CallToolResult(
-                        content=[types.TextContent(type="text", text=challenge_text(record))]
-                    )
-                ok, reason = approvals.consume(
-                    str(approval_id), name, plan.action, plan.arguments
-                )
-                if not ok:
-                    record = approvals.request(name, plan.action, plan.arguments)
-                    audit.record(
-                        name,
-                        profile_name,
-                        "approval-rejected",
-                        0,
-                        argument_names,
-                        error=reason,
-                    )
-                    return types.CallToolResult(
-                        content=[
-                            types.TextContent(
-                                type="text",
-                                text=(
-                                    f"Approval could not be used: {reason}\n\n"
-                                    + challenge_text(record)
-                                ),
-                            )
-                        ]
-                    )
+            elicitation = await _elicit_approval(ctx, name, plan, argument_names)
+            if elicitation == "approved":
                 plan.arguments["confirm"] = True
-            except ApprovalError as exc:
-                audit.record(name, profile_name, "approval-error", 0, argument_names, error=str(exc))
+                audit.record(name, profile_name, "approved-in-chat", 0, argument_names)
+            elif elicitation in ("declined", "cancelled"):
+                audit.record(name, profile_name, f"approval-{elicitation}", 0, argument_names)
                 return types.CallToolResult(
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Approval error: {exc}. The action was not executed.",
+                            text=(
+                                "The user did not approve this action; nothing was "
+                                "changed. Do not retry unless the user asks."
+                            ),
                         )
-                    ],
-                    isError=True,
+                    ]
                 )
+            else:
+                try:
+                    approval_id = plan.arguments.get("approval_id")
+                    if not approval_id:
+                        record = approvals.request(name, plan.action, plan.arguments)
+                        audit.record(
+                            name,
+                            profile_name,
+                            "approval-required",
+                            0,
+                            argument_names + ("approval_id",),
+                        )
+                        return types.CallToolResult(
+                            content=[types.TextContent(type="text", text=challenge_text(record))]
+                        )
+                    ok, reason = approvals.consume(
+                        str(approval_id), name, plan.action, plan.arguments
+                    )
+                    if not ok:
+                        record = approvals.request(name, plan.action, plan.arguments)
+                        audit.record(
+                            name,
+                            profile_name,
+                            "approval-rejected",
+                            0,
+                            argument_names,
+                            error=reason,
+                        )
+                        return types.CallToolResult(
+                            content=[
+                                types.TextContent(
+                                    type="text",
+                                    text=(
+                                        f"Approval could not be used: {reason}\n\n"
+                                        + challenge_text(record)
+                                    ),
+                                )
+                            ]
+                        )
+                    plan.arguments["confirm"] = True
+                except ApprovalError as exc:
+                    audit.record(name, profile_name, "approval-error", 0, argument_names, error=str(exc))
+                    return types.CallToolResult(
+                        content=[
+                            types.TextContent(
+                                type="text",
+                                text=f"Approval error: {exc}. The action was not executed.",
+                            )
+                        ],
+                        isError=True,
+                    )
 
         try:
             require_token_configured(config.mcp_auth_token)
@@ -3607,7 +3666,7 @@ def create_server(config: Config, logger) -> Server:
         return types.ListToolsResult(tools=await handle_list_tools())
 
     async def _call_tool(_context, params):
-        return await handle_call_tool(params.name, params.arguments)
+        return await handle_call_tool(params.name, params.arguments, _context)
 
     async def _list_resources(_context, _params):
         return types.ListResourcesResult(resources=await handle_list_resources())

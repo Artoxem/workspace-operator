@@ -14,14 +14,18 @@ to delete something; it cannot approve its own request.
    {"name": "drive_trash", "arguments": {"file_id": "..."}}
    ```
 
-2. The server does **not** touch Drive. It returns a normal tool result:
+2. If the client supports MCP elicitation, the server asks the user directly in
+the chat: **Approve this action?** Accepting runs it once; declining cancels it.
+
+   If the client does not support elicitation, the server does **not** touch
+   Drive and returns a normal tool result with an `approval_id`:
 
    ```text
    ⚠️ APPROVAL REQUIRED — the action has NOT run.
    {"status": "approval_required", "approval_id": "apr_…", ...}
    ```
 
-3. The agent shows that id to the user. The user approves locally:
+3. In the fallback flow, the agent shows that id to the user, who approves locally:
 
    ```bash
    workspace-operator approvals list
@@ -42,9 +46,11 @@ to delete something; it cannot approve its own request.
 
 5. The server verifies and consumes the approval, then executes the action once.
 
-A successful result is returned as a normal tool result. A pending, denied,
-expired, reused or mismatched approval is also returned as a normal result with
-instructions for the next step — the MCP session does not crash.
+A successful result is returned as a normal tool result. The in-chat dialog is
+the preferred path; the CLI fallback is used only when the client does not
+advertise elicitation. Pending, denied, expired, reused or mismatched approval
+is also returned as a normal result with instructions — the MCP session does not
+crash.
 
 ## Binding and expiry
 

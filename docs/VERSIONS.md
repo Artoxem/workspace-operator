@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.1.0**.
+Current release: **2.1.1**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|
+| **2.1.1** | In-chat approval via MCP elicitation when the client supports it; the local `approval_id` CLI remains a fallback. |
 | **2.1.0** | Human approval for destructive actions: `APPROVAL_REQUIRED` challenge, one-time argument-bound `approval_id`, `workspace-operator approvals` CLI, TTL and local approval queue. |
 | **2.0.6** | Removed the stale `sheet_brief` prompt row from both READMEs; added exact README tool/prompt table tests; 293 tests. |
 | **2.0.5** | README accuracy pass: profile endpoints, scope/public-sharing env rows, corrected local-file capabilities and docs tables; stale tool references removed. |

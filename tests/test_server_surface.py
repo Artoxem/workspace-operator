@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest import mock
 
 from mcp import ClientSession
+from mcp import types
 from mcp.shared.memory import create_client_server_memory_streams
 
 from workspace_operator.approvals import ApprovalStore
@@ -39,7 +40,14 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
 
-    async def _with_server(self, profile: str, assertions, token_file: str = "missing-token.json", scope_routing: bool = False):
+    async def _with_server(
+        self,
+        profile: str,
+        assertions,
+        token_file: str = "missing-token.json",
+        scope_routing: bool = False,
+        elicitation_callback=None,
+    ):
         server = create_server(
             config(profile, token_file, scope_routing, self.tmp.name), LOGGER
         )
@@ -53,7 +61,9 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 )
             )
             try:
-                async with ClientSession(client[0], client[1]) as session:
+                async with ClientSession(
+                    client[0], client[1], elicitation_callback=elicitation_callback
+                ) as session:
                     await session.initialize()
                     await assertions(session)
             finally:
@@ -162,6 +172,40 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIn("already used", reused.content[0].text.lower())
 
         await self._with_server("core", check)
+
+
+    async def test_elicitation_accept_executes(self):
+        cfg = config("core", approval_dir=self.tmp.name)
+        seen = {}
+
+        async def approve(_context, params):
+            seen["message"] = params.message
+            return types.ElicitResult(action="accept", content={"approve": True})
+
+        async def check(session):
+            with mock.patch.object(
+                server_module, "delete_file_handler", return_value="DELETED"
+            ) as handler:
+                result = await session.call_tool("drive_trash", {"file_id": "f"})
+                self.assertFalse(result.is_error)
+                self.assertIn("DELETED", result.content[0].text)
+                self.assertTrue(handler.called)
+            self.assertIn("Approve", seen["message"])
+
+        await self._with_server("core", check, elicitation_callback=approve)
+
+    async def test_elicitation_decline_blocks(self):
+        async def decline(_context, params):
+            return types.ElicitResult(action="decline")
+
+        async def check(session):
+            with mock.patch.object(server_module, "delete_file_handler") as handler:
+                result = await session.call_tool("drive_trash", {"file_id": "f"})
+                self.assertFalse(result.is_error)
+                self.assertIn("did not approve", result.content[0].text)
+                handler.assert_not_called()
+
+        await self._with_server("core", check, elicitation_callback=decline)
 
     async def test_approval_is_bound_to_arguments(self):
         cfg = config("core", approval_dir=self.tmp.name)

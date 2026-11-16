@@ -9,7 +9,7 @@ The package name is **`workspace-operator-mcp`** (checked free on PyPI on
 ## Before every release
 
 ```bash
-python -m unittest discover -s tests -v     # 303 tests, no network
+python -m unittest discover -s tests -v     # 305 tests, no network
 python -m workspace_operator tools --profile core
 python -m build                             # sdist + wheel into dist/
 python -m twine check dist/*                # optional, needs twine
@@ -87,7 +87,7 @@ next patch version. Never reuse a version number.
 ## Checklist
 
 - [ ] versions match in `pyproject.toml` and `__init__.py`
-- [ ] 303 tests green; optional live read/write smoke on a synthetic doc
+- [ ] 305 tests green; optional live read/write smoke on a synthetic doc
 - [ ] `python -m build` produces both artifacts
 - [ ] tag pushed
 - [ ] pending publisher / token ready

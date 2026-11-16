@@ -451,7 +451,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Guard | Applies to |
 |---|---|
-| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — first call returns `APPROVAL_REQUIRED`; approve locally, then retry with `approval_id` |
+| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — first call asks for approval in-chat when the client supports elicitation; otherwise use the `approval_id` CLI fallback |
 | `dry_run` / preview | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Draft mode by default | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Public sharing | disabled unless `allow_public_sharing=true` **and** `allow_public=true` |
@@ -500,7 +500,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 303 unit and in-memory MCP tests
+python -m unittest discover -s tests -v     # 305 unit and in-memory MCP tests
 ```
 
 The suite covers the catalog, action router, profiles, scope filtering, HTTP
