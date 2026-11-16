@@ -494,7 +494,7 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 290 unit и in-memory MCP тестов
+python -m unittest discover -s tests -v     # 293 unit и in-memory MCP тестов
 ```
 
 Набор покрывает каталог, роутер действий, профили, scope-фильтрацию, HTTP-

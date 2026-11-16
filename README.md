@@ -443,7 +443,6 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 | `search_drive` | Search files → ready for organisation advice |
 | `weekly_review` | Last N days of mail, files and agenda → weekly summary |
 | `inbox_triage` | Gmail slice → urgent / waiting / informational / archive |
-| `sheet_brief` | Range → statistics plus a briefing question |
 | `compare_brief` | Two ranges → reconciliation report |
 
 
@@ -500,7 +499,7 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 290 unit and in-memory MCP tests
+python -m unittest discover -s tests -v     # 293 unit and in-memory MCP tests
 ```
 
 The suite covers the catalog, action router, profiles, scope filtering, HTTP

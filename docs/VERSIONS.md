@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.0.5**.
+Current release: **2.0.6**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|
+| **2.0.6** | Removed the stale `sheet_brief` prompt row from both READMEs; added exact README tool/prompt table tests; 293 tests. |
 | **2.0.5** | README accuracy pass: profile endpoints, scope/public-sharing env rows, corrected local-file capabilities and docs tables; stale tool references removed. |
 | **2.0.4** | README starts with the consolidated tool count; added the complete scope → tools matrix, minimal scope sets and missing-scope troubleshooting. |
 | **2.0.3** | Documentation consolidation: version history moved to this file; duplicate README lines removed; prompt count corrected to 7; stale test/release references cleaned. |

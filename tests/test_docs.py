@@ -62,6 +62,36 @@ class ToolCatalogTests(unittest.TestCase):
             with self.subTest(file=rel):
                 self.assertEqual(missing, [], f"missing in {rel}: {missing}")
 
+
+    def test_readme_tool_table_is_exact(self):
+        table = re.findall(
+            r"^\| `([a-z_]+)` \| (?:read|write|destructive) \|",
+            read("README.md"),
+            re.M,
+        )
+        self.assertEqual(sorted(table), sorted(TOOL_NAMES))
+
+    def test_readme_prompt_table_is_exact(self):
+        from workspace_operator.server import _prompts
+
+        text = read("README.md")
+        start = text.index("### Prompts")
+        end = text.index("\n## ", start)
+        section = text[start:end]
+        rows = re.findall(r"^\| `([a-z_]+)` \|", section, re.M)
+        self.assertEqual(sorted(rows), sorted(p.name for p in _prompts()))
+
+
+    def test_russian_readme_prompt_table_is_exact(self):
+        from workspace_operator.server import _prompts
+
+        text = read("README.ru.md")
+        start = text.index("### Промпты")
+        end = text.index("\n## ", start)
+        section = text[start:end]
+        rows = re.findall(r"^\| `([a-z_]+)` \|", section, re.M)
+        self.assertEqual(sorted(rows), sorted(p.name for p in _prompts()))
+
     def test_readme_tool_count(self):
         self.assertIn(f"**{TOTAL} tools", read("README.md"))
         self.assertIn(f"**{TOTAL} инструментов", read("README.ru.md"))
