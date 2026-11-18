@@ -1,27 +1,30 @@
 """Local ↔ Google Drive file transfer.
 
-Three tools cover the gap between the machine the MCP server runs on and Drive:
+Two tools cover the gap between the machine the MCP server runs on and Drive:
 
-* ``drive_upload``   — local file → Drive (optional conversion to Docs or Sheets)
-* ``drive_export`` — Google-native file → local path
-* ``drive_export``   — Google-native file (Doc/Sheet/Slide) → local file in a chosen format
+* ``drive_upload`` — local file → Drive (optional conversion to Docs or Sheets)
+* ``drive_export`` — Google-native file (Doc/Sheet/Slide) → local file in a chosen format
+
+File names that originate from remote data are sanitised (``safe_filename``) and
+uploads refuse OAuth secrets and anything outside the optional ``upload_roots``.
 
 Paths are always expanded and reported as absolute; nothing is overwritten
 unless the caller explicitly asks for it.
 """
 
-import io
 import logging
 import mimetypes
 import os
+import re
 from pathlib import Path
 from typing import Optional
 
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaFileUpload
 
 from ..auth import get_creds
 from ..config import Config
+from ..secure_files import is_protected
 
 MAX_TRANSFER_BYTES = 100 * 1024 * 1024
 
@@ -77,10 +80,38 @@ def default_download_dir() -> Path:
     return Path.home() / "Downloads"
 
 
+_INVALID_NAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+_RESERVED_WINDOWS_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"}
+    | {f"COM{i}" for i in range(1, 10)}
+    | {f"LPT{i}" for i in range(1, 10)}
+)
+
+
+def safe_filename(name: Optional[str], fallback: str = "download") -> str:
+    """Reduce an untrusted file name (mail attachment, Drive title) to a leaf name.
+
+    Directory components, drive letters, control characters and Windows-invalid
+    characters are removed, so the result can never escape the target directory.
+    """
+    leaf = re.split(r"[\\/]", str(name or ""))[-1]
+    leaf = _INVALID_NAME_CHARS.sub("_", leaf).strip().strip(".")
+    leaf = leaf[:200].rstrip(" .")
+    if not leaf or leaf.split(".")[0].upper() in _RESERVED_WINDOWS_NAMES:
+        leaf = f"{fallback}_{leaf}" if leaf else fallback
+    return leaf
+
+
 def resolve_target(save_to: Optional[str], filename: str) -> Path:
-    """Interpret ``save_to`` as a directory or a full file path."""
+    """Interpret ``save_to`` as a directory or a full file path.
+
+    ``filename`` comes from untrusted data (attachment or Drive name), so it is
+    always reduced to a leaf name. An explicit ``save_to`` file path chosen by
+    the caller is respected.
+    """
+    leaf = safe_filename(filename)
     if not save_to:
-        return default_download_dir() / filename
+        return default_download_dir() / leaf
 
     candidate = expand_path(save_to)
     looks_like_dir = (
@@ -88,7 +119,36 @@ def resolve_target(save_to: Optional[str], filename: str) -> Path:
         or str(save_to).endswith(("/", "\\"))
         or candidate.suffix == ""
     )
-    return candidate / filename if looks_like_dir else candidate
+    if not looks_like_dir:
+        return candidate
+    target = candidate / leaf
+    if not target.resolve().is_relative_to(candidate.resolve()):  # pragma: no cover
+        raise ValueError(f"Refusing to write outside {candidate}")
+    return target
+
+
+def check_upload_allowed(source: Path, config: Optional[Config] = None) -> Optional[str]:
+    """Return an error message when ``source`` must not be uploaded, else None."""
+    try:
+        resolved = source.resolve()
+    except OSError as exc:
+        return f"Error: cannot resolve {source}: {exc}"
+
+    if is_protected(resolved, config):
+        return (
+            f"Error: {source.name} is a secrets file or inside a protected "
+            "location (OAuth tokens, keys, approvals, logs) and cannot be uploaded."
+        )
+
+    roots = getattr(config, "upload_roots", None) if config is not None else None
+    if roots:
+        allowed = [Path(root).expanduser().resolve() for root in roots]
+        if not any(resolved.is_relative_to(root) for root in allowed):
+            return (
+                f"Error: {source.name} is outside the allowed upload_roots "
+                f"({', '.join(str(root) for root in allowed)})."
+            )
+    return None
 
 
 def ensure_parent(path: Path) -> None:
@@ -123,6 +183,10 @@ def drive_upload_handler(
         source = expand_path(local_path)
         if not source.exists() or not source.is_file():
             return f"Error: local file not found: {source}"
+
+        denied = check_upload_allowed(source, config)
+        if denied:
+            return denied
 
         size = source.stat().st_size
         if size > MAX_TRANSFER_BYTES:

@@ -52,6 +52,7 @@ class Config:
     bulk_protected_ids: List[str] = field(default_factory=list)
     bulk_protected_patterns: List[str] = field(default_factory=list)
     bulk_allow_shared_drives: bool = False
+    upload_roots: Optional[List[str]] = None
 
 
 def _default_path(*parts: str) -> str:
@@ -182,6 +183,10 @@ def load_config() -> Config:
         )
     )
 
+    upload_roots = _env_list("MCP_UPLOAD_ROOTS") or file_config.get("upload_roots")
+    if upload_roots is not None:
+        upload_roots = [str(item) for item in upload_roots]
+
     return Config(
         client_secrets_file=client_secrets_file,
         token_file=token_file,
@@ -217,4 +222,5 @@ def load_config() -> Config:
         bulk_protected_ids=[str(item) for item in bulk_protected_ids],
         bulk_protected_patterns=[str(item) for item in bulk_protected_patterns],
         bulk_allow_shared_drives=bulk_allow_shared_drives,
+        upload_roots=upload_roots,
     )

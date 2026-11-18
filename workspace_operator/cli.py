@@ -99,6 +99,66 @@ def check_config(config: Config) -> List[Check]:
     checks.append(
         Check("dry run", True, "enabled" if config.dry_run else "disabled", critical=False)
     )
+    checks.extend(check_security(config))
+    return checks
+
+
+def check_security(config: Config) -> List[Check]:
+    """Hygiene checks for secrets: where they live and who can read them."""
+    import os
+
+    from .secure_files import audit_permissions, mask
+
+    checks: List[Check] = []
+
+    if config.mcp_auth_token and not os.environ.get("MCP_AUTH_TOKEN"):
+        checks.append(
+            Check(
+                "auth token source",
+                False,
+                f"mcp_auth_token is stored in the config file ({mask(config.mcp_auth_token)}); "
+                "prefer the MCP_AUTH_TOKEN environment variable",
+                critical=False,
+            )
+        )
+
+    secret_paths = [
+        Path(config.token_file).expanduser(),
+        Path(config.client_secrets_file).expanduser(),
+    ]
+    google_dir = Path(config.token_file).expanduser().parent
+    if google_dir.exists():
+        known = {path.name for path in secret_paths}
+        extras = sorted(
+            entry.name
+            for entry in google_dir.iterdir()
+            if entry.is_file()
+            and entry.name not in known
+            and (
+                entry.name.startswith("token.json.")
+                or entry.name in {"service-account.json", "service_account.json", "credentials.json"}
+            )
+        )
+        if extras:
+            checks.append(
+                Check(
+                    "stray secret files",
+                    False,
+                    f"unused credentials next to the token: {', '.join(extras)} — delete them",
+                    critical=False,
+                )
+            )
+        secret_paths.append(google_dir)
+
+    warnings = audit_permissions(secret_paths)
+    checks.append(
+        Check(
+            "secret file permissions",
+            not warnings,
+            "owner-only" if not warnings else "; ".join(warnings),
+            critical=False,
+        )
+    )
     return checks
 
 
