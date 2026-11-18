@@ -13,6 +13,9 @@ mcp_auth_token: "change_me"
 
 tool_profile: "core"   # core (20) | full (39) | read-write (30) | read-only (17); override with MCP_TOOL_PROFILE
 approval_dir: "/home/app/data/approvals"
+# Staged Apps Script operations (survive a restart; contain script source).
+operation_dir: "/home/app/data/operations"
+operation_ttl: 600
 approval_ttl: 900
 approval_url: "http://127.0.0.1:8765"
 # Only this folder is readable by drive_upload inside the container.

@@ -127,6 +127,7 @@ def protected_paths(config: object = None) -> List[Path]:
             "backup_dir",
             "approval_dir",
             "bulk_dir",
+            "operation_dir",
             "audit_log",
             "log_file",
         ):

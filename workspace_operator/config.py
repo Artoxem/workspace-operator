@@ -53,6 +53,8 @@ class Config:
     bulk_protected_patterns: List[str] = field(default_factory=list)
     bulk_allow_shared_drives: bool = False
     upload_roots: Optional[List[str]] = None
+    operation_dir: Optional[str] = None
+    operation_ttl: int = 600
 
 
 def _default_path(*parts: str) -> str:
@@ -187,6 +189,14 @@ def load_config() -> Config:
     if upload_roots is not None:
         upload_roots = [str(item) for item in upload_roots]
 
+    operation_dir = os.environ.get("MCP_OPERATION_DIR", file_config.get("operation_dir"))
+    try:
+        operation_ttl = int(
+            os.environ.get("MCP_OPERATION_TTL", file_config.get("operation_ttl", 600))
+        )
+    except (TypeError, ValueError):
+        operation_ttl = 600
+
     return Config(
         client_secrets_file=client_secrets_file,
         token_file=token_file,
@@ -223,4 +233,6 @@ def load_config() -> Config:
         bulk_protected_patterns=[str(item) for item in bulk_protected_patterns],
         bulk_allow_shared_drives=bulk_allow_shared_drives,
         upload_roots=upload_roots,
+        operation_dir=operation_dir,
+        operation_ttl=operation_ttl,
     )

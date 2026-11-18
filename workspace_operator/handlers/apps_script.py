@@ -1,26 +1,17 @@
 import json
 import logging
-from datetime import datetime
 from typing import Dict, List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
-from ..operations import (
-    cleanup_expired_operations,
-    create_backup,
-    new_operation_id,
-    pending_operations,
-)
+from ..google_clients import api_client
+from ..operations import OperationStore, create_backup
 
 
 def create_script_project_handler(
     config: Config, logger: logging.Logger, title: str, parent_id: Optional[str] = None
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("script", "v1", credentials=creds)
+        service = api_client(config, 'script', 'v1')
 
         request = {"title": title}
         if parent_id:
@@ -39,8 +30,7 @@ def create_script_project_handler(
 
 def get_script_content_handler(config: Config, logger: logging.Logger, script_id: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("script", "v1", credentials=creds)
+        service = api_client(config, 'script', 'v1')
 
         content = service.projects().getContent(scriptId=script_id).execute()
         files = content.get("files", [])
@@ -60,26 +50,24 @@ def prepare_script_update_handler(
 ) -> str:
     """STEP 1: Prepare script update with backup."""
     try:
-        cleanup_expired_operations()
+        store = OperationStore(config)
+        store.cleanup()
 
-        creds = get_creds(config)
-        service = build("script", "v1", credentials=creds)
+        service = api_client(config, 'script', 'v1')
 
         # Get current content for backup
         current_content = service.projects().getContent(scriptId=script_id).execute()
         current_files = current_content.get("files", [])
 
-        # Create operation ID
-        op_id = new_operation_id()
-
-        # Store pending operation
-        pending_operations[op_id] = {
-            "type": "script_update",
-            "script_id": script_id,
-            "backup": current_files,
-            "new_files": files,
-            "created_at": datetime.now().isoformat(),
-        }
+        # Store the staged operation on disk so a restart does not lose it.
+        op_id = store.create(
+            {
+                "type": "script_update",
+                "script_id": script_id,
+                "backup": current_files,
+                "new_files": files,
+            }
+        )
 
         # Analyze changes for a clear preview
         old_files = {f["name"]: f for f in current_files}
@@ -103,7 +91,8 @@ def prepare_script_update_handler(
         result += f"Script ID: {script_id}\n"
         result += f"Backup created: {len(current_files)} file(s)\n\n"
         result += "📊 Changes:\n" + "\n".join(changes) + "\n\n"
-        result += "⏰ Operation expires in: 10 minutes\n\n"
+        minutes = max(1, store.ttl_seconds // 60)
+        result += f"⏰ Operation expires in: {minutes} minutes\n\n"
         result += f"✅ To execute: execute_operation(operation_id='{op_id}')\n"
         result += f"❌ To cancel: cancel_operation(operation_id='{op_id}')"
 
@@ -117,17 +106,16 @@ def prepare_script_update_handler(
 
 def execute_operation_handler(config: Config, logger: logging.Logger, operation_id: str) -> str:
     """STEP 2: Execute a prepared operation."""
+    store = OperationStore(config)
+    # claim() removes the record atomically: two concurrent calls cannot both run it.
+    op = store.claim(operation_id)
+    if op is None:
+        return f"Error: Operation {operation_id} not found or expired"
+
     try:
-        cleanup_expired_operations()
-
-        if operation_id not in pending_operations:
-            return f"Error: Operation {operation_id} not found or expired"
-
-        op = pending_operations[operation_id]
 
         if op["type"] == "script_update":
-            creds = get_creds(config)
-            service = build("script", "v1", credentials=creds)
+            service = api_client(config, 'script', 'v1')
 
             # Create backup file before applying changes
             backup_data = {
@@ -143,9 +131,6 @@ def execute_operation_handler(config: Config, logger: logging.Logger, operation_
             service.projects().updateContent(
                 scriptId=op["script_id"], body=request
             ).execute()
-
-            # Remove from pending
-            del pending_operations[operation_id]
 
             logger.info(
                 "Script updated: %s (backup: %s)", op["script_id"], backup_path
@@ -165,16 +150,16 @@ def execute_operation_handler(config: Config, logger: logging.Logger, operation_
         return f"Error: Unknown operation type: {op['type']}"
 
     except Exception as e:
+        # The update did not happen: put the operation back so it can be retried.
+        store.restore(op)
         logger.error("Error executing operation %s: %s", operation_id, str(e))
         return f"Error executing operation: {str(e)}"
 
 
 def cancel_operation_handler(config: Config, logger: logging.Logger, operation_id: str) -> str:
     """Cancel a prepared operation."""
-    cleanup_expired_operations()
-
-    if operation_id in pending_operations:
-        del pending_operations[operation_id]
+    store = OperationStore(config)
+    if store.get(operation_id) is not None and store.delete(operation_id):
         logger.info("Operation cancelled: %s", operation_id)
         return f"✅ Operation {operation_id} cancelled"
 
@@ -211,8 +196,7 @@ def restore_script_backup_handler(
         else:
             return "Error: Invalid backup format"
 
-        creds = get_creds(config)
-        service = build("script", "v1", credentials=creds)
+        service = api_client(config, 'script', 'v1')
 
         request = {"files": files}
         service.projects().updateContent(scriptId=script_id, body=request).execute()
@@ -262,8 +246,7 @@ def script_run_function_handler(
         if not script_id or not function_name:
             return "Error: script_id and function_name are required."
 
-        creds = get_creds(config)
-        service = build("script", "v1", credentials=creds)
+        service = api_client(config, 'script', 'v1')
 
         body = {
             "function": function_name,
@@ -286,7 +269,7 @@ def list_deployments_handler(
         if not script_id:
             return "Error: script_id is required."
 
-        service = build("script", "v1", credentials=get_creds(config))
+        service = api_client(config, 'script', 'v1')
         result = service.projects().deployments().list(scriptId=script_id).execute()
         deployments = result.get("deployments", [])
         if not deployments:
@@ -317,7 +300,7 @@ def create_deployment_handler(
         if not script_id:
             return "Error: script_id is required."
 
-        service = build("script", "v1", credentials=get_creds(config))
+        service = api_client(config, 'script', 'v1')
         version = int(version_number or 0)
         if not version:
             versions = (
@@ -371,7 +354,7 @@ def update_deployment_handler(
         if not script_id or not deployment_id:
             return "Error: script_id and deployment_id are required."
 
-        service = build("script", "v1", credentials=get_creds(config))
+        service = api_client(config, 'script', 'v1')
         version = int(version_number or 0)
         if not version:
             versions = (
