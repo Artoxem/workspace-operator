@@ -1,7 +1,6 @@
 """Drive extras: metadata, rename, trash/restore and permission removal."""
 
 import logging
-from typing import Optional
 
 from googleapiclient.discovery import build
 

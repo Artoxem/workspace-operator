@@ -1,11 +1,9 @@
 import logging
-from typing import Dict, Union
 
 from googleapiclient.discovery import build
 
 from ..auth import get_creds
 from ..config import Config
-from ..operations import BinaryResult
 from ..text import clean_text
 
 

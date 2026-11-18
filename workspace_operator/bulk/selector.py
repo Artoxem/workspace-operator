@@ -195,7 +195,7 @@ def resolve_drive(
                 else:
                     queries.append(f"({parents})")
         else:
-            queries = [base_query or None]
+            queries = [base_query or ""]
 
         for query in queries:
             token = None

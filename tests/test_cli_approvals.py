@@ -1,7 +1,6 @@
 """CLI tests for the approval queue (no network)."""
 
 import io
-import json
 import os
 import tempfile
 import unittest

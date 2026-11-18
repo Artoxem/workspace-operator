@@ -13,7 +13,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
 from googleapiclient.discovery import build
@@ -197,8 +197,8 @@ def _apply_item(
         return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
 
     if action == "rename_back":
-        previous = item.get("previous_name")
-        if not previous:
+        previous_name = item.get("previous_name")
+        if not previous_name:
             raise BulkError("rename_back needs previous_name")
         current = (
             service.files()
@@ -206,18 +206,18 @@ def _apply_item(
             .execute()
             .get("name", "")
         )
-        if current == previous:
+        if current == previous_name:
             return {"id": file_id, "name": current, "status": "skipped"}
         _with_retry(
-            lambda: service.files()
-            .update(fileId=file_id, body={"name": previous}, fields="id,name")
+            lambda name=previous_name: service.files()  # type: ignore[misc]
+            .update(fileId=file_id, body={"name": name}, fields="id,name")
             .execute(),
             logger,
         )
         return {
             "id": file_id,
             "name": current,
-            "new_name": previous,
+            "new_name": previous_name,
             "previous_name": current,
             "status": "ok",
         }
@@ -255,7 +255,7 @@ def _apply_item(
             return {"id": file_id, "name": item.get("name", ""), "status": "skipped"}
         for entry in public:
             _with_retry(
-                lambda permission_id=entry["id"]: service.permissions()
+                lambda permission_id=entry["id"]: service.permissions()  # type: ignore[misc]
                 .delete(fileId=file_id, permissionId=permission_id)
                 .execute(),
                 logger,
@@ -265,7 +265,7 @@ def _apply_item(
     if domain == "docs" and action == "replace_text":
         find = str(options.get("find") or "")
         replace = str(options.get("replace") or "")
-        request = {
+        docs_request: Dict[str, Any] = {
             "replaceAllText": {
                 "containsText": {
                     "text": find,
@@ -277,7 +277,7 @@ def _apply_item(
         response = _with_retry(
             lambda: _api(config, "docs", "v1")
             .documents()
-            .batchUpdate(documentId=file_id, body={"requests": [request]})
+            .batchUpdate(documentId=file_id, body={"requests": [docs_request]})
             .execute(),
             logger,
         )
@@ -377,7 +377,7 @@ def _run_gmail(
             message_ids = [item["id"] for item in chunk]
             try:
                 _with_retry(
-                    lambda ids=message_ids: service.users()
+                    lambda ids=message_ids: service.users()  # type: ignore[misc]
                     .messages()
                     .batchModify(
                         userId="me",

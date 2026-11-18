@@ -2,74 +2,47 @@
 
 from .apps_script import (
     cancel_operation_handler,
-    update_deployment_handler,
     create_deployment_handler,
-    list_deployments_handler,
+    create_script_project_handler,
     execute_operation_handler,
     get_script_content_handler,
+    list_deployments_handler,
     prepare_script_update_handler,
     restore_script_backup_handler,
-    create_script_project_handler,
     script_run_function_handler,
+    update_deployment_handler,
+)
+from .bulk import (
+    bulk_cancel_handler,
+    bulk_list_handler,
+    bulk_plan_handler,
+    bulk_result_handler,
+    bulk_run_handler,
+    bulk_status_handler,
+    bulk_undo_handler,
+)
+from .calendar import (
+    calendar_create_meeting_handler,
+    list_calendars_handler,
+    list_events_handler,
+    move_event_handler,
+    set_event_color_handler,
 )
 from .calendar_writes import (
     calendar_delete_event_handler,
     calendar_respond_to_invite_handler,
     calendar_update_event_handler,
 )
-from .digest import digest_handler
 from .compare import compare_tables_handler
-from .calendar import (
-    calendar_create_meeting_handler,
-    set_event_color_handler,
-    list_calendars_handler,
-    move_event_handler,
-    list_events_handler,
-)
+from .digest import digest_handler
+from .doc_edit import replace_text_handler
+from .doc_format import format_text_handler
+from .doc_media import insert_image_handler
 from .docs import (
     append_to_doc_handler,
     create_doc_handler,
     document_to_text,
     read_doc_handler,
-)
-from .doc_edit import replace_text_handler
-from .drive_extra import (
-    delete_file_handler,
-    get_metadata_handler,
-    remove_permission_handler,
-    rename_file_handler,
-    restore_file_handler,
-)
-from .sheets_extra import add_chart_handler, conditional_format_handler
-from .sheets_pivot import add_pivot_table_handler
-from .sheets_validate import (
-    protect_range_handler,
-    set_borders_handler,
-    set_data_validation_handler,
-)
-from .gmail_filters import create_filter_handler, list_filters_handler
-from .doc_format import format_text_handler
-from .gmail_drafts import (
-    delete_draft_handler as delete_draft_tool,
-    list_drafts_handler,
-    update_draft_handler,
-)
-from .sheets_more import (
-    delete_columns_handler,
-    insert_columns_handler,
-    sort_range_handler,
-)
-from .doc_media import insert_image_handler
-from .sheets_structure import (
-    delete_rows_handler,
-    delete_sheet_handler,
-    insert_rows_handler,
-    merge_cells_handler,
-)
-from .gmail_labels import (
-    create_label_handler,
-    list_labels_handler,
-    modify_messages_handler,
 )
 from .drive import (
     create_folder_handler,
@@ -80,8 +53,22 @@ from .drive import (
     move_file_handler,
     share_file_handler,
 )
+from .drive_extra import (
+    delete_file_handler,
+    get_metadata_handler,
+    remove_permission_handler,
+    rename_file_handler,
+    restore_file_handler,
+)
+from .files import drive_export_handler, drive_upload_handler
+from .formatting import format_sheet_handler
+from .forms import (
+    forms_add_questions_handler,
+    forms_create_handler,
+    forms_get_handler,
+    forms_list_responses_handler,
+)
 from .gmail import (
-    send_with_attachments_handler,
     create_draft_handler,
     delete_email_handler,
     get_gmail_profile_handler,
@@ -92,7 +79,31 @@ from .gmail import (
     read_email_handler,
     send_draft_handler,
     send_email_handler,
+    send_with_attachments_handler,
 )
+from .gmail_drafts import (
+    delete_draft_handler as delete_draft_tool,
+)
+from .gmail_drafts import (
+    list_drafts_handler,
+    update_draft_handler,
+)
+from .gmail_filters import create_filter_handler, list_filters_handler
+from .gmail_labels import (
+    create_label_handler,
+    list_labels_handler,
+    modify_messages_handler,
+)
+from .gmail_threads import (
+    gmail_get_attachment_handler,
+    gmail_get_thread_handler,
+    gmail_reply_handler,
+)
+from .postmaster import (
+    postmaster_list_domains_handler,
+    postmaster_traffic_stats_handler,
+)
+from .search import workspace_search_handler
 from .sheets import (
     add_sheet_handler,
     append_row_handler,
@@ -106,11 +117,23 @@ from .sheets import (
     sheet_find_replace_handler,
     update_sheet_handler,
 )
-from .files import drive_export_handler, drive_upload_handler
-from .gmail_threads import (
-    gmail_get_attachment_handler,
-    gmail_get_thread_handler,
-    gmail_reply_handler,
+from .sheets_extra import add_chart_handler, conditional_format_handler
+from .sheets_more import (
+    delete_columns_handler,
+    insert_columns_handler,
+    sort_range_handler,
+)
+from .sheets_pivot import add_pivot_table_handler
+from .sheets_structure import (
+    delete_rows_handler,
+    delete_sheet_handler,
+    insert_rows_handler,
+    merge_cells_handler,
+)
+from .sheets_validate import (
+    protect_range_handler,
+    set_borders_handler,
+    set_data_validation_handler,
 )
 from .tasks import (
     tasks_complete_handler,
@@ -118,27 +141,6 @@ from .tasks import (
     tasks_list_handler,
     tasks_list_lists_handler,
 )
-from .forms import (
-    forms_add_questions_handler,
-    forms_create_handler,
-    forms_get_handler,
-    forms_list_responses_handler,
-)
-from .postmaster import (
-    postmaster_list_domains_handler,
-    postmaster_traffic_stats_handler,
-)
-from .formatting import format_sheet_handler
-from .bulk import (
-    bulk_cancel_handler,
-    bulk_list_handler,
-    bulk_plan_handler,
-    bulk_result_handler,
-    bulk_run_handler,
-    bulk_status_handler,
-    bulk_undo_handler,
-)
-from .search import workspace_search_handler
 
 __all__ = [
     "read_sheet_handler",
@@ -220,7 +222,7 @@ __all__ = [
     "format_text_handler",
     "list_drafts_handler",
     "delete_draft_tool",
-    "calendar_move_event_handler",
+    "move_event_handler",
     "create_deployment_handler",
     "set_data_validation_handler",
     "protect_range_handler",

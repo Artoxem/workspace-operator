@@ -13,7 +13,6 @@ from mcp import types
 
 from .models import ActionSpec, Safety, ScopeMode, ToolSpec, annotations_for
 
-
 CORE_TOOL_NAMES = frozenset(
     {
         "workspace_search",
@@ -39,7 +38,7 @@ CORE_TOOL_NAMES = frozenset(
     }
 )
 
-READ_ONLY_TIMEOUT = frozenset()
+READ_ONLY_TIMEOUT: frozenset = frozenset()
 
 
 def _scopes(*names: str, mode: ScopeMode = ScopeMode.ALL) -> Tuple[frozenset, ScopeMode]:

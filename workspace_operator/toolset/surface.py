@@ -8,7 +8,7 @@ from mcp import types
 
 from ..profiles import ToolProfile, resolve_profile
 from .catalog import CORE_TOOL_NAMES
-from .models import Safety, ScopeMode, Surface, ToolSpec, safety_from_annotations
+from .models import ScopeMode, Surface, ToolSpec, safety_from_annotations
 
 
 def _copy_schema(schema) -> dict:
@@ -23,13 +23,14 @@ def build_legacy_surface(tools: Sequence[types.Tool], domain: str = "legacy") ->
     """
     specs = []
     for tool in tools:
-        safety = safety_from_annotations(tool.annotations)
+        annotations = tool.annotations or types.ToolAnnotations()
+        safety = safety_from_annotations(annotations)
         specs.append(
             ToolSpec(
                 name=tool.name,
                 description=tool.description or "",
                 input_schema=_copy_schema(tool.input_schema),
-                annotations=tool.annotations,
+                annotations=annotations,
                 domain=domain,
                 safety=safety,
                 legacy=tool.name,

@@ -10,7 +10,7 @@ credentials or network.
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from googleapiclient.discovery import build
 

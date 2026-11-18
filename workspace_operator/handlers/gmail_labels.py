@@ -1,7 +1,7 @@
 """Gmail labels and bulk message flags."""
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from googleapiclient.discovery import build
 
@@ -72,8 +72,8 @@ def modify_messages_handler(
     config: Config,
     logger: logging.Logger,
     message_ids: List[str],
-    add_labels: List[str] = None,
-    remove_labels: List[str] = None,
+    add_labels: Optional[List[str]] = None,
+    remove_labels: Optional[List[str]] = None,
     dry_run: bool = True,
 ) -> str:
     """Apply or remove labels (system labels cover read/unread and star)."""

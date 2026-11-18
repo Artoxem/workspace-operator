@@ -2,7 +2,6 @@
 
 import unittest
 
-from workspace_operator.profiles import resolve_profile
 from workspace_operator.server import _tools
 from workspace_operator.toolset.catalog import (
     CORE_TOOL_NAMES,

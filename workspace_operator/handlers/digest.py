@@ -9,7 +9,7 @@ format is testable without Google.
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from googleapiclient.discovery import build
 

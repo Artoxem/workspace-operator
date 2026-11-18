@@ -47,6 +47,64 @@ Documentation = "https://github.com/Artoxem/workspace-operator#readme"
 Changelog = "https://github.com/Artoxem/workspace-operator/tree/master/docs"
 Issues = "https://github.com/Artoxem/workspace-operator/issues"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "types-PyYAML",
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["workspace_operator"]
+branch = true
+
+[tool.coverage.report]
+# Ratchet: raise this as bulk/engine.py and bulk/selector.py gain tests.
+fail_under = 40
+show_missing = true
+skip_empty = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = ["docs", "antigravity", "skills"]
+
+[tool.ruff.lint]
+# Correctness (F), bugbear (B), security (S), imports (I) and pycodestyle errors/warnings.
+select = ["E", "F", "W", "B", "S", "I"]
+ignore = [
+    "E501",  # long lines: tool definitions and prompts are data
+    "S101",  # assert is fine in tests
+    "S110", "S112",  # deliberate best-effort try/except pass in cleanup paths
+    "S311",  # random is used for retry jitter, not security
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S104", "S105", "S106", "S107", "B017"]
+"workspace_operator/http_transport.py" = ["S104"]  # bind address is validated by resolve_bind
+"workspace_operator/handlers/__init__.py" = ["F401"]  # re-exports
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+# urlopen targets a fixed https discovery URL (postmaster.py)
+skips = ["B310"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = false
+warn_unused_ignores = false
+# Incremental adoption: new modules can opt in with strict settings.
+files = ["workspace_operator"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["workspace_operator*"]

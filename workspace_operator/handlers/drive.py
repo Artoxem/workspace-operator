@@ -9,8 +9,6 @@ from ..security import validate_email
 from ..text import format_timestamp
 
 
-
-
 def create_folder_handler(
     config: Config, logger: logging.Logger, name: str, parent_id: Optional[str] = None
 ) -> str:
@@ -18,7 +16,7 @@ def create_folder_handler(
         creds = get_creds(config)
         service = build("drive", "v3", credentials=creds)
 
-        file_metadata = {
+        file_metadata: dict = {
             "name": name,
             "mimeType": "application/vnd.google-apps.folder",
         }
@@ -250,7 +248,7 @@ def drive_copy_file_handler(
         creds = get_creds(config)
         service = build("drive", "v3", credentials=creds)
 
-        body = {}
+        body: dict = {}
         if name:
             body["name"] = name
         if parent_id:

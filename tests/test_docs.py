@@ -11,7 +11,6 @@ from pathlib import Path
 
 import yaml
 
-from workspace_operator.profiles import resolve_profile
 from workspace_operator.server import _tools
 from workspace_operator.toolset.catalog import build_catalog
 from workspace_operator.toolset.surface import build_surface
@@ -132,7 +131,7 @@ class DocumentationCoverageTests(unittest.TestCase):
 
 class DockerTests(unittest.TestCase):
     def test_docker_workflow_and_config(self):
-        workflow = yaml.safe_load(read(".github/workflows/docker-publish.yml"))
+        yaml.safe_load(read(".github/workflows/docker-publish.yml"))  # must parse
         text = read(".github/workflows/docker-publish.yml")
         self.assertIn("ghcr.io/${{ github.repository }}", text)
         self.assertIn("packages: write", text)

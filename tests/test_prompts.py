@@ -11,7 +11,7 @@ EXPECTED = {
     "search_drive",
     "weekly_review",
     "inbox_triage",
-    
+
     "compare_brief",
 }
 
@@ -36,7 +36,7 @@ class PromptCatalogTests(unittest.TestCase):
         def required(name):
             return [arg.name for arg in by_name[name].arguments if arg.required]
 
-        
+
         self.assertEqual(required("compare_brief"), ["spreadsheet_id", "range_a", "range_b"])
         self.assertEqual(required("weekly_review"), [])
         self.assertEqual(required("inbox_triage"), [])

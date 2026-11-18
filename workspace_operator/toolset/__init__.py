@@ -5,10 +5,10 @@ safety class and scope requirements, and can build the visible surface for a
 profile. The server remains responsible for MCP wiring and handler dispatch.
 """
 
-from .models import ActionSpec, CallPlan, Safety, ScopeMode, Surface, ToolSpec
 from .catalog import CORE_TOOL_NAMES, REMOVED_ALIAS_NAMES, build_aliases, build_catalog
-from .surface import build_legacy_surface, build_surface, filter_by_scopes
+from .models import ActionSpec, CallPlan, Safety, ScopeMode, Surface, ToolSpec
 from .routing import RoutingError, resolve_call
+from .surface import build_legacy_surface, build_surface, filter_by_scopes
 
 __all__ = [
     "ActionSpec",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Iterable, Mapping, Optional, Tuple
 
@@ -80,7 +80,7 @@ class ToolSpec:
         return types.Tool(
             name=self.name,
             description=self.description,
-            inputSchema=dict(self.input_schema),
+            input_schema=dict(self.input_schema),
             annotations=self.annotations,
         )
 
@@ -144,10 +144,10 @@ def safety_from_annotations(annotations: types.ToolAnnotations) -> Safety:
 
 def annotations_for(safety: Safety) -> types.ToolAnnotations:
     if safety is Safety.READ:
-        return types.ToolAnnotations(readOnlyHint=True, destructiveHint=False)
+        return types.ToolAnnotations(read_only_hint=True, destructive_hint=False)
     if safety is Safety.DESTRUCTIVE:
-        return types.ToolAnnotations(readOnlyHint=False, destructiveHint=True)
-    return types.ToolAnnotations(readOnlyHint=False, destructiveHint=False)
+        return types.ToolAnnotations(read_only_hint=False, destructive_hint=True)
+    return types.ToolAnnotations(read_only_hint=False, destructive_hint=False)
 
 
 def iter_names(tools: Iterable[ToolSpec]) -> Iterable[str]:

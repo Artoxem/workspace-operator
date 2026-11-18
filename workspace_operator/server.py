@@ -1,24 +1,134 @@
 """MCP server exposing Google Workspace tools, resources and prompts."""
 
 import asyncio
-import time
 import base64
+import time
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from typing import List
 
+import mcp.types as types
+from mcp.server import Server
+from mcp.server.lowlevel.helper_types import ReadResourceContents
+from mcp.server.stdio import stdio_server
 from pydantic import AnyUrl
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-from mcp.server.lowlevel.helper_types import ReadResourceContents
-import mcp.types as types
-
 from . import __version__
-from .approvals import ApprovalError, ApprovalStore, challenge_text, summarize
+from .approvals import ApprovalError, ApprovalStore, challenge_text
 from .config import Config, load_config
+from .handlers import (
+    add_chart_handler,
+    add_pivot_table_handler,
+    add_sheet_handler,
+    append_row_handler,
+    append_to_doc_handler,
+    bulk_cancel_handler,
+    bulk_list_handler,
+    bulk_plan_handler,
+    bulk_result_handler,
+    bulk_run_handler,
+    bulk_status_handler,
+    bulk_undo_handler,
+    calendar_create_meeting_handler,
+    calendar_delete_event_handler,
+    calendar_respond_to_invite_handler,
+    calendar_update_event_handler,
+    cancel_operation_handler,
+    clear_range_handler,
+    compare_tables_handler,
+    conditional_format_handler,
+    create_deployment_handler,
+    create_doc_handler,
+    create_draft_handler,
+    create_filter_handler,
+    create_folder_handler,
+    create_label_handler,
+    create_script_project_handler,
+    create_spreadsheet_handler,
+    delete_columns_handler,
+    delete_draft_tool,
+    delete_email_handler,
+    delete_file_handler,
+    delete_rows_handler,
+    delete_sheet_handler,
+    digest_handler,
+    document_to_text,
+    drive_copy_file_handler,
+    drive_export_handler,
+    drive_list_permissions_handler,
+    drive_revoke_public_handler,
+    drive_search_advanced_handler,
+    drive_upload_handler,
+    execute_operation_handler,
+    format_sheet_handler,
+    format_text_handler,
+    forms_add_questions_handler,
+    forms_create_handler,
+    forms_get_handler,
+    forms_list_responses_handler,
+    get_gmail_profile_handler,
+    get_metadata_handler,
+    get_script_content_handler,
+    get_spreadsheet_meta_handler,
+    gmail_archive_handler,
+    gmail_get_attachment_handler,
+    gmail_get_thread_handler,
+    gmail_label_apply_handler,
+    gmail_reply_handler,
+    gmail_search_and_summarize_handler,
+    insert_columns_handler,
+    insert_image_handler,
+    insert_rows_handler,
+    list_calendars_handler,
+    list_deployments_handler,
+    list_drafts_handler,
+    list_emails_handler,
+    list_events_handler,
+    list_filters_handler,
+    list_labels_handler,
+    merge_cells_handler,
+    move_event_handler,
+    move_file_handler,
+    postmaster_list_domains_handler,
+    postmaster_traffic_stats_handler,
+    prepare_script_update_handler,
+    protect_range_handler,
+    read_doc_handler,
+    read_email_handler,
+    read_sheet_handler,
+    remove_permission_handler,
+    rename_file_handler,
+    replace_text_handler,
+    restore_file_handler,
+    restore_script_backup_handler,
+    script_run_function_handler,
+    send_draft_handler,
+    send_email_handler,
+    send_with_attachments_handler,
+    set_borders_handler,
+    set_data_validation_handler,
+    set_event_color_handler,
+    share_file_handler,
+    sheet_create_filter_view_handler,
+    sheet_create_named_range_handler,
+    sheet_export_csv_handler,
+    sheet_find_replace_handler,
+    sort_range_handler,
+    tasks_complete_handler,
+    tasks_create_handler,
+    tasks_list_handler,
+    tasks_list_lists_handler,
+    update_deployment_handler,
+    update_draft_handler,
+    update_sheet_handler,
+    workspace_search_handler,
+)
 from .logging import setup_logging
-from .profiles import ProfileError, resolve_profile
+from .operations import BinaryResult
+from .profiles import ProfileError
+from .runtime import AuditLog, call_with_retry
+from .security import require_token_configured
+from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
 from .toolset import (
     REMOVED_ALIAS_NAMES,
     RoutingError,
@@ -29,125 +139,13 @@ from .toolset import (
 )
 from .toolset.models import Safety
 from .toolset.scopes import read_granted_scopes
-from .security import require_token_configured
-from .operations import BinaryResult
-from .text import clean_text, format_timestamp, humanize_http_error, parse_email_date
-from .runtime import AuditLog, call_with_retry
-from .handlers import (
-    bulk_cancel_handler,
-    bulk_list_handler,
-    bulk_plan_handler,
-    bulk_result_handler,
-    bulk_run_handler,
-    bulk_status_handler,
-    bulk_undo_handler,
-    forms_add_questions_handler,
-    forms_create_handler,
-    forms_get_handler,
-    forms_list_responses_handler,
-    postmaster_list_domains_handler,
-    postmaster_traffic_stats_handler,
-    tasks_complete_handler,
-    tasks_create_handler,
-    tasks_list_handler,
-    tasks_list_lists_handler,
-    create_filter_handler,
-    list_filters_handler,
-    protect_range_handler,
-    set_borders_handler,
-    set_data_validation_handler,
-    set_event_color_handler,
-    update_deployment_handler,
-    update_draft_handler,
-    add_pivot_table_handler,
-    create_deployment_handler,
-    delete_draft_tool,
-    format_text_handler,
-    list_drafts_handler,
-    move_event_handler,
-    delete_columns_handler,
-    insert_columns_handler,
-    insert_image_handler,
-    list_calendars_handler,
-    list_deployments_handler,
-    send_with_attachments_handler,
-    sort_range_handler,
-    delete_rows_handler,
-    delete_sheet_handler,
-    insert_rows_handler,
-    list_labels_handler,
-    create_label_handler,
-    merge_cells_handler,
-    modify_messages_handler,
-    add_chart_handler,
-    conditional_format_handler,
-    delete_file_handler,
-    get_metadata_handler,
-    remove_permission_handler,
-    rename_file_handler,
-    replace_text_handler,
-    restore_file_handler,
-    add_sheet_handler,
-    append_row_handler,
-    append_to_doc_handler,
-    calendar_create_meeting_handler,
-    cancel_operation_handler,
-    clear_range_handler,
-    create_doc_handler,
-    create_draft_handler,
-    create_folder_handler,
-    create_script_project_handler,
-    create_spreadsheet_handler,
-    delete_email_handler,
-    drive_copy_file_handler,
-    drive_list_permissions_handler,
-    drive_revoke_public_handler,
-    drive_search_advanced_handler,
-    execute_operation_handler,
-    get_gmail_profile_handler,
-    get_script_content_handler,
-    get_spreadsheet_meta_handler,
-    gmail_archive_handler,
-    gmail_label_apply_handler,
-    gmail_search_and_summarize_handler,
-    list_emails_handler,
-    list_events_handler,
-    move_file_handler,
-    prepare_script_update_handler,
-    read_doc_handler,
-    read_email_handler,
-    read_sheet_handler,
-    restore_script_backup_handler,
-    send_draft_handler,
-    send_email_handler,
-    share_file_handler,
-    sheet_create_filter_view_handler,
-    sheet_create_named_range_handler,
-    sheet_export_csv_handler,
-    sheet_find_replace_handler,
-    update_sheet_handler,
-    workspace_search_handler,
-    document_to_text,
-    format_sheet_handler,
-    gmail_get_attachment_handler,
-    gmail_get_thread_handler,
-    gmail_reply_handler,
-    calendar_delete_event_handler,
-    calendar_respond_to_invite_handler,
-    calendar_update_event_handler,
-    digest_handler,
-    compare_tables_handler,
-    drive_export_handler,
-    drive_upload_handler,
-    script_run_function_handler,
-)
 
 # ---------------------------------------------------------------------------
 # Annotation presets (reused across tool definitions)
 # ---------------------------------------------------------------------------
-_READ_ONLY = types.ToolAnnotations(readOnlyHint=True, destructiveHint=False)
-_WRITE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=False)
-_DESTRUCTIVE = types.ToolAnnotations(readOnlyHint=False, destructiveHint=True)
+_READ_ONLY = types.ToolAnnotations(read_only_hint=True, destructive_hint=False)
+_WRITE = types.ToolAnnotations(read_only_hint=False, destructive_hint=False)
+_DESTRUCTIVE = types.ToolAnnotations(read_only_hint=False, destructive_hint=True)
 
 
 
@@ -167,7 +165,7 @@ def _tools() -> List[types.Tool]:
                 "merged, date-sorted result list. Use it for 'find everything about X' "
                 "questions before falling back to per-service tools."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "query": {
@@ -205,7 +203,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="drive_search_advanced",
             description="Advanced Google Drive search with full query syntax",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "query": {"type": "string"},
@@ -218,7 +216,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="drive_list_permissions",
             description="List permissions for a Drive file",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"file_id": {"type": "string"}},
                 "required": ["file_id"],
@@ -228,7 +226,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="create_folder",
             description="Create a folder in Google Drive",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "name": {"type": "string"},
@@ -241,7 +239,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="move_file",
             description="Move a file to a different folder",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -254,7 +252,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="drive_copy_file",
             description="Copy a Drive file to a new file",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -271,7 +269,7 @@ def _tools() -> List[types.Tool]:
                 "Share a file with a user or make it public. "
                 "REQUIRES allow_public=True to share publicly!"
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -301,7 +299,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="drive_revoke_public",
             description="Revoke public access (type=anyone) for a Drive file. Requires confirm=True.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -318,7 +316,7 @@ def _tools() -> List[types.Tool]:
                 "Upload a local file to Google Drive. Use convert_to to turn a "
                 "docx/xlsx into a native Google Doc or Sheet."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "local_path": {
@@ -353,7 +351,7 @@ def _tools() -> List[types.Tool]:
                 "Export a Google Doc or Sheet to a local file: pdf, "
                 "docx, xlsx, csv, txt and more."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -376,7 +374,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="read_sheet",
             description="Read data from a Google Sheet",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -389,7 +387,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="get_spreadsheet_meta",
             description="Get metadata (sheets, titles) of a spreadsheet",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"spreadsheet_id": {"type": "string"}},
                 "required": ["spreadsheet_id"],
@@ -399,7 +397,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_export_csv",
             description="Export a range as CSV text",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -413,7 +411,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="create_spreadsheet",
             description="Create a new Google Spreadsheet",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"title": {"type": "string"}},
                 "required": ["title"],
@@ -423,7 +421,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="add_sheet",
             description="Add a new sheet (tab) to a spreadsheet",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -436,7 +434,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="append_row",
             description="Append a row to a Google Sheet",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -453,7 +451,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="update_sheet",
             description="Update data in a Google Sheet. 'values' must be a list of lists of strings (rows of columns).",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -470,7 +468,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="clear_range",
             description="Clear values in a spreadsheet range. Auto dry-run for large ranges (>100 cells).",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -488,7 +486,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_find_replace",
             description="Find/replace in a range with dry-run preview",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -505,7 +503,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_create_filter_view",
             description="Create a filter view for a sheet with grid range",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -523,7 +521,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_create_named_range",
             description="Create a named range using grid indexes",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -553,7 +551,7 @@ def _tools() -> List[types.Tool]:
                 "format, colours, alignment, wrap, column width, row height and "
                 "frozen panes — all in one call."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -596,7 +594,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="read_doc",
             description="Read the content of a Google Doc",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"document_id": {"type": "string"}},
                 "required": ["document_id"],
@@ -606,7 +604,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="create_doc",
             description="Create a new Google Doc",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"title": {"type": "string"}},
                 "required": ["title"],
@@ -616,7 +614,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="append_to_doc",
             description="Append text to a Google Doc",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "document_id": {"type": "string"},
@@ -631,7 +629,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="create_script_project",
             description="Create a new Google Apps Script project",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "title": {"type": "string"},
@@ -644,7 +642,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="get_script_content",
             description="Get the content of a Google Apps Script project",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"script_id": {"type": "string"}},
                 "required": ["script_id"],
@@ -654,7 +652,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="prepare_script_update",
             description="STEP 1: Prepare a Google Apps Script update with automatic backup. Returns operation_id.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "script_id": {
@@ -682,7 +680,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="execute_operation",
             description="STEP 2: Execute a prepared operation by operation_id (from prepare_script_update)",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "operation_id": {
@@ -697,7 +695,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="cancel_operation",
             description="Cancel a prepared operation before execution",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "operation_id": {
@@ -707,12 +705,12 @@ def _tools() -> List[types.Tool]:
                 },
                 "required": ["operation_id"],
             },
-            annotations=types.ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True),
+            annotations=types.ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=True),
         ),
         types.Tool(
             name="restore_script_backup",
             description="Restore a script from a backup file",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "backup_path": {
@@ -730,7 +728,7 @@ def _tools() -> List[types.Tool]:
                 "Run a function from an Apps Script project deployed as an API "
                 "executable. Executes arbitrary code with your account's authority."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "script_id": {"type": "string"},
@@ -757,7 +755,7 @@ def _tools() -> List[types.Tool]:
                 "Update an existing event. Only the fields you pass are changed; "
                 "send_updates controls attendee notifications."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "event_id": {"type": "string"},
@@ -781,7 +779,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="calendar_delete_event",
             description="Delete an event. Requires confirm=true.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "event_id": {"type": "string"},
@@ -803,7 +801,7 @@ def _tools() -> List[types.Tool]:
                 "Answer an invitation: accepted, declined or tentative. "
                 "Requires confirm=true."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "event_id": {"type": "string"},
@@ -829,7 +827,7 @@ def _tools() -> List[types.Tool]:
                 "Composite: one digest across Gmail, Calendar and Drive for the last "
                 "N hours. Returns text by default, or creates a Google Doc."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "sources": {
@@ -852,7 +850,7 @@ def _tools() -> List[types.Tool]:
                 "Composite: diff two ranges by a key column (added / removed / "
                 "changed rows). Works across sheets or spreadsheets."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -878,13 +876,13 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="get_gmail_profile",
             description="Get the authenticated Gmail address for the current OAuth token",
-            inputSchema={"type": "object", "properties": {}, "required": []},
+            input_schema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
         ),
         types.Tool(
             name="list_emails",
             description="List emails from Gmail",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "max_results": {"type": "integer"},
@@ -900,7 +898,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="read_email",
             description="Read a specific email by ID",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"message_id": {"type": "string"}},
                 "required": ["message_id"],
@@ -910,7 +908,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_search_and_summarize",
             description="Search Gmail and return a brief summary",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "query": {"type": "string"},
@@ -923,7 +921,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="create_draft",
             description="Create a draft email in Gmail",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "to": {"type": "string"},
@@ -937,7 +935,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="send_email",
             description="Send an email via Gmail. Defaults to draft_mode=True for safety!",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "to": {"type": "string", "description": "Recipient email address"},
@@ -956,7 +954,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="send_draft",
             description="Send an existing draft email by draft ID",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "draft_id": {
@@ -971,7 +969,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="delete_email",
             description="Move one email to Trash by ID (recoverable 30 days). REQUIRES confirm=True.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "message_id": {
@@ -991,7 +989,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_archive",
             description="Archive a Gmail message (remove INBOX). Requires confirm=True.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "message_id": {"type": "string"},
@@ -1004,7 +1002,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_label_apply",
             description="Apply a label to messages with dry-run preview",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "message_ids": {"type": "array", "items": {"type": "string"}},
@@ -1022,7 +1020,7 @@ def _tools() -> List[types.Tool]:
                 "Read a whole Gmail conversation: every message with date, sender, "
                 "labels and attachments. Pass thread_id or any message_id."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "thread_id": {"type": "string"},
@@ -1039,7 +1037,7 @@ def _tools() -> List[types.Tool]:
                 "Save an attachment from a Gmail message to disk. Select it by "
                 "filename or attachment_id; with a single attachment both are optional."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "message_id": {"type": "string"},
@@ -1061,7 +1059,7 @@ def _tools() -> List[types.Tool]:
                 "Reply inside the original thread with correct In-Reply-To/References "
                 "headers. Creates a draft by default; set draft_mode=false to send."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "message_id": {"type": "string"},
@@ -1078,7 +1076,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="list_events",
             description="List upcoming calendar events",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "calendar_id": {"type": "string"},
@@ -1091,7 +1089,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="calendar_create_meeting",
             description="Create a calendar meeting with attendees. Requires confirm=True.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "summary": {"type": "string"},
@@ -1122,7 +1120,7 @@ def _tools() -> List[types.Tool]:
                 "Read file metadata: name, type, size, owner, parents, created and "
                 "modified time, sharing state and link."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string", "description": "The Drive file ID"},
@@ -1134,7 +1132,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="drive_rename_file",
             description="Rename a Drive file without moving or copying it.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -1150,7 +1148,7 @@ def _tools() -> List[types.Tool]:
                 "Move a file to the trash. Requires confirm=true; the file stays "
                 "recoverable for 30 days. Permanent deletion is not exposed."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -1163,7 +1161,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="drive_restore_file",
             description="Restore a file from the Drive trash (trashed=false).",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"file_id": {"type": "string"}},
                 "required": ["file_id"],
@@ -1176,7 +1174,7 @@ def _tools() -> List[types.Tool]:
                 "Remove one permission from a file (revoke a person, group or public "
                 "link). Requires confirm=true."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "file_id": {"type": "string"},
@@ -1196,7 +1194,7 @@ def _tools() -> List[types.Tool]:
                 "Find and replace text in a Google Doc. Without confirm=true it "
                 "returns a preview with the number of occurrences."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "document_id": {"type": "string"},
@@ -1215,7 +1213,7 @@ def _tools() -> List[types.Tool]:
                 "Add a conditional formatting rule to a range: colour cells when the "
                 "condition matches (text, number or emptiness)."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1246,7 +1244,7 @@ def _tools() -> List[types.Tool]:
                 "Insert a chart from a range: COLUMN, BAR, LINE, AREA, SCATTER, "
                 "COMBO, STEPPED_AREA or PIE. The first column is the domain."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1278,7 +1276,7 @@ def _tools() -> List[types.Tool]:
                 "Delete a sheet (tab) and everything on it. Requires confirm=true; "
                 "the last remaining sheet cannot be deleted."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1292,7 +1290,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_insert_rows",
             description="Insert empty rows before a 1-based row number.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1309,7 +1307,7 @@ def _tools() -> List[types.Tool]:
             description=(
                 "Delete rows starting at a 1-based row number. Requires confirm=true."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1327,7 +1325,7 @@ def _tools() -> List[types.Tool]:
             description=(
                 "Merge a range (MERGE_ALL, MERGE_ROWS, MERGE_COLUMNS) or unmerge it."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1346,13 +1344,13 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_list_labels",
             description="List Gmail labels with their IDs, split into user and system labels.",
-            inputSchema={"type": "object", "properties": {}, "required": []},
+            input_schema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
         ),
         types.Tool(
             name="gmail_create_label",
             description="Create a Gmail label (a duplicate name is rejected by Gmail).",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "name": {"type": "string"},
@@ -1375,7 +1373,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_insert_columns",
             description="Insert empty columns before a 1-based column number.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1390,7 +1388,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="sheet_delete_columns",
             description="Delete columns starting at a 1-based column. Requires confirm=true.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1410,7 +1408,7 @@ def _tools() -> List[types.Tool]:
                 "descending. The header row is sorted with the data unless excluded "
                 "from the range."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1429,7 +1427,7 @@ def _tools() -> List[types.Tool]:
                 "Insert an inline image from a public URL at the end of a document; "
                 "width/height are in points."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "document_id": {"type": "string"},
@@ -1444,7 +1442,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="calendar_list_calendars",
             description="List calendars available to the account with access roles.",
-            inputSchema={"type": "object", "properties": {}, "required": []},
+            input_schema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
         ),
         types.Tool(
@@ -1453,7 +1451,7 @@ def _tools() -> List[types.Tool]:
                 "Send or draft an email with local file attachments (20 MB total). "
                 "Draft by default."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "to": {"type": "string"},
@@ -1473,7 +1471,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="script_list_deployments",
             description="List deployments of an Apps Script project.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"script_id": {"type": "string"}},
                 "required": ["script_id"],
@@ -1487,7 +1485,7 @@ def _tools() -> List[types.Tool]:
                 "Create a pivot table on a new sheet from a source range. Columns are "
                 "1-based positions inside that range."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1513,7 +1511,7 @@ def _tools() -> List[types.Tool]:
                 "Style every occurrence of a text: bold, italic, font size and/or "
                 "heading. Without confirm returns a preview."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "document_id": {"type": "string"},
@@ -1535,7 +1533,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_list_drafts",
             description="List Gmail drafts with recipient and subject.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"limit": {"type": "integer", "default": 10}},
                 "required": [],
@@ -1545,7 +1543,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_delete_draft",
             description="Delete a draft. Requires confirm=true; nothing is sent.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "draft_id": {"type": "string"},
@@ -1558,7 +1556,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="calendar_move_event",
             description="Move an event to another calendar.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "event_id": {"type": "string"},
@@ -1575,7 +1573,7 @@ def _tools() -> List[types.Tool]:
                 "Create an Apps Script deployment from a saved version (latest when "
                 "version_number is omitted)."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "script_id": {"type": "string"},
@@ -1593,7 +1591,7 @@ def _tools() -> List[types.Tool]:
                 "Add a data validation rule to a range: one of a list of values, or a "
                 "number between two bounds."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1615,7 +1613,7 @@ def _tools() -> List[types.Tool]:
                 "Protect a range: warning-only by default, or locked for everyone "
                 "except the listed editors."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1635,7 +1633,7 @@ def _tools() -> List[types.Tool]:
                 "Draw borders around and inside a range: SOLID, DOTTED, DASHED, "
                 "SOLID_MEDIUM, SOLID_THICK or NONE."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "spreadsheet_id": {"type": "string"},
@@ -1659,7 +1657,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_list_filters",
             description="List Gmail filters with their criteria and actions.",
-            inputSchema={"type": "object", "properties": {}, "required": []},
+            input_schema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
         ),
         types.Tool(
@@ -1668,7 +1666,7 @@ def _tools() -> List[types.Tool]:
                 "Create a Gmail filter: match from/subject/query, then add or remove "
                 "labels (use label IDs)."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "from_address": {"type": "string"},
@@ -1684,7 +1682,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="gmail_update_draft",
             description="Replace the content of an existing draft.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "draft_id": {"type": "string"},
@@ -1699,7 +1697,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="calendar_set_event_color",
             description='Set an event colour by Google Calendar colour id ("1"–"11").',
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "event_id": {"type": "string"},
@@ -1713,7 +1711,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="script_update_deployment",
             description="Point an Apps Script deployment at a newer version.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "script_id": {"type": "string"},
@@ -1734,7 +1732,7 @@ def _tools() -> List[types.Tool]:
                 "Cap: 300 items by default; allow_large raises it to the hard limit. "
                 "Nothing is changed until bulk_run is called with confirm=true."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "domain": {
@@ -1821,7 +1819,7 @@ def _tools() -> List[types.Tool]:
                 "interrupted job. Returns immediately with a job_id; poll "
                 "bulk_status for progress."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "plan_id": {"type": "string"},
@@ -1838,7 +1836,7 @@ def _tools() -> List[types.Tool]:
                 "Compact progress for a bulk job: state, done/total, ok, skipped, "
                 "failed percentages and the result file path."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"job_id": {"type": "string"}},
                 "required": ["job_id"],
@@ -1851,7 +1849,7 @@ def _tools() -> List[types.Tool]:
                 "Request cancellation of a running bulk job. In-flight items finish; "
                 "the job state becomes cancelled and can be resumed later."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"job_id": {"type": "string"}},
                 "required": ["job_id"],
@@ -1865,7 +1863,7 @@ def _tools() -> List[types.Tool]:
                 "Paginated: 50 items by default, 200 maximum. Use the result_file "
                 "path for the full artifact."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "job_id": {"type": "string"},
@@ -1879,7 +1877,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="bulk_list",
             description="List recent bulk jobs in this profile, newest first.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"limit": {"type": "integer", "default": 10}},
             },
@@ -1892,7 +1890,7 @@ def _tools() -> List[types.Tool]:
                 "Supports Drive move (restore previous parents), rename (restore "
                 "previous names) and trash (restore from trash). Requires confirm=true."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "job_id": {"type": "string"},
@@ -1905,7 +1903,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="tasks_list_lists",
             description="List Google Tasks task lists with their ids.",
-            inputSchema={"type": "object", "properties": {}, "required": []},
+            input_schema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
         ),
         types.Tool(
@@ -1914,7 +1912,7 @@ def _tools() -> List[types.Tool]:
                 "List tasks in a Google Tasks list. Default list is '@default'; "
                 "show_completed includes finished tasks."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "tasklist_id": {"type": "string", "default": "@default"},
@@ -1930,7 +1928,7 @@ def _tools() -> List[types.Tool]:
                 "Create a Google Task. due is an RFC 3339 timestamp "
                 "(for example 2026-11-20T00:00:00.000Z)."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "title": {"type": "string"},
@@ -1945,7 +1943,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="tasks_complete",
             description="Mark a Google Task as completed.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "task_id": {"type": "string"},
@@ -1958,7 +1956,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="forms_create",
             description="Create a Google Form with a title and optional description.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "title": {"type": "string"},
@@ -1974,7 +1972,7 @@ def _tools() -> List[types.Tool]:
                 "Append short-answer questions to a Google Form. Each question is an "
                 "object with title, optional description and required."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "form_id": {"type": "string"},
@@ -1998,7 +1996,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="forms_get",
             description="Read a Google Form: title, description, responder link and questions.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {"form_id": {"type": "string"}},
                 "required": ["form_id"],
@@ -2008,7 +2006,7 @@ def _tools() -> List[types.Tool]:
         types.Tool(
             name="forms_list_responses",
             description="List Google Form responses with answers mapped to question titles.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "form_id": {"type": "string"},
@@ -2024,7 +2022,7 @@ def _tools() -> List[types.Tool]:
                 "List domains verified in Gmail Postmaster Tools with the account's "
                 "permission level."
             ),
-            inputSchema={"type": "object", "properties": {}, "required": []},
+            input_schema={"type": "object", "properties": {}, "required": []},
             annotations=_READ_ONLY,
         ),
         types.Tool(
@@ -2033,7 +2031,7 @@ def _tools() -> List[types.Tool]:
                 "Read Gmail Postmaster traffic stats for a verified domain: spam rate, "
                 "domain reputation, DKIM/DMARC/SPF ratios and delivery errors."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "domain": {"type": "string"},
@@ -2207,7 +2205,6 @@ def create_server(config: Config, logger) -> Server:
         ),
     )
     exposed_tools = surface.mcp_tools()
-    exposed_names = frozenset(tool.name for tool in exposed_tools)
     exposed_specs = surface.by_name
     aliases = build_aliases(catalog)
     profile_name = surface.profile
@@ -2299,7 +2296,7 @@ def create_server(config: Config, logger) -> Server:
                             ),
                         )
                     ],
-                    isError=True,
+                    is_error=True,
                 )
             if action:
                 arguments = dict(arguments or {})
@@ -2317,7 +2314,7 @@ def create_server(config: Config, logger) -> Server:
                             ),
                         )
                     ],
-                    isError=True,
+                    is_error=True,
                 )
             logger.warning("Blocked tool call outside profile: %s", name)
             return types.CallToolResult(
@@ -2331,7 +2328,7 @@ def create_server(config: Config, logger) -> Server:
                         ),
                     )
                 ],
-                isError=True,
+                is_error=True,
             )
 
         try:
@@ -2351,7 +2348,7 @@ def create_server(config: Config, logger) -> Server:
             )
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=str(exc))],
-                isError=True,
+                is_error=True,
             )
 
         is_read_only = spec.safety is Safety.READ
@@ -2443,7 +2440,7 @@ def create_server(config: Config, logger) -> Server:
                                 text=f"Approval error: {exc}. The action was not executed.",
                             )
                         ],
-                        isError=True,
+                        is_error=True,
                     )
 
         try:
@@ -3107,7 +3104,7 @@ def create_server(config: Config, logger) -> Server:
                             type="resource",
                             resource=types.BlobResourceContents(
                                 uri=result.uri,
-                                mimeType=result.mime_type,
+                                mime_type=result.mime_type,
                                 blob=base64.b64encode(result.data).decode(),
                             ),
                         )
@@ -3130,7 +3127,7 @@ def create_server(config: Config, logger) -> Server:
             )
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=text)],
-                isError=is_error,
+                is_error=is_error,
             )
 
         except Exception as e:
@@ -3147,7 +3144,7 @@ def create_server(config: Config, logger) -> Server:
                 content=[
                     types.TextContent(type="text", text=f"Error: {humanize_http_error(e)}")
                 ],
-                isError=True,
+                is_error=True,
             )
 
     # ------------------------------------------------------------------
@@ -3160,50 +3157,51 @@ def create_server(config: Config, logger) -> Server:
                 uri="gdrive://recent",
                 name="Recent Google Drive Files",
                 description="Lists the 20 most recently modified files in Google Drive",
-                mimeType="text/plain",
+                mime_type="text/plain",
             ),
             types.Resource(
                 uri="gmail://inbox",
                 name="Gmail Inbox",
                 description="Recent unread messages in the Gmail inbox",
-                mimeType="text/plain",
+                mime_type="text/plain",
             ),
             types.Resource(
                 uri="gcalendar://upcoming",
                 name="Upcoming Calendar Events",
                 description="Upcoming events from the primary Google Calendar (next 7 days)",
-                mimeType="text/plain",
+                mime_type="text/plain",
             ),
         ]
 
     async def handle_list_resource_templates() -> List[types.ResourceTemplate]:
         return [
             types.ResourceTemplate(
-                uriTemplate="gdrive://file/{file_id}",
+                uri_template="gdrive://file/{file_id}",
                 name="Google Drive File",
                 description="Metadata for a specific Google Drive file (ID required)",
-                mimeType="text/plain",
+                mime_type="text/plain",
             ),
             types.ResourceTemplate(
-                uriTemplate="gsheets://{spreadsheet_id}/{range}",
+                uri_template="gsheets://{spreadsheet_id}/{range}",
                 name="Google Sheets Range",
                 description=(
                     "Data from a specific spreadsheet range, e.g. "
                     "gsheets://SPREADSHEET_ID/Sheet1!A1:Z100"
                 ),
-                mimeType="text/plain",
+                mime_type="text/plain",
             ),
             types.ResourceTemplate(
-                uriTemplate="gdocs://{document_id}",
+                uri_template="gdocs://{document_id}",
                 name="Google Document",
                 description="Full text content of a specific Google Doc (ID required)",
-                mimeType="text/plain",
+                mime_type="text/plain",
             ),
         ]
 
     async def handle_read_resource(uri: AnyUrl) -> Iterable[ReadResourceContents]:
-        from .auth import get_creds
         from googleapiclient.discovery import build
+
+        from .auth import get_creds
 
         uri_str = str(uri)
 
@@ -3357,8 +3355,9 @@ def create_server(config: Config, logger) -> Server:
     async def handle_get_prompt(
         name: str, arguments: dict[str, str] | None
     ) -> types.GetPromptResult:
-        from .auth import get_creds
         from googleapiclient.discovery import build
+
+        from .auth import get_creds
 
         args = arguments or {}
 

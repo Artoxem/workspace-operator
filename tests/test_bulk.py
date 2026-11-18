@@ -10,10 +10,10 @@ from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 from workspace_operator.bulk import service, store
-from workspace_operator.bulk.service import _undo_spec
 from workspace_operator.bulk.engine import _gmail_label_changes, _rename
 from workspace_operator.bulk.models import Job, Plan
 from workspace_operator.bulk.selector import build_query, escape_query
+from workspace_operator.bulk.service import _undo_spec
 from workspace_operator.config import Config
 
 LOGGER = logging.getLogger("test.bulk")

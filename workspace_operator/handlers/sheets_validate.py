@@ -175,7 +175,7 @@ def set_borders_handler(
             _properties(service, spreadsheet_id), sheet_name, range_name
         )
         grid = _grid_range(sheet["sheetId"], parse_a1_range(range_name))
-        border = {"style": border_style}
+        border: Dict[str, Any] = {"style": border_style}
         if border_style != "NONE":
             border["colorStyle"] = {"rgbColor": hex_to_color(color)}
 

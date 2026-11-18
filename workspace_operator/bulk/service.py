@@ -19,12 +19,12 @@ from googleapiclient.errors import HttpError
 from ..auth import get_creds
 from ..config import Config
 from ..security import validate_email
-from . import engine, selector as selector_module, store
+from . import engine, store
+from . import selector as selector_module
 from .models import (
-    ACTIONS,
+    DOCS_ACTIONS,
     DOMAIN_MIME,
     DOMAINS,
-    DOCS_ACTIONS,
     DRIVE_ACTIONS,
     GMAIL_ACTIONS,
     SHEETS_ACTIONS,

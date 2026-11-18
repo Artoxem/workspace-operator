@@ -53,7 +53,7 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(kinds, {"read", "write", "destructive"})
 
     def test_cli_json_output(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory():
             import contextlib
             import io
 

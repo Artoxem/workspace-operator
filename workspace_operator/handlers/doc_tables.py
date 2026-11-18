@@ -235,7 +235,7 @@ def create_document_with_blocks(
         current = docs.documents().get(documentId=document_id).execute()
         tables = _tables(current)
         style: List[Dict[str, Any]] = []
-        for table, rows in zip(tables, table_rows):
+        for table, rows in zip(tables, table_rows, strict=False):
             style.extend(header_style_requests(cell_layout(table), rows))
         if style:
             docs.documents().batchUpdate(

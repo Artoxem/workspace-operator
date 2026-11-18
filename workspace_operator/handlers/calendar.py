@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from googleapiclient.discovery import build
@@ -118,7 +118,7 @@ def calendar_create_meeting_handler(
         creds = get_creds(config)
         service = build("calendar", "v3", credentials=creds)
 
-        event = {
+        event: dict = {
             "summary": summary,
             "description": description,
             "location": location,

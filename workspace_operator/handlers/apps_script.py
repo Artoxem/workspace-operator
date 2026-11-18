@@ -186,8 +186,8 @@ def restore_script_backup_handler(
 ) -> str:
     """Restore script from backup file."""
     try:
-        import os
         import json
+        import os
 
         if not os.path.exists(backup_path):
             return f"Error: Backup file not found: {backup_path}"

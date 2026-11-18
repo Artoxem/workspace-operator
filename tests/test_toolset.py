@@ -2,10 +2,7 @@
 
 import unittest
 
-from mcp import types
-
 from workspace_operator.server import _tools
-from workspace_operator.toolset.catalog import build_catalog
 from workspace_operator.toolset import (
     ActionSpec,
     RoutingError,
@@ -17,6 +14,7 @@ from workspace_operator.toolset import (
     filter_by_scopes,
     resolve_call,
 )
+from workspace_operator.toolset.catalog import build_catalog
 from workspace_operator.toolset.models import annotations_for
 
 

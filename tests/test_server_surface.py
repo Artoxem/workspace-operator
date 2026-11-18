@@ -9,14 +9,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from mcp import ClientSession
-from mcp import types
+from mcp import ClientSession, types
 from mcp.shared.memory import create_client_server_memory_streams
 
+import workspace_operator.server as server_module
 from workspace_operator.approvals import ApprovalStore
 from workspace_operator.config import Config
 from workspace_operator.server import create_server
-import workspace_operator.server as server_module
 
 LOGGER = logging.getLogger("test.server")
 
@@ -175,7 +174,6 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_elicitation_accept_executes(self):
-        cfg = config("core", approval_dir=self.tmp.name)
         seen = {}
 
         async def approve(_context, params):
