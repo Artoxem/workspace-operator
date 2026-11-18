@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "workspace-operator-mcp",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "transport": {
         "type": "stdio"
       },
