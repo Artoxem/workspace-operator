@@ -100,6 +100,7 @@ docker run --rm -p 127.0.0.1:8765:8765 \
 | Симптом | Причина | Что делать |
 |---|---|---|
 | `Unknown tool: …` | профиль или allow/deny скрывает инструмент | `workspace-operator tools --profile full`; проверить `MCP_DENIED_TOOLS` |
+| `Operation op_… not found or expired` | подготовленная операция Apps Script уже выполнена, отменена или старше `operation_ttl` | повторите шаг подготовки; что ожидает — видно в `data/operations/` |
 | `CONFIRMATION REQUIRED` | разрушительный инструмент вызван один раз | повторить вызов с `confirm=true`, посмотрев превью |
 | инструмент возвращает превью вместо действия | включён dry-run | убрать `MCP_DRY_RUN` / `dry_run: false` |
 | `403 quota exceeded`, `rateLimitExceeded` | лимиты Google | подождать, поднять `MCP_RETRY_ATTEMPTS`, сузить диапазон |

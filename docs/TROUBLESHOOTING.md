@@ -100,6 +100,7 @@ endpoint has no TLS.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Unknown tool: …` | the profile or an allow/deny list hides it | `workspace-operator tools --profile full`; check `MCP_DENIED_TOOLS` |
+| `Operation op_… not found or expired` | a prepared Apps Script update was executed already, cancelled, or older than `operation_ttl` | run the prepare step again; `data/operations/` shows what is pending |
 | `CONFIRMATION REQUIRED` | destructive tool called once | repeat the call with `confirm=true` after checking the preview |
 | the tool returns a preview instead of acting | dry-run is on | unset `MCP_DRY_RUN` / `dry_run: false` |
 | `403 quota exceeded`, `rateLimitExceeded` | Google limits | wait; raise `MCP_RETRY_ATTEMPTS`; narrow the range |

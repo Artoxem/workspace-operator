@@ -346,7 +346,10 @@ Compose adds `--allow-network --insecure` and publishes the port on the host
 loopback only. With a plain `docker run`, append
 `--http --host 0.0.0.0 --allow-network --insecure` to the command **and** keep the
 `-p 127.0.0.1:8765:8765` mapping (otherwise the container is exposed without TLS).
-Uploads inside the container are limited to `/home/app/data/upload`.
+Uploads inside the container are limited to `/home/app/data/upload`. The shipped
+`config.docker.yaml` keeps the conservative `core` profile (20 tools); put
+`MCP_TOOL_PROFILE=full` (or `read-write`, `read-only`) in `.env` to change the exposed
+surface without editing the tracked config — Compose passes the variable through.
 
 **docker run — Linux/macOS**
 
@@ -555,7 +558,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 421 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 448 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

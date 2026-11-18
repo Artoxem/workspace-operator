@@ -341,7 +341,11 @@ curl http://127.0.0.1:8765/healthz
 При обычном `docker run` добавьте в конец команды
 `--http --host 0.0.0.0 --allow-network --insecure` **и** оставьте проброс
 `-p 127.0.0.1:8765:8765` (иначе контейнер окажется в сети без TLS). Загрузка файлов
-внутри контейнера ограничена папкой `/home/app/data/upload`.
+внутри контейнера ограничена папкой `/home/app/data/upload`. Шаблон
+`config.docker.yaml` оставляет консервативный профиль `core` (20 инструментов);
+поставьте `MCP_TOOL_PROFILE=full` (или `read-write`, `read-only`) в `.env`, чтобы
+изменить видимую поверхность, не редактируя отслеживаемый конфиг — Compose передаёт
+переменную в контейнер.
 
 **docker run — Linux/macOS**
 
@@ -550,7 +554,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 421 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 448 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```
