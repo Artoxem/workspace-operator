@@ -43,6 +43,7 @@ workspace-operator/
 │   ├── logging.py      # stderr + optional file logging
 │   ├── security.py     # Token check, validation helpers
 │   ├── operations.py   # Shared utilities (backups, etc.)
+│   ├── dispatch.py     # Routing table: handler name -> function + arguments
 │   ├── server.py       # MCP Server, tool registration
 │   └── handlers/       # One module per Google API
 │       ├── drive.py
@@ -233,6 +234,10 @@ async def handle_list_tools() -> list[types.Tool]:
 ```
 
 **Step 5.2:** Implement `handle_call_tool`:
+
+> This is the minimal teaching version with an inline `handlers` dict. The current
+> server keeps that table as data in `workspace_operator/dispatch.py` (name →
+> function and argument mapping) and builds the callables with `build_handlers`.
 
 ```python
 @server.call_tool()

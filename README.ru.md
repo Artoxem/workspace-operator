@@ -490,14 +490,19 @@ workspace_operator/
 │  ├─ surface.py             фильтрация по профилю и скоупам
 │  ├─ routing.py             валидация action и confirm
 │  └─ scopes.py              выданные Google-скоупы из token file
+├─ dispatch.py               таблица маршрутов: имя handler → функция + разбор аргументов
 ├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 конфиг + переменные окружения
-├─ auth.py                   OAuth 2.0 и кэш токена
+├─ auth.py                   OAuth 2.0; обновление токена под файловой блокировкой
+├─ secure_files.py           атомарная запись с правами владельца, блокировка, защищённые пути
+├─ approvals.py              очередь одобрений (секрет на одобрение, одноразовые id)
+├─ http_transport.py         Streamable HTTP: bearer, защита от DNS-rebinding, страницы одобрений
+├─ bulk/                     движок plan → job: selector, store, run/cancel/undo
 ├─ text.py                   нормализация текста, таймстампов и ошибок
 ├─ operations.py             хранилище подготовленных операций Apps Script
 ├─ security.py               проверки токена и email
 ├─ runtime.py                ретраи, аудит-лог, dry-run
-├─ cli.py                    doctor / tools / serve
+├─ cli.py                    doctor / tools / approvals / serve
 └─ handlers/                 реализации Google API для каталога
 tests/                       unit, surface и in-memory MCP тесты
 antigravity/                 готовый mcp_config.json
@@ -508,6 +513,8 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 
 * каталог — единственный источник истины для имён, действий, скоупов и документации;
 * каждое действие сопоставлено ровно одному handler и проверяется до вызова;
+* таблица handler'ов — это данные (`dispatch.py`), а `tests/test_handler_dispatch.py`
+  фиксирует, что получает каждый из 104 handler'ов, включая значения по умолчанию;
 * destructive-действия требуют approval человека (`approval_id`) и confirm;
 * ни один инструмент не удаляет файл Drive безвозвратно — граница это корзина;
 * профили и scope-routing уменьшают видимую поверхность.
@@ -516,7 +523,7 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 390 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 394 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

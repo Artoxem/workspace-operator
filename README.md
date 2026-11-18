@@ -495,14 +495,19 @@ workspace_operator/
 │  ├─ surface.py             profile + scope filtering
 │  ├─ routing.py             action validation and confirm gate
 │  └─ scopes.py              granted Google scopes from the token file
+├─ dispatch.py               routing table: handler name → function + argument mapping
 ├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 config file + environment overrides
-├─ auth.py                   OAuth 2.0 credentials and token cache
+├─ auth.py                   OAuth 2.0 credentials; token refresh under a file lock
+├─ secure_files.py           owner-only atomic writes, file lock, protected paths
+├─ approvals.py              human approval queue (per-approval secret, one-time ids)
+├─ http_transport.py         Streamable HTTP: bearer auth, DNS-rebinding guard, approval pages
+├─ bulk/                     plan → job engine: selector, store, run/cancel/undo
 ├─ text.py                   entity/whitespace normalisation, timestamps, error hints
 ├─ operations.py             staged-operation store for Apps Script
 ├─ security.py               token and email checks
 ├─ runtime.py                retries, audit log, dry-run helpers
-├─ cli.py                    doctor / tools / serve
+├─ cli.py                    doctor / tools / approvals / serve
 └─ handlers/                 Google API implementations used by the catalog
 tests/                       unit, surface and in-memory MCP checks
 antigravity/                 ready-to-paste mcp_config.json
@@ -513,6 +518,8 @@ Design rules:
 
 * the catalog is the single source of truth for names, actions, scopes and docs;
 * every action maps to exactly one handler and is validated before dispatch;
+* the handler table is data (`dispatch.py`), and `tests/test_handler_dispatch.py` pins
+  what each of the 104 handlers receives, including defaults;
 * destructive actions require a human `approval_id` (and are still confirm-gated);
 * no tool permanently deletes a Drive file; Trash is the boundary;
 * server-side profiles and scope routing keep the exposed surface small.
@@ -521,7 +528,7 @@ Design rules:
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 390 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 394 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```
