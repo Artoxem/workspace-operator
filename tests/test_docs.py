@@ -26,6 +26,20 @@ READ_ONLY = len(build_surface(TOOLS, "read-only"))
 # Release notes and specs describe past versions on purpose.
 HISTORICAL = ("docs/RELEASE_", "docs/SPEC_")
 
+# Top-level directories the project does not ship: runtime state, build output and
+# local tooling. They hold whatever the live account or a local venv contains, and a
+# bare "data/" must stay out of this list's scope for nested dirs like tests/data/.
+RUNTIME = (
+    "data/",
+    "build/",
+    "dist/",
+    ".venv/",
+    "venv/",
+    ".mypy_cache/",
+    ".pytest_cache/",
+    ".ruff_cache/",
+)
+
 
 def read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8")
@@ -34,6 +48,8 @@ def read(rel: str) -> str:
 def markdown_files():
     for path in ROOT.rglob("*.md"):
         if ".git" in path.parts or "__pycache__" in path.parts:
+            continue
+        if path.relative_to(ROOT).as_posix().startswith(RUNTIME):
             continue
         yield path
 
@@ -205,7 +221,11 @@ class LegacyNameTests(unittest.TestCase):
             if path.suffix not in {".py", ".md", ".json", ".toml", ".yaml"}:
                 continue
             rel = path.relative_to(ROOT).as_posix()
-            if rel.startswith(HISTORICAL) or rel == "tests/test_docs.py":
+            if (
+                rel.startswith(HISTORICAL)
+                or rel.startswith(RUNTIME)
+                or rel == "tests/test_docs.py"
+            ):
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             for needle in ("mcp_google", "My Google Tools"):
@@ -225,7 +245,11 @@ class UniversalityTests(unittest.TestCase):
             if not path.is_file() or ".git" in path.parts or "__pycache__" in path.parts:
                 continue
             rel = path.relative_to(ROOT).as_posix()
-            if rel.startswith(HISTORICAL) or rel == "tests/test_docs.py":
+            if (
+                rel.startswith(HISTORICAL)
+                or rel.startswith(RUNTIME)
+                or rel == "tests/test_docs.py"
+            ):
                 continue
             if path.suffix not in {".py", ".md", ".json", ".yaml", ".toml"}:
                 continue
