@@ -521,7 +521,7 @@ Design rules:
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 334 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 390 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

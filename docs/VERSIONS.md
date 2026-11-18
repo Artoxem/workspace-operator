@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.2.0**.
+Current release: **2.2.1**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|
+| **2.2.1** | Fixed bulk jobs losing results on cancel: items already running when a job was cancelled changed Google data but were not written to the result file, so `bulk_undo` skipped them and resume repeated them; they are now recorded. Added engine, selector and service tests with fake Google clients (bulk engine coverage 18% → 77%, selector 17% → 95%); 390 tests. |
 | **2.2.0** | Security hardening: mail-attachment/Drive names are sanitised (path traversal fix); `drive_upload` refuses secrets and honours `upload_roots`; browser approvals need a per-approval secret, an Origin check and strict headers (`approvals link`); HTTP mode rejects placeholder/short tokens; `token.json` is refreshed under a lock and written atomically owner-only; `doctor` checks secret hygiene; the Docker image binds `127.0.0.1` by default. CI (pytest, ruff, mypy, bandit, pip-audit) gates publishing; mypy 152 → 0; 334 tests. |
 | **2.1.2** | Added the browser approval fallback (`/approvals/...`) for clients without MCP elicitation; approval URL config and HTTP page tests. |
 | **2.1.1** | In-chat approval via MCP elicitation when the client supports it; the local `approval_id` CLI remains a fallback. |

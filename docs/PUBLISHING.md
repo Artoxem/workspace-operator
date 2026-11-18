@@ -11,7 +11,7 @@ The package name is **`workspace-operator-mcp`** (checked free on PyPI on
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                            # 334 tests, no network
+python -m pytest                            # 390 tests, no network
 python -m ruff check workspace_operator tests
 python -m mypy
 python -m workspace_operator tools --profile core
@@ -92,7 +92,7 @@ next patch version. Never reuse a version number.
 
 - [ ] versions match in `pyproject.toml`, `__init__.py` and `server.json`
 - [ ] CI green (pytest, ruff, mypy, bandit, pip-audit); the publish workflows run it first
-- [ ] 334 tests green locally; optional live read/write smoke on a synthetic doc
+- [ ] 390 tests green locally; optional live read/write smoke on a synthetic doc
 - [ ] `python -m build` produces both artifacts
 - [ ] tag pushed
 - [ ] pending publisher / token ready
