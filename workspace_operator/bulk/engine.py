@@ -471,6 +471,47 @@ def _run(
     store.save_job(config, job)
 
     cancelled = False
+    processed = 0
+
+    def record_outcome(item: Dict[str, Any], future) -> None:
+        """Persist the outcome of one finished future and update the counters."""
+        nonlocal processed
+        try:
+            record = future.result()
+        except BulkError as exc:
+            record = {
+                "id": item["id"],
+                "name": item.get("name", ""),
+                "status": "failed",
+                "error": str(exc),
+            }
+        except HttpError as exc:
+            record = {
+                "id": item["id"],
+                "name": item.get("name", ""),
+                "status": "failed",
+                "error": f"HTTP {getattr(getattr(exc, 'resp', None), 'status', '?')}: {exc}",
+            }
+        except Exception as exc:  # noqa: BLE001 - isolate one bad item
+            record = {
+                "id": item["id"],
+                "name": item.get("name", ""),
+                "status": "failed",
+                "error": str(exc),
+            }
+
+        store.append_result(config, job.id, record)
+        processed += 1
+        job.done += 1
+        if record["status"] == "ok":
+            job.ok += 1
+        elif record["status"] == "skipped":
+            job.skipped += 1
+        else:
+            job.failed += 1
+        if processed % 25 == 0:
+            store.save_job(config, job)
+
     try:
         with ThreadPoolExecutor(max_workers=concurrency) as pool:
             futures = {
@@ -486,49 +527,25 @@ def _run(
                 ): item
                 for index, item in enumerate(items, start=1)
             }
-            processed = 0
+            recorded = set()
             for future in as_completed(futures):
                 if event is not None and event.is_set():
                     cancelled = True
-                    for pending in futures:
-                        pending.cancel()
                     break
-                item = futures[future]
-                try:
-                    record = future.result()
-                except BulkError as exc:
-                    record = {
-                        "id": item["id"],
-                        "name": item.get("name", ""),
-                        "status": "failed",
-                        "error": str(exc),
-                    }
-                except HttpError as exc:
-                    record = {
-                        "id": item["id"],
-                        "name": item.get("name", ""),
-                        "status": "failed",
-                        "error": f"HTTP {getattr(getattr(exc, 'resp', None), 'status', '?')}: {exc}",
-                    }
-                except Exception as exc:  # noqa: BLE001 - isolate one bad item
-                    record = {
-                        "id": item["id"],
-                        "name": item.get("name", ""),
-                        "status": "failed",
-                        "error": str(exc),
-                    }
+                record_outcome(futures[future], future)
+                recorded.add(future)
 
-                store.append_result(config, job.id, record)
-                processed += 1
-                job.done += 1
-                if record["status"] == "ok":
-                    job.ok += 1
-                elif record["status"] == "skipped":
-                    job.skipped += 1
-                else:
-                    job.failed += 1
-                if processed % 25 == 0:
-                    store.save_job(config, job)
+            if cancelled:
+                # Drop what has not started. Whatever is already running will still
+                # change Google data, so its outcome must be recorded too: resume
+                # would otherwise repeat it and undo would not know about it.
+                for pending in futures:
+                    pending.cancel()
+                for future, item in futures.items():
+                    if future in recorded or future.cancelled():
+                        continue
+                    future.exception()  # wait for the in-flight call to finish
+                    record_outcome(item, future)
 
         job.state = "cancelled" if cancelled else "completed"
         job.finished_at = now_iso()
