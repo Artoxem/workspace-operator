@@ -1,0 +1,246 @@
+[
+ {
+  "name": "calendar_update_event",
+  "description": "Update an existing event. Only the fields you pass are changed; send_updates controls attendee notifications.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "event_id": {
+     "type": "string"
+    },
+    "calendar_id": {
+     "type": "string",
+     "default": "primary"
+    },
+    "summary": {
+     "type": "string"
+    },
+    "start_time": {
+     "type": "string",
+     "description": "ISO datetime"
+    },
+    "end_time": {
+     "type": "string",
+     "description": "ISO datetime"
+    },
+    "description": {
+     "type": "string"
+    },
+    "location": {
+     "type": "string"
+    },
+    "attendees": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "send_updates": {
+     "type": "string",
+     "enum": [
+      "all",
+      "externalOnly",
+      "none"
+     ],
+     "default": "none"
+    }
+   },
+   "required": [
+    "event_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "calendar_delete_event",
+  "description": "Delete an event. Requires confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "event_id": {
+     "type": "string"
+    },
+    "calendar_id": {
+     "type": "string",
+     "default": "primary"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    },
+    "send_updates": {
+     "type": "string",
+     "enum": [
+      "all",
+      "externalOnly",
+      "none"
+     ],
+     "default": "none"
+    }
+   },
+   "required": [
+    "event_id"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "calendar_respond_to_invite",
+  "description": "Answer an invitation: accepted, declined or tentative. Requires confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "event_id": {
+     "type": "string"
+    },
+    "response": {
+     "type": "string",
+     "enum": [
+      "accepted",
+      "declined",
+      "tentative"
+     ]
+    },
+    "calendar_id": {
+     "type": "string",
+     "default": "primary"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    },
+    "send_updates": {
+     "type": "string",
+     "enum": [
+      "all",
+      "externalOnly",
+      "none"
+     ],
+     "default": "all"
+    }
+   },
+   "required": [
+    "event_id",
+    "response"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "list_events",
+  "description": "List upcoming calendar events",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "calendar_id": {
+     "type": "string"
+    },
+    "max_results": {
+     "type": "integer"
+    }
+   },
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "calendar_create_meeting",
+  "description": "Create a calendar meeting with attendees. Requires confirm=True.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "summary": {
+     "type": "string"
+    },
+    "start_time": {
+     "type": "string",
+     "description": "ISO format start time"
+    },
+    "end_time": {
+     "type": "string",
+     "description": "ISO format end time"
+    },
+    "attendees": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "description": {
+     "type": "string"
+    },
+    "location": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "summary",
+    "start_time",
+    "end_time"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "calendar_list_calendars",
+  "description": "List calendars available to the account with access roles.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "calendar_move_event",
+  "description": "Move an event to another calendar.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "event_id": {
+     "type": "string"
+    },
+    "destination_calendar_id": {
+     "type": "string"
+    },
+    "calendar_id": {
+     "type": "string",
+     "default": "primary"
+    }
+   },
+   "required": [
+    "event_id",
+    "destination_calendar_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "calendar_set_event_color",
+  "description": "Set an event colour by Google Calendar colour id (\"1\"–\"11\").",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "event_id": {
+     "type": "string"
+    },
+    "color_id": {
+     "type": "string"
+    },
+    "calendar_id": {
+     "type": "string",
+     "default": "primary"
+    }
+   },
+   "required": [
+    "event_id",
+    "color_id"
+   ]
+  },
+  "safety": "write"
+ }
+]

@@ -1,0 +1,80 @@
+[
+ {
+  "name": "tasks_list_lists",
+  "description": "List Google Tasks task lists with their ids.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "tasks_list",
+  "description": "List tasks in a Google Tasks list. Default list is '@default'; show_completed includes finished tasks.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "tasklist_id": {
+     "type": "string",
+     "default": "@default"
+    },
+    "show_completed": {
+     "type": "boolean",
+     "default": false
+    },
+    "max_results": {
+     "type": "integer",
+     "default": 50
+    }
+   }
+  },
+  "safety": "read"
+ },
+ {
+  "name": "tasks_create",
+  "description": "Create a Google Task. due is an RFC 3339 timestamp (for example 2026-11-20T00:00:00.000Z).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "title": {
+     "type": "string"
+    },
+    "notes": {
+     "type": "string"
+    },
+    "due": {
+     "type": "string"
+    },
+    "tasklist_id": {
+     "type": "string",
+     "default": "@default"
+    }
+   },
+   "required": [
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "tasks_complete",
+  "description": "Mark a Google Task as completed.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "task_id": {
+     "type": "string"
+    },
+    "tasklist_id": {
+     "type": "string",
+     "default": "@default"
+    }
+   },
+   "required": [
+    "task_id"
+   ]
+  },
+  "safety": "write"
+ }
+]

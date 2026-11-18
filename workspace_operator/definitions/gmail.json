@@ -1,0 +1,474 @@
+[
+ {
+  "name": "get_gmail_profile",
+  "description": "Get the authenticated Gmail address for the current OAuth token",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "list_emails",
+  "description": "List emails from Gmail",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "max_results": {
+     "type": "integer"
+    },
+    "query": {
+     "type": "string",
+     "description": "Gmail search query (e.g. 'is:unread')"
+    }
+   },
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "read_email",
+  "description": "Read a specific email by ID",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "message_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "message_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "gmail_search_and_summarize",
+  "description": "Search Gmail and return a brief summary",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "query": {
+     "type": "string"
+    },
+    "max_results": {
+     "type": "integer",
+     "default": 50
+    }
+   },
+   "required": [
+    "query"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "create_draft",
+  "description": "Create a draft email in Gmail",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "to": {
+     "type": "string"
+    },
+    "subject": {
+     "type": "string"
+    },
+    "body_text": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "to",
+    "subject",
+    "body_text"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "send_email",
+  "description": "Send an email via Gmail. Defaults to draft_mode=True for safety!",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "to": {
+     "type": "string",
+     "description": "Recipient email address"
+    },
+    "subject": {
+     "type": "string"
+    },
+    "body_text": {
+     "type": "string"
+    },
+    "draft_mode": {
+     "type": "boolean",
+     "description": "If true (default), creates draft instead of sending. Set to false to actually send.",
+     "default": true
+    }
+   },
+   "required": [
+    "to",
+    "subject",
+    "body_text"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "send_draft",
+  "description": "Send an existing draft email by draft ID",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "draft_id": {
+     "type": "string",
+     "description": "The ID of the draft to send"
+    }
+   },
+   "required": [
+    "draft_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "delete_email",
+  "description": "Move one email to Trash by ID (recoverable 30 days). REQUIRES confirm=True.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "message_id": {
+     "type": "string",
+     "description": "The ID of the email to delete"
+    },
+    "confirm": {
+     "type": "boolean",
+     "description": "MUST be true to actually delete the email. Safety check.",
+     "default": false
+    }
+   },
+   "required": [
+    "message_id",
+    "confirm"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "gmail_archive",
+  "description": "Archive a Gmail message (remove INBOX). Requires confirm=True.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "message_id": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "message_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "gmail_label_apply",
+  "description": "Apply a label to messages with dry-run preview",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "message_ids": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "label_name": {
+     "type": "string"
+    },
+    "dry_run": {
+     "type": "boolean",
+     "default": true
+    },
+    "create_if_missing": {
+     "type": "boolean",
+     "default": true
+    }
+   },
+   "required": [
+    "message_ids",
+    "label_name"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "gmail_get_thread",
+  "description": "Read a whole Gmail conversation: every message with date, sender, labels and attachments. Pass thread_id or any message_id.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "thread_id": {
+     "type": "string"
+    },
+    "message_id": {
+     "type": "string"
+    },
+    "include_body": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "gmail_get_attachment",
+  "description": "Save an attachment from a Gmail message to disk. Select it by filename or attachment_id; with a single attachment both are optional.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "message_id": {
+     "type": "string"
+    },
+    "filename": {
+     "type": "string"
+    },
+    "attachment_id": {
+     "type": "string"
+    },
+    "save_to": {
+     "type": "string",
+     "description": "File or directory path (default: ~/Downloads)"
+    },
+    "overwrite": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "message_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "gmail_reply",
+  "description": "Reply inside the original thread with correct In-Reply-To/References headers. Creates a draft by default; set draft_mode=false to send.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "message_id": {
+     "type": "string"
+    },
+    "body_text": {
+     "type": "string"
+    },
+    "reply_all": {
+     "type": "boolean",
+     "default": false
+    },
+    "draft_mode": {
+     "type": "boolean",
+     "default": true
+    }
+   },
+   "required": [
+    "message_id",
+    "body_text"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "gmail_list_labels",
+  "description": "List Gmail labels with their IDs, split into user and system labels.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "gmail_create_label",
+  "description": "Create a Gmail label (a duplicate name is rejected by Gmail).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "label_list_visibility": {
+     "type": "string",
+     "enum": [
+      "labelShow",
+      "labelShowIfUnread",
+      "labelHide"
+     ],
+     "default": "labelShow"
+    },
+    "message_list_visibility": {
+     "type": "string",
+     "enum": [
+      "show",
+      "hide"
+     ],
+     "default": "show"
+    }
+   },
+   "required": [
+    "name"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "gmail_send_with_attachments",
+  "description": "Send or draft an email with local file attachments (20 MB total). Draft by default.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "to": {
+     "type": "string"
+    },
+    "subject": {
+     "type": "string"
+    },
+    "body_text": {
+     "type": "string"
+    },
+    "attachments": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "description": "Local paths on the server machine"
+    },
+    "draft_mode": {
+     "type": "boolean",
+     "default": true
+    }
+   },
+   "required": [
+    "to",
+    "subject",
+    "body_text",
+    "attachments"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "gmail_list_drafts",
+  "description": "List Gmail drafts with recipient and subject.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "limit": {
+     "type": "integer",
+     "default": 10
+    }
+   },
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "gmail_delete_draft",
+  "description": "Delete a draft. Requires confirm=true; nothing is sent.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "draft_id": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "draft_id"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "gmail_list_filters",
+  "description": "List Gmail filters with their criteria and actions.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "gmail_create_filter",
+  "description": "Create a Gmail filter: match from/subject/query, then add or remove labels (use label IDs).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "from_address": {
+     "type": "string"
+    },
+    "subject": {
+     "type": "string"
+    },
+    "query": {
+     "type": "string"
+    },
+    "add_labels": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "remove_labels": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": []
+  },
+  "safety": "write"
+ },
+ {
+  "name": "gmail_update_draft",
+  "description": "Replace the content of an existing draft.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "draft_id": {
+     "type": "string"
+    },
+    "to": {
+     "type": "string"
+    },
+    "subject": {
+     "type": "string"
+    },
+    "body_text": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "draft_id",
+    "to",
+    "subject",
+    "body_text"
+   ]
+  },
+  "safety": "write"
+ }
+]

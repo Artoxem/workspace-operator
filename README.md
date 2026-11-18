@@ -487,7 +487,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 ## How it works
 
 ```
-server.py                    MCP protocol wiring and dispatch
+server.py                    MCP protocol wiring (tools, resources, prompts)
 workspace_operator/
 ├─ toolset/                  typed catalog, action router, scope/profile surface
 │  ├─ models.py              ToolSpec / ActionSpec / Safety / Surface
@@ -495,6 +495,8 @@ workspace_operator/
 │  ├─ surface.py             profile + scope filtering
 │  ├─ routing.py             action validation and confirm gate
 │  └─ scopes.py              granted Google scopes from the token file
+├─ definitions/              tool and prompt definitions as data: one JSON per domain,
+│                            order.json (the order of tools/list), prompts.json
 ├─ dispatch.py               routing table: handler name → function + argument mapping
 ├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 config file + environment overrides
@@ -518,17 +520,36 @@ Design rules:
 
 * the catalog is the single source of truth for names, actions, scopes and docs;
 * every action maps to exactly one handler and is validated before dispatch;
-* the handler table is data (`dispatch.py`), and `tests/test_handler_dispatch.py` pins
-  what each of the 104 handlers receives, including defaults;
+* tool schemas (`definitions/*.json`) and the handler table (`dispatch.py`) are data;
+  `tests/test_definitions.py` and `tests/test_handler_dispatch.py` pin what clients see
+  and what each of the 104 handlers receives, including defaults;
 * destructive actions require a human `approval_id` (and are still confirm-gated);
 * no tool permanently deletes a Drive file; Trash is the boundary;
 * server-side profiles and scope routing keep the exposed surface small.
+
+## Adding a tool or action
+
+A handler is reachable through four places that must agree; the tests tell you which
+one you forgot:
+
+1. the handler function in `workspace_operator/handlers/` (add it to `handlers/__init__.py`);
+2. its schema in `workspace_operator/definitions/<domain>.json` (`name`, `description`,
+   `input_schema`, `safety`: `read` / `write` / `destructive`) and its name in `order.json`;
+3. its route in `workspace_operator/dispatch.py` (`P("key", default=...)` per argument) and
+   the import in `server.py`;
+4. its action in `workspace_operator/toolset/catalog.py` (scopes, confirm), then the tool
+   tables in `README.md`, `README.ru.md` and `docs/TOOLS_REFERENCE.md` (en/ru).
+
+Regenerate the golden snapshots only for an intentional change:
+`UPDATE_GOLDEN=1 python -m pytest tests/test_handler_dispatch.py`. JSON files must be listed
+in `[tool.setuptools.package-data]` (already covered for `definitions/`), or the wheel
+ships without them.
 
 ## Testing
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 394 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 406 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

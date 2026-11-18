@@ -1,0 +1,275 @@
+[
+ {
+  "name": "bulk_plan",
+  "description": "Resolve a Drive, Gmail, Docs or Sheets selector into a reviewed plan (dry run). Returns a plan_id, matched count, total size, a small sample and warnings. Cap: 300 items by default; allow_large raises it to the hard limit. Nothing is changed until bulk_run is called with confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "domain": {
+     "type": "string",
+     "enum": [
+      "drive",
+      "gmail",
+      "docs",
+      "sheets"
+     ],
+     "default": "drive"
+    },
+    "action": {
+     "type": "string",
+     "enum": [
+      "move",
+      "trash",
+      "restore",
+      "rename",
+      "share",
+      "revoke_public",
+      "archive",
+      "label",
+      "mark_read",
+      "mark_unread",
+      "replace_text",
+      "find_replace"
+     ]
+    },
+    "selector": {
+     "type": "object",
+     "properties": {
+      "query": {
+       "type": "string"
+      },
+      "folder_id": {
+       "type": "string"
+      },
+      "recursive": {
+       "type": "boolean",
+       "default": false
+      },
+      "mime_types": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "name_contains": {
+       "type": "string"
+      },
+      "ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "exclude_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "modified": {
+       "type": "object",
+       "properties": {
+        "after": {
+         "type": "string"
+        },
+        "before": {
+         "type": "string"
+        }
+       }
+      },
+      "include_trashed": {
+       "type": "boolean",
+       "default": false
+      },
+      "include_spam_trash": {
+       "type": "boolean",
+       "default": false
+      },
+      "limit": {
+       "type": "integer"
+      }
+     }
+    },
+    "options": {
+     "type": "object",
+     "properties": {
+      "target_folder_id": {
+       "type": "string"
+      },
+      "pattern": {
+       "type": "string"
+      },
+      "find": {
+       "type": "string"
+      },
+      "replace": {
+       "type": "string"
+      },
+      "role": {
+       "type": "string"
+      },
+      "type": {
+       "type": "string"
+      },
+      "email_address": {
+       "type": "string"
+      },
+      "domain": {
+       "type": "string"
+      },
+      "send_notification": {
+       "type": "boolean"
+      },
+      "allow_public": {
+       "type": "boolean"
+      },
+      "add_labels": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "remove_labels": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "match_case": {
+       "type": "boolean",
+       "default": false
+      },
+      "sheet_id": {
+       "type": "integer"
+      }
+     }
+    },
+    "allow_large": {
+     "type": "boolean",
+     "default": false
+    },
+    "sample": {
+     "type": "integer",
+     "default": 5
+    }
+   },
+   "required": [
+    "action"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "bulk_run",
+  "description": "Execute a reviewed bulk plan as a background job. Requires confirm=true and a non-expired plan_id. Pass job_id to resume an interrupted job. Returns immediately with a job_id; poll bulk_status for progress.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "plan_id": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    },
+    "job_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "plan_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "bulk_status",
+  "description": "Compact progress for a bulk job: state, done/total, ok, skipped, failed percentages and the result file path.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "job_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "job_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "bulk_cancel",
+  "description": "Request cancellation of a running bulk job. In-flight items finish; the job state becomes cancelled and can be resumed later.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "job_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "job_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "bulk_result",
+  "description": "Read one page of per-item bulk results (id, name, status, error). Paginated: 50 items by default, 200 maximum. Use the result_file path for the full artifact.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "job_id": {
+     "type": "string"
+    },
+    "offset": {
+     "type": "integer",
+     "default": 0
+    },
+    "limit": {
+     "type": "integer",
+     "default": 50
+    }
+   },
+   "required": [
+    "job_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "bulk_list",
+  "description": "List recent bulk jobs in this profile, newest first.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "limit": {
+     "type": "integer",
+     "default": 10
+    }
+   }
+  },
+  "safety": "read"
+ },
+ {
+  "name": "bulk_undo",
+  "description": "Revert a completed bulk job using the state saved in its results. Supports Drive move (restore previous parents), rename (restore previous names) and trash (restore from trash). Requires confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "job_id": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "job_id"
+   ]
+  },
+  "safety": "write"
+ }
+]

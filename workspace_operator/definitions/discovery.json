@@ -1,0 +1,121 @@
+[
+ {
+  "name": "workspace_search",
+  "description": "Search Google Drive, Gmail and Calendar with one query and get a merged, date-sorted result list. Use it for 'find everything about X' questions before falling back to per-service tools.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "query": {
+     "type": "string",
+     "description": "Free-text query, e.g. 'Q3 budget'"
+    },
+    "sources": {
+     "type": "string",
+     "default": "drive,gmail",
+     "description": "Comma-separated sources to search: drive, gmail, calendar"
+    },
+    "limit": {
+     "type": "integer",
+     "default": 10,
+     "description": "Maximum results per source (1-25)"
+    },
+    "calendar_days_back": {
+     "type": "integer",
+     "default": 30,
+     "description": "Calendar only: how far back to search"
+    },
+    "calendar_days_ahead": {
+     "type": "integer",
+     "default": 180,
+     "description": "Calendar only: how far ahead to search"
+    }
+   },
+   "required": [
+    "query"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "digest",
+  "description": "Composite: one digest across Gmail, Calendar and Drive for the last N hours. Returns text by default, or creates a Google Doc.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "sources": {
+     "type": "string",
+     "default": "gmail,calendar,drive",
+     "description": "Comma-separated subset of gmail, calendar, drive"
+    },
+    "since_hours": {
+     "type": "integer",
+     "default": 24
+    },
+    "limit": {
+     "type": "integer",
+     "default": 10
+    },
+    "output": {
+     "type": "string",
+     "enum": [
+      "text",
+      "doc"
+     ],
+     "default": "text"
+    },
+    "doc_title": {
+     "type": "string"
+    }
+   },
+   "required": []
+  },
+  "safety": "write"
+ },
+ {
+  "name": "compare_tables",
+  "description": "Composite: diff two ranges by a key column (added / removed / changed rows). Works across sheets or spreadsheets.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_a": {
+     "type": "string"
+    },
+    "range_b": {
+     "type": "string"
+    },
+    "other_spreadsheet_id": {
+     "type": "string"
+    },
+    "key_column": {
+     "type": "string",
+     "default": "1",
+     "description": "Column name or 1-based index"
+    },
+    "header": {
+     "type": "boolean",
+     "default": true
+    },
+    "output": {
+     "type": "string",
+     "enum": [
+      "text",
+      "doc"
+     ],
+     "default": "text"
+    },
+    "doc_title": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_a",
+    "range_b"
+   ]
+  },
+  "safety": "write"
+ }
+]

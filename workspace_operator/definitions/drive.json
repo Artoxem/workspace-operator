@@ -1,0 +1,328 @@
+[
+ {
+  "name": "drive_search_advanced",
+  "description": "Advanced Google Drive search with full query syntax",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "query": {
+     "type": "string"
+    },
+    "limit": {
+     "type": "integer",
+     "default": 50
+    }
+   },
+   "required": [
+    "query"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "drive_list_permissions",
+  "description": "List permissions for a Drive file",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "file_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "create_folder",
+  "description": "Create a folder in Google Drive",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "parent_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "name"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "move_file",
+  "description": "Move a file to a different folder",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "folder_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "file_id",
+    "folder_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "drive_copy_file",
+  "description": "Copy a Drive file to a new file",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "parent_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "file_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "share_file",
+  "description": "Share a file with a user or make it public. REQUIRES allow_public=True to share publicly!",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "role": {
+     "type": "string",
+     "enum": [
+      "reader",
+      "commenter",
+      "writer"
+     ]
+    },
+    "type": {
+     "type": "string",
+     "enum": [
+      "user",
+      "group",
+      "domain",
+      "anyone"
+     ],
+     "description": "Access type. 'anyone' requires allow_public=True"
+    },
+    "email_address": {
+     "type": "string",
+     "description": "Required for type 'user' or 'group'"
+    },
+    "allow_public": {
+     "type": "boolean",
+     "description": "MUST be true to share with type='anyone'. Security check.",
+     "default": false
+    }
+   },
+   "required": [
+    "file_id",
+    "role"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "drive_revoke_public",
+  "description": "Revoke public access (type=anyone) for a Drive file. Requires confirm=True.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "file_id"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "drive_upload",
+  "description": "Upload a local file to Google Drive. Use convert_to to turn a docx/xlsx into a native Google Doc or Sheet.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "local_path": {
+     "type": "string",
+     "description": "Path on the machine running this server"
+    },
+    "name": {
+     "type": "string",
+     "description": "Drive file name (default: the local file name)"
+    },
+    "parent_id": {
+     "type": "string",
+     "description": "Destination folder ID (default: My Drive root)"
+    },
+    "mime_type": {
+     "type": "string",
+     "description": "Override the detected content type"
+    },
+    "convert_to": {
+     "type": "string",
+     "enum": [
+      "google-docs",
+      "google-sheets"
+     ],
+     "description": "Convert to a native Google file on upload"
+    }
+   },
+   "required": [
+    "local_path"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "drive_export",
+  "description": "Export a Google Doc or Sheet to a local file: pdf, docx, xlsx, csv, txt and more.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "format": {
+     "type": "string",
+     "description": "pdf | docx | xlsx | csv | txt | md | html | …"
+    },
+    "save_to": {
+     "type": "string",
+     "description": "File or directory path (default: ~/Downloads)"
+    },
+    "overwrite": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "file_id",
+    "format"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "drive_get_metadata",
+  "description": "Read file metadata: name, type, size, owner, parents, created and modified time, sharing state and link.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string",
+     "description": "The Drive file ID"
+    }
+   },
+   "required": [
+    "file_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "drive_rename_file",
+  "description": "Rename a Drive file without moving or copying it.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string",
+     "description": "New file name"
+    }
+   },
+   "required": [
+    "file_id",
+    "name"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "drive_delete_file",
+  "description": "Move a file to the trash. Requires confirm=true; the file stays recoverable for 30 days. Permanent deletion is not exposed.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "file_id"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "drive_restore_file",
+  "description": "Restore a file from the Drive trash (trashed=false).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "file_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "drive_remove_permission",
+  "description": "Remove one permission from a file (revoke a person, group or public link). Requires confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "permission_id": {
+     "type": "string",
+     "description": "Permission ID from drive_list_permissions"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "file_id",
+    "permission_id"
+   ]
+  },
+  "safety": "destructive"
+ }
+]

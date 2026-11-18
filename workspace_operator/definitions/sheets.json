@@ -1,0 +1,862 @@
+[
+ {
+  "name": "read_sheet",
+  "description": "Read data from a Google Sheet",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_name"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "get_spreadsheet_meta",
+  "description": "Get metadata (sheets, titles) of a spreadsheet",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "sheet_export_csv",
+  "description": "Export a range as CSV text",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_name": {
+     "type": "string"
+    },
+    "max_rows": {
+     "type": "integer",
+     "default": 5000
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_name"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "create_spreadsheet",
+  "description": "Create a new Google Spreadsheet",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "title": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "add_sheet",
+  "description": "Add a new sheet (tab) to a spreadsheet",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "title": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "append_row",
+  "description": "Append a row to a Google Sheet",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_name": {
+     "type": "string"
+    },
+    "values": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_name",
+    "values"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "update_sheet",
+  "description": "Update data in a Google Sheet. 'values' must be a list of lists of strings (rows of columns).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_name": {
+     "type": "string"
+    },
+    "values": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_name",
+    "values"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "clear_range",
+  "description": "Clear values in a spreadsheet range. Auto dry-run for large ranges (>100 cells).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_name": {
+     "type": "string"
+    },
+    "confirm": {
+     "type": "boolean",
+     "description": "Must be true to clear large ranges (>100 cells)",
+     "default": false
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_name"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "sheet_find_replace",
+  "description": "Find/replace in a range with dry-run preview",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range_name": {
+     "type": "string"
+    },
+    "find_text": {
+     "type": "string"
+    },
+    "replace_text": {
+     "type": "string"
+    },
+    "dry_run": {
+     "type": "boolean",
+     "default": true
+    },
+    "match_case": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range_name",
+    "find_text",
+    "replace_text"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_create_filter_view",
+  "description": "Create a filter view for a sheet with grid range",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_id": {
+     "type": "integer"
+    },
+    "title": {
+     "type": "string"
+    },
+    "start_row": {
+     "type": "integer",
+     "default": 0
+    },
+    "end_row": {
+     "type": "integer"
+    },
+    "start_col": {
+     "type": "integer",
+     "default": 0
+    },
+    "end_col": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "sheet_id",
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_create_named_range",
+  "description": "Create a named range using grid indexes",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "sheet_id": {
+     "type": "integer"
+    },
+    "start_row": {
+     "type": "integer"
+    },
+    "end_row": {
+     "type": "integer"
+    },
+    "start_col": {
+     "type": "integer"
+    },
+    "end_col": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "name",
+    "sheet_id",
+    "start_row",
+    "end_row",
+    "start_col",
+    "end_col"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_format",
+  "description": "Format a Google Sheets range or sheet: bold/italic/size, number format, colours, alignment, wrap, column width, row height and frozen panes — all in one call.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string",
+     "description": "Sheet tab name (default: first sheet or the one in range)"
+    },
+    "range": {
+     "type": "string",
+     "description": "A1 range, e.g. A1:C10, A:C or 1:10 (default: whole sheet)"
+    },
+    "bold": {
+     "type": "boolean"
+    },
+    "italic": {
+     "type": "boolean"
+    },
+    "font_size": {
+     "type": "number"
+    },
+    "number_format": {
+     "type": "string",
+     "description": "Sheets number pattern, e.g. '#,##0.00' or '0.0%'"
+    },
+    "background_color": {
+     "type": "string",
+     "description": "#RRGGBB"
+    },
+    "text_color": {
+     "type": "string",
+     "description": "#RRGGBB"
+    },
+    "horizontal_alignment": {
+     "type": "string",
+     "enum": [
+      "LEFT",
+      "CENTER",
+      "RIGHT"
+     ]
+    },
+    "wrap": {
+     "type": "string",
+     "enum": [
+      "OVERFLOW_CELL",
+      "CLIP",
+      "WRAP"
+     ]
+    },
+    "column_width": {
+     "type": "number",
+     "description": "Pixels"
+    },
+    "row_height": {
+     "type": "number",
+     "description": "Pixels"
+    },
+    "freeze_rows": {
+     "type": "integer"
+    },
+    "freeze_cols": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "spreadsheet_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_conditional_format",
+  "description": "Add a conditional formatting rule to a range: colour cells when the condition matches (text, number or emptiness).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string",
+     "description": "A1 range, e.g. A2:C100"
+    },
+    "condition": {
+     "type": "string",
+     "description": "TEXT_CONTAINS, TEXT_EQ, NUMBER_GREATER, NUMBER_LESS, NUMBER_BETWEEN, IS_EMPTY, IS_NOT_EMPTY, …"
+    },
+    "value": {
+     "type": "string",
+     "description": "Comparison value"
+    },
+    "value2": {
+     "type": "string",
+     "description": "Upper bound for NUMBER_BETWEEN"
+    },
+    "background_color": {
+     "type": "string",
+     "default": "#FFF2CC"
+    },
+    "text_color": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range",
+    "condition"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_add_chart",
+  "description": "Insert a chart from a range: COLUMN, BAR, LINE, AREA, SCATTER, COMBO, STEPPED_AREA or PIE. The first column is the domain.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string",
+     "description": "A1 range with headers"
+    },
+    "chart_type": {
+     "type": "string",
+     "enum": [
+      "COLUMN",
+      "BAR",
+      "LINE",
+      "AREA",
+      "SCATTER",
+      "COMBO",
+      "STEPPED_AREA",
+      "PIE"
+     ],
+     "default": "COLUMN"
+    },
+    "title": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    },
+    "header": {
+     "type": "boolean",
+     "default": true
+    },
+    "anchor_row": {
+     "type": "integer",
+     "default": 0
+    },
+    "anchor_col": {
+     "type": "integer",
+     "default": 0
+    },
+    "width": {
+     "type": "integer",
+     "default": 600
+    },
+    "height": {
+     "type": "integer",
+     "default": 371
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_delete_sheet",
+  "description": "Delete a sheet (tab) and everything on it. Requires confirm=true; the last remaining sheet cannot be deleted.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string",
+     "description": "Tab to delete"
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "sheet_name"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "sheet_insert_rows",
+  "description": "Insert empty rows before a 1-based row number.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    },
+    "start_row": {
+     "type": "integer",
+     "default": 1
+    },
+    "count": {
+     "type": "integer",
+     "default": 1
+    }
+   },
+   "required": [
+    "spreadsheet_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_delete_rows",
+  "description": "Delete rows starting at a 1-based row number. Requires confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    },
+    "start_row": {
+     "type": "integer",
+     "default": 1
+    },
+    "count": {
+     "type": "integer",
+     "default": 1
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "spreadsheet_id"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "sheet_merge_cells",
+  "description": "Merge a range (MERGE_ALL, MERGE_ROWS, MERGE_COLUMNS) or unmerge it.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string",
+     "description": "A1 range"
+    },
+    "merge_type": {
+     "type": "string",
+     "enum": [
+      "MERGE_ALL",
+      "MERGE_COLUMNS",
+      "MERGE_ROWS",
+      "UNMERGE"
+     ],
+     "default": "MERGE_ALL"
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_insert_columns",
+  "description": "Insert empty columns before a 1-based column number.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    },
+    "start_column": {
+     "type": "integer",
+     "default": 1
+    },
+    "count": {
+     "type": "integer",
+     "default": 1
+    }
+   },
+   "required": [
+    "spreadsheet_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_delete_columns",
+  "description": "Delete columns starting at a 1-based column. Requires confirm=true.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    },
+    "start_column": {
+     "type": "integer",
+     "default": 1
+    },
+    "count": {
+     "type": "integer",
+     "default": 1
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "spreadsheet_id"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "sheet_sort_range",
+  "description": "Sort a range by a 1-based column inside that range, ascending or descending. The header row is sorted with the data unless excluded from the range.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string"
+    },
+    "column": {
+     "type": "integer",
+     "default": 1
+    },
+    "ascending": {
+     "type": "boolean",
+     "default": true
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_add_pivot_table",
+  "description": "Create a pivot table on a new sheet from a source range. Columns are 1-based positions inside that range.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "source_range": {
+     "type": "string",
+     "description": "A1 range with headers"
+    },
+    "rows": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     }
+    },
+    "values": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     }
+    },
+    "columns": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     }
+    },
+    "aggregation": {
+     "type": "string",
+     "enum": [
+      "SUM",
+      "COUNT",
+      "AVERAGE",
+      "MIN",
+      "MAX"
+     ],
+     "default": "SUM"
+    },
+    "target_sheet_name": {
+     "type": "string",
+     "default": "Pivot"
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "source_range",
+    "rows",
+    "values"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_set_data_validation",
+  "description": "Add a data validation rule to a range: one of a list of values, or a number between two bounds.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string"
+    },
+    "values": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "minimum": {
+     "type": "number"
+    },
+    "maximum": {
+     "type": "number"
+    },
+    "strict": {
+     "type": "boolean",
+     "default": true
+    },
+    "input_message": {
+     "type": "string"
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_protect_range",
+  "description": "Protect a range: warning-only by default, or locked for everyone except the listed editors.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    },
+    "warning_only": {
+     "type": "boolean",
+     "default": true
+    },
+    "editors": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "sheet_set_borders",
+  "description": "Draw borders around and inside a range: SOLID, DOTTED, DASHED, SOLID_MEDIUM, SOLID_THICK or NONE.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "spreadsheet_id": {
+     "type": "string"
+    },
+    "range": {
+     "type": "string"
+    },
+    "style": {
+     "type": "string",
+     "enum": [
+      "SOLID",
+      "DOTTED",
+      "DASHED",
+      "SOLID_MEDIUM",
+      "SOLID_THICK",
+      "NONE"
+     ],
+     "default": "SOLID"
+    },
+    "color": {
+     "type": "string",
+     "default": "#000000"
+    },
+    "sides": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "sheet_name": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "spreadsheet_id",
+    "range"
+   ]
+  },
+  "safety": "write"
+ }
+]

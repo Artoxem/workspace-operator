@@ -1,0 +1,32 @@
+[
+ {
+  "name": "postmaster_list_domains",
+  "description": "List domains verified in Gmail Postmaster Tools with the account's permission level.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "required": []
+  },
+  "safety": "read"
+ },
+ {
+  "name": "postmaster_traffic_stats",
+  "description": "Read Gmail Postmaster traffic stats for a verified domain: spam rate, domain reputation, DKIM/DMARC/SPF ratios and delivery errors.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "domain": {
+     "type": "string"
+    },
+    "days": {
+     "type": "integer",
+     "default": 7
+    }
+   },
+   "required": [
+    "domain"
+   ]
+  },
+  "safety": "read"
+ }
+]

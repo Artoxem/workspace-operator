@@ -1,0 +1,94 @@
+[
+ {
+  "name": "forms_create",
+  "description": "Create a Google Form with a title and optional description.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "title": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "forms_add_questions",
+  "description": "Append short-answer questions to a Google Form. Each question is an object with title, optional description and required.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "form_id": {
+     "type": "string"
+    },
+    "questions": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string"
+       },
+       "description": {
+        "type": "string"
+       },
+       "required": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "title"
+      ]
+     }
+    }
+   },
+   "required": [
+    "form_id",
+    "questions"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "forms_get",
+  "description": "Read a Google Form: title, description, responder link and questions.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "form_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "form_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "forms_list_responses",
+  "description": "List Google Form responses with answers mapped to question titles.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "form_id": {
+     "type": "string"
+    },
+    "max_results": {
+     "type": "integer",
+     "default": 50
+    }
+   },
+   "required": [
+    "form_id"
+   ]
+  },
+  "safety": "read"
+ }
+]

@@ -1,0 +1,229 @@
+[
+ {
+  "name": "create_script_project",
+  "description": "Create a new Google Apps Script project",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "title": {
+     "type": "string"
+    },
+    "parent_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "get_script_content",
+  "description": "Get the content of a Google Apps Script project",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "script_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "script_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "prepare_script_update",
+  "description": "STEP 1: Prepare a Google Apps Script update with automatic backup. Returns operation_id.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "script_id": {
+     "type": "string",
+     "description": "The Apps Script project ID"
+    },
+    "files": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "type": {
+        "type": "string"
+       },
+       "source": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "type",
+       "source"
+      ]
+     },
+     "description": "Array of files to update"
+    }
+   },
+   "required": [
+    "script_id",
+    "files"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "execute_operation",
+  "description": "STEP 2: Execute a prepared operation by operation_id (from prepare_script_update)",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "operation_id": {
+     "type": "string",
+     "description": "The operation ID from prepare_script_update"
+    }
+   },
+   "required": [
+    "operation_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "cancel_operation",
+  "description": "Cancel a prepared operation before execution",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "operation_id": {
+     "type": "string",
+     "description": "The operation ID to cancel"
+    }
+   },
+   "required": [
+    "operation_id"
+   ]
+  },
+  "annotations": {
+   "read_only_hint": false,
+   "destructive_hint": false,
+   "idempotent_hint": true
+  }
+ },
+ {
+  "name": "restore_script_backup",
+  "description": "Restore a script from a backup file",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "backup_path": {
+     "type": "string",
+     "description": "Full path to the backup JSON file"
+    }
+   },
+   "required": [
+    "backup_path"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "script_run_function",
+  "description": "Run a function from an Apps Script project deployed as an API executable. Executes arbitrary code with your account's authority.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "script_id": {
+     "type": "string"
+    },
+    "function_name": {
+     "type": "string"
+    },
+    "parameters": {
+     "type": "array",
+     "items": {},
+     "description": "Positional arguments passed to the function"
+    },
+    "dev_mode": {
+     "type": "boolean",
+     "default": true,
+     "description": "Run the latest saved code instead of the deployed version"
+    }
+   },
+   "required": [
+    "script_id",
+    "function_name"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "script_list_deployments",
+  "description": "List deployments of an Apps Script project.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "script_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "script_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "script_create_deployment",
+  "description": "Create an Apps Script deployment from a saved version (latest when version_number is omitted).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "script_id": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    },
+    "version_number": {
+     "type": "integer",
+     "default": 0
+    }
+   },
+   "required": [
+    "script_id"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "script_update_deployment",
+  "description": "Point an Apps Script deployment at a newer version.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "script_id": {
+     "type": "string"
+    },
+    "deployment_id": {
+     "type": "string"
+    },
+    "version_number": {
+     "type": "integer",
+     "default": 0
+    },
+    "description": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "script_id",
+    "deployment_id"
+   ]
+  },
+  "safety": "write"
+ }
+]

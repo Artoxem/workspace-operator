@@ -43,6 +43,7 @@ workspace-operator/
 │   ├── logging.py      # stderr + optional file logging
 │   ├── security.py     # Token check, validation helpers
 │   ├── operations.py   # Shared utilities (backups, etc.)
+│   ├── definitions/    # Tool and prompt definitions as JSON data
 │   ├── dispatch.py     # Routing table: handler name -> function + arguments
 │   ├── server.py       # MCP Server, tool registration
 │   └── handlers/       # One module per Google API
@@ -206,6 +207,10 @@ async def run() -> None:
 ## Part 5: Registering Tools
 
 Tools are declared with `name`, `description`, and `inputSchema` (JSON Schema).
+
+> The code below is the minimal teaching version. The current server keeps these
+> definitions as data in `workspace_operator/definitions/*.json` and loads them with
+> `load_tools()`.
 
 **Step 5.1:** Decorate `handle_list_tools`:
 

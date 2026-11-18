@@ -482,7 +482,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 ## Как устроено
 
 ```
-server.py                    MCP-протокол и dispatch
+server.py                    MCP-протокол (инструменты, ресурсы, промпты)
 workspace_operator/
 ├─ toolset/                  типизированный каталог, router, scope/profile surface
 │  ├─ models.py              ToolSpec / ActionSpec / Safety / Surface
@@ -490,6 +490,8 @@ workspace_operator/
 │  ├─ surface.py             фильтрация по профилю и скоупам
 │  ├─ routing.py             валидация action и confirm
 │  └─ scopes.py              выданные Google-скоупы из token file
+├─ definitions/              определения инструментов и промптов как данные: JSON на домен,
+│                            order.json (порядок tools/list), prompts.json
 ├─ dispatch.py               таблица маршрутов: имя handler → функция + разбор аргументов
 ├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 конфиг + переменные окружения
@@ -513,17 +515,36 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 
 * каталог — единственный источник истины для имён, действий, скоупов и документации;
 * каждое действие сопоставлено ровно одному handler и проверяется до вызова;
-* таблица handler'ов — это данные (`dispatch.py`), а `tests/test_handler_dispatch.py`
-  фиксирует, что получает каждый из 104 handler'ов, включая значения по умолчанию;
+* схемы инструментов (`definitions/*.json`) и таблица handler'ов (`dispatch.py`) — это
+  данные; `tests/test_definitions.py` и `tests/test_handler_dispatch.py` фиксируют, что
+  видят клиенты и что получает каждый из 104 handler'ов, включая значения по умолчанию;
 * destructive-действия требуют approval человека (`approval_id`) и confirm;
 * ни один инструмент не удаляет файл Drive безвозвратно — граница это корзина;
 * профили и scope-routing уменьшают видимую поверхность.
+
+## Как добавить инструмент или действие
+
+Handler доступен через четыре места, которые должны быть согласованы; тесты подскажут,
+что вы забыли:
+
+1. функция handler в `workspace_operator/handlers/` (добавьте её в `handlers/__init__.py`);
+2. её схема в `workspace_operator/definitions/<домен>.json` (`name`, `description`,
+   `input_schema`, `safety`: `read` / `write` / `destructive`) и имя в `order.json`;
+3. её маршрут в `workspace_operator/dispatch.py` (`P("key", default=...)` на каждый
+   аргумент) и импорт в `server.py`;
+4. её действие в `workspace_operator/toolset/catalog.py` (скоупы, confirm), затем таблицы
+   инструментов в `README.md`, `README.ru.md` и `docs/TOOLS_REFERENCE.md` (en/ru).
+
+Эталонные снимки пересоздавайте только при намеренном изменении:
+`UPDATE_GOLDEN=1 python -m pytest tests/test_handler_dispatch.py`. JSON-файлы должны быть
+перечислены в `[tool.setuptools.package-data]` (для `definitions/` уже сделано), иначе
+wheel уйдёт без них.
 
 ## Тестирование
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 394 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 406 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

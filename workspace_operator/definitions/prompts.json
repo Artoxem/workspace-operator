@@ -1,0 +1,149 @@
+[
+ {
+  "name": "summarize_inbox",
+  "title": null,
+  "description": "Fetch recent Gmail messages and prepare them for AI summarization. Optionally filter by a Gmail search query.",
+  "arguments": [
+   {
+    "name": "query",
+    "title": null,
+    "description": "Gmail search query (default: 'is:unread in:inbox')",
+    "required": false
+   },
+   {
+    "name": "max_results",
+    "title": null,
+    "description": "Maximum number of emails to include (default: 20)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ },
+ {
+  "name": "analyze_spreadsheet",
+  "title": null,
+  "description": "Read a Google Sheet range and prepare the data for AI analysis or visualization.",
+  "arguments": [
+   {
+    "name": "spreadsheet_id",
+    "title": null,
+    "description": "The Google Spreadsheet ID",
+    "required": true
+   },
+   {
+    "name": "range",
+    "title": null,
+    "description": "Sheet range to read (default: Sheet1)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ },
+ {
+  "name": "plan_week",
+  "title": null,
+  "description": "Fetch upcoming calendar events and prepare a weekly planning summary for AI-assisted scheduling.",
+  "arguments": [
+   {
+    "name": "days_ahead",
+    "title": null,
+    "description": "Number of days to look ahead (default: 7)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ },
+ {
+  "name": "search_drive",
+  "title": null,
+  "description": "Search Google Drive for files and prepare a structured list for AI review or organisation suggestions.",
+  "arguments": [
+   {
+    "name": "query",
+    "title": null,
+    "description": "Drive search query (e.g. 'name contains \"budget\"')",
+    "required": true
+   },
+   {
+    "name": "limit",
+    "title": null,
+    "description": "Maximum number of results (default: 20)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ },
+ {
+  "name": "weekly_review",
+  "title": null,
+  "description": "Cross-source review of the last N days: mail, changed files and the coming agenda, prepared for a weekly summary.",
+  "arguments": [
+   {
+    "name": "days_back",
+    "title": null,
+    "description": "How many days to look back (default: 7)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ },
+ {
+  "name": "inbox_triage",
+  "title": null,
+  "description": "Fetch a Gmail slice and prepare it for triage: urgent, waiting, informational, archive candidates.",
+  "arguments": [
+   {
+    "name": "query",
+    "title": null,
+    "description": "Gmail search query (default: 'is:unread in:inbox')",
+    "required": false
+   },
+   {
+    "name": "max_results",
+    "title": null,
+    "description": "Maximum messages to include (default: 15)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ },
+ {
+  "name": "compare_brief",
+  "title": null,
+  "description": "Diff two ranges by a key column and prepare a reconciliation report.",
+  "arguments": [
+   {
+    "name": "spreadsheet_id",
+    "title": null,
+    "description": "Spreadsheet ID",
+    "required": true
+   },
+   {
+    "name": "range_a",
+    "title": null,
+    "description": "Baseline range",
+    "required": true
+   },
+   {
+    "name": "range_b",
+    "title": null,
+    "description": "New range",
+    "required": true
+   },
+   {
+    "name": "key_column",
+    "title": null,
+    "description": "Column name or 1-based index (default: 1)",
+    "required": false
+   }
+  ],
+  "icons": null,
+  "meta": null
+ }
+]

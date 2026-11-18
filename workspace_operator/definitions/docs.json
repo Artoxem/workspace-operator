@@ -1,0 +1,158 @@
+[
+ {
+  "name": "read_doc",
+  "description": "Read the content of a Google Doc",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "document_id": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "document_id"
+   ]
+  },
+  "safety": "read"
+ },
+ {
+  "name": "create_doc",
+  "description": "Create a new Google Doc",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "title": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "title"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "append_to_doc",
+  "description": "Append text to a Google Doc",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "document_id": {
+     "type": "string"
+    },
+    "text": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "document_id",
+    "text"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "doc_replace_text",
+  "description": "Find and replace text in a Google Doc. Without confirm=true it returns a preview with the number of occurrences.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "document_id": {
+     "type": "string"
+    },
+    "find": {
+     "type": "string",
+     "description": "Text to search for"
+    },
+    "replace": {
+     "type": "string",
+     "description": "Replacement text"
+    },
+    "match_case": {
+     "type": "boolean",
+     "default": false
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "document_id",
+    "find",
+    "replace"
+   ]
+  },
+  "safety": "destructive"
+ },
+ {
+  "name": "docs_insert_image",
+  "description": "Insert an inline image from a public URL at the end of a document; width/height are in points.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "document_id": {
+     "type": "string"
+    },
+    "image_url": {
+     "type": "string"
+    },
+    "width": {
+     "type": "number"
+    },
+    "height": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "document_id",
+    "image_url"
+   ]
+  },
+  "safety": "write"
+ },
+ {
+  "name": "docs_format_text",
+  "description": "Style every occurrence of a text: bold, italic, font size and/or heading. Without confirm returns a preview.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "document_id": {
+     "type": "string"
+    },
+    "find": {
+     "type": "string"
+    },
+    "bold": {
+     "type": "boolean",
+     "default": false
+    },
+    "italic": {
+     "type": "boolean",
+     "default": false
+    },
+    "font_size": {
+     "type": "number",
+     "description": "Points"
+    },
+    "heading": {
+     "type": "string",
+     "description": "NORMAL_TEXT, HEADING_1..6, TITLE, SUBTITLE"
+    },
+    "match_case": {
+     "type": "boolean",
+     "default": false
+    },
+    "confirm": {
+     "type": "boolean",
+     "default": false
+    }
+   },
+   "required": [
+    "document_id",
+    "find"
+   ]
+  },
+  "safety": "destructive"
+ }
+]
