@@ -1,0 +1,369 @@
+"""Tool-call pipeline: resolve, validate, approve, execute, report.
+
+``ToolRouter.handle`` is the body of the MCP ``tools/call`` request. It used to be
+a single 270-line closure inside ``create_server``; the steps are methods now and
+share their state through the instance. Each step either returns a finished
+``CallToolResult`` (an early exit) or ``None`` to continue, so the order of the
+checks, the messages and the audit records are exactly the ones the closure had.
+``tests/test_call_tool_branches.py`` pins them.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import base64
+import logging
+import time
+from datetime import datetime
+from types import ModuleType
+from typing import Any, Dict, Mapping, Optional, Tuple
+
+import mcp.types as types
+
+from .approvals import ApprovalError, ApprovalStore, challenge_text, summarize
+from .config import Config
+from .dispatch import build_handlers
+from .operations import BinaryResult
+from .runtime import AuditLog, call_with_retry
+from .security import require_token_configured
+from .text import humanize_http_error
+from .toolset import REMOVED_ALIAS_NAMES, RoutingError, resolve_call
+from .toolset.models import CallPlan, Safety, ToolSpec
+
+
+def _error(text: str) -> types.CallToolResult:
+    return types.CallToolResult(
+        content=[types.TextContent(type="text", text=text)], is_error=True
+    )
+
+
+def _message(text: str) -> types.CallToolResult:
+    return types.CallToolResult(content=[types.TextContent(type="text", text=text)])
+
+
+class ToolRouter:
+    """State and steps of one server's tool-call path."""
+
+    def __init__(
+        self,
+        config: Config,
+        logger: logging.Logger,
+        *,
+        tool_index: Mapping[str, ToolSpec],
+        aliases: Mapping[str, Tuple[str, Optional[str]]],
+        audit: AuditLog,
+        approvals: ApprovalStore,
+        profile_name: str,
+        handler_module: ModuleType,
+    ) -> None:
+        self.config = config
+        self.logger = logger
+        self.tool_index = tool_index
+        self.aliases = aliases
+        self.audit = audit
+        self.approvals = approvals
+        self.profile_name = profile_name
+        # Handlers are looked up by name in this module at call time, so tests that
+        # patch a handler there keep working (see dispatch.build_handlers).
+        self.handler_module = handler_module
+
+    # ------------------------------------------------------------------ steps
+
+    def _approval_link(self, record: Dict[str, Any]) -> Optional[str]:
+        base = (getattr(self.config, "approval_url", None) or "").rstrip("/")
+        return f"{base}/approvals/{record['id']}" if base else None
+
+    async def _elicit_approval(
+        self, ctx: Any, name: str, plan: CallPlan, argument_names: Tuple[str, ...]
+    ) -> Optional[str]:
+        """Ask the human in the client UI when the client supports elicitation."""
+        if ctx is None:
+            return None
+        try:
+            capabilities = getattr(ctx.session, "client_capabilities", None)
+            elicitation = getattr(capabilities, "elicitation", None)
+            if getattr(elicitation, "form", None) is None:
+                return None
+            summary = summarize(name, plan.action, plan.arguments)
+            result = await ctx.session.elicit_form(
+                message=(
+                    "Approve this destructive Workspace Operator action?\n\n"
+                    f"{summary}\n\n"
+                    "The action will run once and is bound to these arguments."
+                ),
+                requested_schema={
+                    "type": "object",
+                    "properties": {
+                        "approve": {
+                            "type": "boolean",
+                            "title": "Approve",
+                            "description": "Run this exact destructive action.",
+                        }
+                    },
+                    "required": ["approve"],
+                },
+                related_request_id=getattr(ctx, "request_id", None),
+            )
+            if result.action == "accept" and (result.content or {}).get("approve") is True:
+                return "approved"
+            if result.action == "accept":
+                return "declined"
+            return "declined" if result.action == "decline" else "cancelled"
+        except Exception as exc:  # noqa: BLE001 - fallback must never break a call
+            self.logger.warning(
+                "Elicitation unavailable, falling back to approval_id: %s", exc
+            )
+            return None
+
+    def _find_spec(
+        self, name: str, arguments: Dict[str, Any]
+    ) -> Tuple[Optional[ToolSpec], Dict[str, Any], Optional[types.CallToolResult]]:
+        """Map a name to a tool spec, following legacy aliases.
+
+        Returns ``(spec, arguments, early_result)``; ``early_result`` is set when the
+        call must stop here (hidden by the profile, removed, or unknown).
+        """
+        spec = self.tool_index.get(name)
+        if spec is None and name in self.aliases:
+            target, action = self.aliases[name]
+            spec = self.tool_index.get(target)
+            if spec is None:
+                return None, arguments, _error(
+                    f"Tool '{name}' maps to '{target}', which is hidden by "
+                    f"the active profile ({self.profile_name}) or by scope routing."
+                )
+            if action:
+                arguments = dict(arguments or {})
+                arguments["action"] = action
+            self.logger.info(
+                "Legacy alias %s -> %s%s", name, target, f":{action}" if action else ""
+            )
+        if spec is None:
+            if name in REMOVED_ALIAS_NAMES:
+                return None, arguments, _error(
+                    f"Tool '{name}' was removed in Workspace Operator 2.0. "
+                    "See docs/MIGRATION_2.0.md for the replacement."
+                )
+            self.logger.warning("Blocked tool call outside profile: %s", name)
+            return None, arguments, _error(
+                f"Tool '{name}' is disabled by the active tool profile "
+                f"({self.profile_name}). Adjust tool_profile, allowed_tools or "
+                "denied_tools in config.yaml to enable it."
+            )
+        return spec, arguments, None
+
+    def _dry_run(
+        self, name: str, argument_names: Tuple[str, ...]
+    ) -> types.CallToolResult:
+        self.logger.info("Dry run: %s was not executed", name)
+        self.audit.record(name, self.profile_name, "dry-run", 0, argument_names)
+        return _message(
+            f"DRY RUN: '{name}' was not executed. "
+            f"Arguments: {sorted(argument_names)}. "
+            "Unset dry_run / MCP_DRY_RUN to apply changes."
+        )
+
+    async def _authorise(
+        self,
+        ctx: Any,
+        name: str,
+        plan: CallPlan,
+        argument_names: Tuple[str, ...],
+    ) -> Optional[types.CallToolResult]:
+        """Human approval for a destructive call; ``None`` means "approved, go on"."""
+        audit, profile_name, approvals = self.audit, self.profile_name, self.approvals
+        elicitation = await self._elicit_approval(ctx, name, plan, argument_names)
+        if elicitation == "approved":
+            plan.arguments["confirm"] = True
+            audit.record(name, profile_name, "approved-in-chat", 0, argument_names)
+            return None
+        if elicitation in ("declined", "cancelled"):
+            audit.record(name, profile_name, f"approval-{elicitation}", 0, argument_names)
+            return _message(
+                "The user did not approve this action; nothing was "
+                "changed. Do not retry unless the user asks."
+            )
+        try:
+            approval_id = plan.arguments.get("approval_id")
+            if not approval_id:
+                record = approvals.request(name, plan.action, plan.arguments)
+                audit.record(
+                    name,
+                    profile_name,
+                    "approval-required",
+                    0,
+                    argument_names + ("approval_id",),
+                )
+                return _message(challenge_text(record, self._approval_link(record)))
+            ok, reason = approvals.consume(
+                str(approval_id), name, plan.action, plan.arguments
+            )
+            if not ok:
+                record = approvals.request(name, plan.action, plan.arguments)
+                audit.record(
+                    name,
+                    profile_name,
+                    "approval-rejected",
+                    0,
+                    argument_names,
+                    error=reason,
+                )
+                return _message(
+                    f"Approval could not be used: {reason}\n\n"
+                    + challenge_text(record, self._approval_link(record))
+                )
+            plan.arguments["confirm"] = True
+            return None
+        except ApprovalError as exc:
+            audit.record(
+                name, profile_name, "approval-error", 0, argument_names, error=str(exc)
+            )
+            return _error(f"Approval error: {exc}. The action was not executed.")
+
+    def _record_bulk_finish(self, tool_name: str, job: Any) -> None:
+        try:
+            start = datetime.fromisoformat(job.started_at).timestamp()
+            end = (
+                datetime.fromisoformat(job.finished_at).timestamp()
+                if job.finished_at
+                else time.time()
+            )
+            duration = max(0, int((end - start) * 1000))
+        except Exception:  # noqa: BLE001 - audit must never break a job
+            duration = 0
+        status = (
+            "ok"
+            if job.state == "completed"
+            else ("cancelled" if job.state == "cancelled" else "error")
+        )
+        self.audit.record(
+            tool_name,
+            self.profile_name,
+            status,
+            duration,
+            ("plan_id", "confirm", "job_id"),
+            error=job.error,
+        )
+
+    async def _execute(
+        self,
+        name: str,
+        plan: CallPlan,
+        argument_names: Tuple[str, ...],
+        started: float,
+    ) -> types.CallToolResult:
+        config, logger = self.config, self.logger
+        try:
+            require_token_configured(config.mcp_auth_token)
+
+            handlers = build_handlers(
+                self.handler_module,
+                config,
+                logger,
+                {
+                    "_on_bulk_finish": lambda job: self._record_bulk_finish("bulk_run", job),
+                    "_on_undo_finish": lambda job: self._record_bulk_finish("bulk_undo", job),
+                },
+            )
+
+            if plan.legacy_name not in handlers:
+                raise ValueError(f"Unknown tool: {plan.legacy_name}")
+
+            result = await asyncio.to_thread(
+                call_with_retry,
+                lambda: handlers[plan.legacy_name](plan.arguments),
+                config.retry_attempts,
+                logger=logger,
+            )
+
+            if isinstance(result, BinaryResult):
+                return types.CallToolResult(
+                    content=[
+                        types.EmbeddedResource(
+                            type="resource",
+                            resource=types.BlobResourceContents(
+                                uri=result.uri,
+                                mime_type=result.mime_type,
+                                blob=base64.b64encode(result.data).decode(),
+                            ),
+                        )
+                    ]
+                )
+
+            text = str(result)
+            # Handlers report recoverable failures as "Error ..." strings; turn
+            # those into a protocol-level isError so clients can react to them,
+            # and strip googleapiclient's raw <HttpError ...> dumps.
+            is_error = text.lstrip().startswith("Error")
+            if is_error:
+                text = humanize_http_error(text)
+            self.audit.record(
+                name,
+                self.profile_name,
+                "error" if is_error else "ok",
+                int((time.perf_counter() - started) * 1000),
+                argument_names,
+            )
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=text)],
+                is_error=is_error,
+            )
+
+        except Exception as e:
+            self.audit.record(
+                name,
+                self.profile_name,
+                "exception",
+                int((time.perf_counter() - started) * 1000),
+                argument_names,
+                error=str(e),
+            )
+            logger.exception("Tool call error [%s]: %s", name, e)
+            return _error(f"Error: {humanize_http_error(e)}")
+
+    # ------------------------------------------------------------------ entry
+
+    async def handle(
+        self, name: str, arguments: Optional[Dict[str, Any]], ctx: Any = None
+    ) -> types.CallToolResult:
+        if not arguments:
+            arguments = {}
+
+        spec, arguments, early = self._find_spec(name, arguments)
+        if early is not None:
+            return early
+        assert spec is not None
+
+        try:
+            plan = resolve_call(
+                spec,
+                arguments,
+                require_confirm=not self.config.dry_run
+                and spec.safety is not Safety.DESTRUCTIVE,
+            )
+        except RoutingError as exc:
+            self.audit.record(
+                name,
+                self.profile_name,
+                "invalid",
+                0,
+                tuple((arguments or {}).keys()),
+                error=str(exc),
+            )
+            return _error(str(exc))
+
+        is_read_only = spec.safety is Safety.READ
+        argument_names = tuple(plan.arguments.keys())
+        if plan.action:
+            argument_names = argument_names + ("action",)
+        started = time.perf_counter()
+
+        if self.config.dry_run and not is_read_only:
+            return self._dry_run(name, argument_names)
+
+        if spec.safety is Safety.DESTRUCTIVE:
+            denied = await self._authorise(ctx, name, plan, argument_names)
+            if denied is not None:
+                return denied
+
+        return await self._execute(name, plan, argument_names, started)

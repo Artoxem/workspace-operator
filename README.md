@@ -487,7 +487,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 ## How it works
 
 ```
-server.py                    MCP protocol wiring (tools, resources, prompts)
+server.py                    builds the MCP server and registers the request handlers
 workspace_operator/
 ├─ toolset/                  typed catalog, action router, scope/profile surface
 │  ├─ models.py              ToolSpec / ActionSpec / Safety / Surface
@@ -497,6 +497,9 @@ workspace_operator/
 │  └─ scopes.py              granted Google scopes from the token file
 ├─ definitions/              tool and prompt definitions as data: one JSON per domain,
 │                            order.json (the order of tools/list), prompts.json
+├─ tool_router.py            tools/call pipeline: resolve → validate → dry-run → approve → run
+├─ prompts.py                prompt messages built from live Gmail/Calendar/Drive/Sheets data
+├─ resources.py              read-only resources (Drive, Gmail, Calendar, Sheets, Docs)
 ├─ dispatch.py               routing table: handler name → function + argument mapping
 ├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 config file + environment overrides
@@ -523,6 +526,9 @@ Design rules:
 * tool schemas (`definitions/*.json`) and the handler table (`dispatch.py`) are data;
   `tests/test_definitions.py` and `tests/test_handler_dispatch.py` pin what clients see
   and what each of the 104 handlers receives, including defaults;
+* the call path, prompts and resources are pinned branch by branch
+  (`tests/test_call_tool_branches.py`, `tests/test_resources_prompts.py`) against snapshots
+  taken before they were split out of `server.py`;
 * destructive actions require a human `approval_id` (and are still confirm-gated);
 * no tool permanently deletes a Drive file; Trash is the boundary;
 * server-side profiles and scope routing keep the exposed surface small.
@@ -549,7 +555,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 406 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 410 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

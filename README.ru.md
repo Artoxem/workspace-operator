@@ -482,7 +482,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 ## Как устроено
 
 ```
-server.py                    MCP-протокол (инструменты, ресурсы, промпты)
+server.py                    собирает MCP-сервер и регистрирует обработчики запросов
 workspace_operator/
 ├─ toolset/                  типизированный каталог, router, scope/profile surface
 │  ├─ models.py              ToolSpec / ActionSpec / Safety / Surface
@@ -492,6 +492,9 @@ workspace_operator/
 │  └─ scopes.py              выданные Google-скоупы из token file
 ├─ definitions/              определения инструментов и промптов как данные: JSON на домен,
 │                            order.json (порядок tools/list), prompts.json
+├─ tool_router.py            конвейер tools/call: разбор → валидация → dry-run → одобрение → запуск
+├─ prompts.py                сообщения промптов из живых данных Gmail/Calendar/Drive/Sheets
+├─ resources.py              ресурсы только для чтения (Drive, Gmail, Calendar, Sheets, Docs)
 ├─ dispatch.py               таблица маршрутов: имя handler → функция + разбор аргументов
 ├─ profiles.py               core / full / read-write / read-only
 ├─ config.py                 конфиг + переменные окружения
@@ -518,6 +521,9 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 * схемы инструментов (`definitions/*.json`) и таблица handler'ов (`dispatch.py`) — это
   данные; `tests/test_definitions.py` и `tests/test_handler_dispatch.py` фиксируют, что
   видят клиенты и что получает каждый из 104 handler'ов, включая значения по умолчанию;
+* путь вызова, промпты и ресурсы проверены по веткам
+  (`tests/test_call_tool_branches.py`, `tests/test_resources_prompts.py`) на снимках,
+  снятых до выноса из `server.py`;
 * destructive-действия требуют approval человека (`approval_id`) и confirm;
 * ни один инструмент не удаляет файл Drive безвозвратно — граница это корзина;
 * профили и scope-routing уменьшают видимую поверхность.
@@ -544,7 +550,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 406 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 410 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

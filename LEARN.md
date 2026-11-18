@@ -44,6 +44,9 @@ workspace-operator/
 │   ├── security.py     # Token check, validation helpers
 │   ├── operations.py   # Shared utilities (backups, etc.)
 │   ├── definitions/    # Tool and prompt definitions as JSON data
+│   ├── tool_router.py  # tools/call pipeline (ToolRouter)
+│   ├── prompts.py      # MCP prompts
+│   ├── resources.py    # MCP resources
 │   ├── dispatch.py     # Routing table: handler name -> function + arguments
 │   ├── server.py       # MCP Server, tool registration
 │   └── handlers/       # One module per Google API
@@ -243,6 +246,8 @@ async def handle_list_tools() -> list[types.Tool]:
 > This is the minimal teaching version with an inline `handlers` dict. The current
 > server keeps that table as data in `workspace_operator/dispatch.py` (name →
 > function and argument mapping) and builds the callables with `build_handlers`.
+> The whole call path (alias lookup, validation, dry-run, human approval, execution,
+> audit) lives in `workspace_operator/tool_router.py` as the `ToolRouter` class.
 
 ```python
 @server.call_tool()
