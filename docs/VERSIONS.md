@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.1.2**.
+Current release: **2.2.0**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|
+| **2.2.0** | Security hardening: mail-attachment/Drive names are sanitised (path traversal fix); `drive_upload` refuses secrets and honours `upload_roots`; browser approvals need a per-approval secret, an Origin check and strict headers (`approvals link`); HTTP mode rejects placeholder/short tokens; `token.json` is refreshed under a lock and written atomically owner-only; `doctor` checks secret hygiene; the Docker image binds `127.0.0.1` by default. CI (pytest, ruff, mypy, bandit, pip-audit) gates publishing; mypy 152 → 0; 334 tests. |
 | **2.1.2** | Added the browser approval fallback (`/approvals/...`) for clients without MCP elicitation; approval URL config and HTTP page tests. |
 | **2.1.1** | In-chat approval via MCP elicitation when the client supports it; the local `approval_id` CLI remains a fallback. |
 | **2.1.0** | Human approval for destructive actions: `APPROVAL_REQUIRED` challenge, one-time argument-bound `approval_id`, `workspace-operator approvals` CLI, TTL and local approval queue. |
