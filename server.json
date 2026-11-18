@@ -3,7 +3,7 @@
   "name": "io.github.Artoxem/workspace-operator",
   "title": "Workspace Operator",
   "description": "Google Workspace automation for AI agents: 39 tools, human-approved deletes, bulk undo.",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "repository": {
     "url": "https://github.com/Artoxem/workspace-operator",
     "source": "github"

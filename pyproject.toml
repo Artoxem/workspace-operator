@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "workspace-operator-mcp"
-version = "2.2.3"
+version = "2.2.4"
 description = "Deep Google Workspace automation for AI agents — Apps Script execution, local file transfer, Slides, document templates, cross-product search, and tool profiles"
 readme = "README.md"
 license = { text = "MIT" }
@@ -67,8 +67,8 @@ source = ["workspace_operator"]
 branch = true
 
 [tool.coverage.report]
-# Ratchet: only ever raise this (engine 77%, selector 95%, server.py is next).
-fail_under = 48
+# Ratchet: only ever raise this (prompts/resources/router are 95-100%).
+fail_under = 52
 show_missing = true
 skip_empty = true
 
