@@ -7,10 +7,8 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from typing import List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..security import validate_email
 from ..text import clean_text, html_to_text, parse_email_date, shorten_links
 
@@ -90,8 +88,7 @@ def send_email_handler(
         if not validate_email(to):
             return f"Error: Invalid email format: {to}"
 
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
         message = _create_message(to, subject, body_text)
 
         # Safe by default: create draft unless explicitly disabled
@@ -127,8 +124,7 @@ def send_email_handler(
 def send_draft_handler(config: Config, logger: logging.Logger, draft_id: str) -> str:
     """Send an existing draft."""
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         sent_message = (
             service.users()
@@ -148,8 +144,7 @@ def send_draft_handler(config: Config, logger: logging.Logger, draft_id: str) ->
 def get_gmail_profile_handler(config: Config, logger: logging.Logger) -> str:
     """Get the authenticated Gmail address (profile)."""
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
         profile = service.users().getProfile(userId="me").execute()
         email_address = profile.get("emailAddress", "Unknown")
         logger.info("Gmail profile accessed: %s", email_address)
@@ -163,8 +158,7 @@ def create_draft_handler(
     config: Config, logger: logging.Logger, to: str, subject: str, body_text: str
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         message = _create_message(to, subject, body_text)
         draft = {"message": message}
@@ -181,8 +175,7 @@ def list_emails_handler(
     config: Config, logger: logging.Logger, max_results: int = 10, query: Optional[str] = None
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         q = query if query else ""
         results = (
@@ -227,8 +220,7 @@ def list_emails_handler(
 
 def read_email_handler(config: Config, logger: logging.Logger, message_id: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         message = (
             service.users()
@@ -266,8 +258,7 @@ def delete_email_handler(
 ) -> str:
     """Move one email to Trash with confirmation (recoverable 30 days)."""
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         # Provide a preview before destructive action
         try:
@@ -309,8 +300,7 @@ def gmail_search_and_summarize_handler(
 ) -> str:
     """Search Gmail and return a brief summary."""
     try:
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         if not query:
             return "Error: Query is required."
@@ -370,8 +360,7 @@ def gmail_archive_handler(
                 "To proceed, call again with confirm=True."
             )
 
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
 
         service.users().messages().modify(
             userId="me", id=message_id, body={"removeLabelIds": ["INBOX"]}
@@ -422,8 +411,7 @@ def gmail_label_apply_handler(
         if not label_name:
             return "Error: label_name is required."
 
-        creds = get_creds(config)
-        service = build("gmail", "v1", credentials=creds)
+        service = api_client(config, 'gmail', 'v1')
         label_id = _get_or_create_label_id(service, label_name, create_if_missing)
         if not label_id:
             return f"Error: Label not found: {label_name}"
@@ -497,7 +485,7 @@ def send_with_attachments_handler(
             return "Error: attachments must list at least one local file."
 
         message = _create_message_with_attachments(to, subject, body_text, attachments)
-        service = build("gmail", "v1", credentials=get_creds(config))
+        service = api_client(config, 'gmail', 'v1')
         names = ", ".join(Path(item).name for item in attachments)
 
         if draft_mode:

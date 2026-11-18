@@ -9,10 +9,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 from .doc_tables import create_document_with_blocks
 
@@ -188,8 +186,7 @@ def compare_tables_handler(
         if mode not in {"text", "doc"}:
             return "Error: output must be 'text' or 'doc'."
 
-        creds = get_creds(config)
-        sheets = build("sheets", "v4", credentials=creds)
+        sheets = api_client(config, 'sheets', 'v4')
 
         rows_a = _read_range(sheets, spreadsheet_id, range_a)
         rows_b = _read_range(sheets, other_spreadsheet_id or spreadsheet_id, range_b)

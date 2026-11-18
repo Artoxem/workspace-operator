@@ -2,10 +2,8 @@
 
 import logging
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import format_timestamp
 
 FILE_FIELDS = (
@@ -15,7 +13,7 @@ FILE_FIELDS = (
 
 
 def _drive(config: Config):
-    return build("drive", "v3", credentials=get_creds(config))
+    return api_client(config, 'drive', 'v3')
 
 
 def get_metadata_handler(

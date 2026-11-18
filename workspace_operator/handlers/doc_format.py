@@ -3,10 +3,8 @@
 import logging
 from typing import Dict, List, Tuple
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 from .docs import document_to_text
 
@@ -105,7 +103,7 @@ def format_text_handler(
         if not (bold or italic or font_size or style):
             return "Error: pass bold, italic, font_size and/or heading."
 
-        service = build("docs", "v1", credentials=get_creds(config))
+        service = api_client(config, 'docs', 'v1')
         document = service.documents().get(documentId=document_id).execute()
         ranges = find_ranges(document, find, match_case)
         if not ranges:

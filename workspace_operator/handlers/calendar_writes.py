@@ -8,10 +8,8 @@ the rest of the lifecycle. Request bodies are built by pure helpers so the
 import logging
 from typing import Any, Dict, List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 
 RESPONSES = {"accepted", "declined", "tentative"}
@@ -61,7 +59,7 @@ def set_attendee_response(
 
 
 def _service(config: Config):
-    return build("calendar", "v3", credentials=get_creds(config))
+    return api_client(config, 'calendar', 'v3')
 
 
 def calendar_update_event_handler(

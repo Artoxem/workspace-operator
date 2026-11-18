@@ -15,6 +15,7 @@ import mcp.types as types
 
 from .config import Config
 from .definitions import load_prompts
+from .google_clients import api_client
 from .handlers import (
     compare_tables_handler,
     digest_handler,
@@ -31,9 +32,7 @@ def list_prompts() -> List[types.Prompt]:
 async def get_prompt(
     config: Config, logger: logging.Logger, name: str, arguments: dict[str, str] | None
 ) -> types.GetPromptResult:
-    from googleapiclient.discovery import build
 
-    from .auth import get_creds
 
     args = arguments or {}
 
@@ -42,8 +41,7 @@ async def get_prompt(
         max_results = int(args.get("max_results", "20"))
 
         def _fetch_emails() -> str:
-            creds = get_creds(config)
-            svc = build("gmail", "v1", credentials=creds)
+            svc = api_client(config, 'gmail', 'v1')
             results = svc.users().messages().list(
                 userId="me", maxResults=min(max_results, 50), q=query
             ).execute()
@@ -98,8 +96,7 @@ async def get_prompt(
         range_name = args.get("range", "Sheet1")
 
         def _fetch_sheet() -> tuple[str, str]:
-            creds = get_creds(config)
-            svc = build("sheets", "v4", credentials=creds)
+            svc = api_client(config, 'sheets', 'v4')
             meta = svc.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
             title = meta.get("properties", {}).get("title", spreadsheet_id)
             result = svc.spreadsheets().values().get(
@@ -139,8 +136,7 @@ async def get_prompt(
         days_ahead = int(args.get("days_ahead", "7"))
 
         def _fetch_events() -> str:
-            creds = get_creds(config)
-            svc = build("calendar", "v3", credentials=creds)
+            svc = api_client(config, 'calendar', 'v3')
             now = datetime.now(timezone.utc)
             time_max = (now + timedelta(days=days_ahead)).isoformat()
             results = svc.events().list(
@@ -203,8 +199,7 @@ async def get_prompt(
         limit = int(args.get("limit", "20"))
 
         def _fetch_drive() -> str:
-            creds = get_creds(config)
-            svc = build("drive", "v3", credentials=creds)
+            svc = api_client(config, 'drive', 'v3')
             results = svc.files().list(
                 q=query,
                 pageSize=min(limit, 50),

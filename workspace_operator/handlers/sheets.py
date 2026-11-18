@@ -2,16 +2,13 @@ import logging
 import re
 from typing import List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 
 
 def read_sheet_handler(config: Config, logger: logging.Logger, spreadsheet_id: str, range_name: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         sheet = service.spreadsheets()
         result = sheet.values().get(
@@ -35,8 +32,7 @@ def append_row_handler(
     config: Config, logger: logging.Logger, spreadsheet_id: str, range_name: str, values: List[str]
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         body = {"values": [values]}
 
@@ -67,8 +63,7 @@ def update_sheet_handler(
     values: List[List[str]],
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         body = {"values": values}
 
@@ -91,8 +86,7 @@ def update_sheet_handler(
 
 def create_spreadsheet_handler(config: Config, logger: logging.Logger, title: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         spreadsheet = {"properties": {"title": title}}
         spreadsheet = (
@@ -109,8 +103,7 @@ def add_sheet_handler(
     config: Config, logger: logging.Logger, spreadsheet_id: str, title: str
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         requests = [
             {
@@ -141,8 +134,7 @@ def clear_range_handler(
 ) -> str:
     """Clear range with auto dry-run for large ranges."""
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         # Analyze the range to decide whether confirmation is needed
         try:
@@ -209,8 +201,7 @@ def sheet_create_filter_view_handler(
 ) -> str:
     """Create a filter view for a sheet with a specified grid range."""
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         # If end_row/end_col not provided, use sheet properties
         if end_row is None or end_col is None:
@@ -264,8 +255,7 @@ def sheet_export_csv_handler(
 ) -> str:
     """Export range to CSV (values only)."""
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         result = service.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id, range=range_name
@@ -310,8 +300,7 @@ def sheet_find_replace_handler(
         if not find_text:
             return "Error: find_text is required."
 
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         result = service.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id, range=range_name
@@ -389,8 +378,7 @@ def sheet_create_named_range_handler(
 ) -> str:
     """Create a named range in a spreadsheet using grid indexes."""
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         requests = [
             {
@@ -424,8 +412,7 @@ def get_spreadsheet_meta_handler(
     config: Config, logger: logging.Logger, spreadsheet_id: str
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         sheet_metadata = service.spreadsheets().get(
             spreadsheetId=spreadsheet_id

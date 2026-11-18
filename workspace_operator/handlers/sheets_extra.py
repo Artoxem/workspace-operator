@@ -3,10 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from .formatting import (
     _grid_range,
     _resolve_sheet,
@@ -61,7 +59,7 @@ CHART_TYPES = {
 
 
 def _sheets(config: Config):
-    return build("sheets", "v4", credentials=get_creds(config))
+    return api_client(config, 'sheets', 'v4')
 
 
 def _meta(service, spreadsheet_id: str) -> List[Dict[str, Any]]:

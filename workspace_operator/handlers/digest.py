@@ -11,10 +11,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Sequence
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text, format_timestamp, parse_email_date
 
 VALID_SOURCES = ("gmail", "calendar", "drive")
@@ -173,14 +171,13 @@ def digest_handler(
         if mode not in {"text", "doc"}:
             return "Error: output must be 'text' or 'doc'."
 
-        creds = get_creds(config)
         sections: Dict[str, List[Dict[str, str]]] = {}
         errors: List[str] = []
 
         collectors = {
-            "gmail": lambda: _collect_gmail(build("gmail", "v1", credentials=creds), hours, per_source),
-            "calendar": lambda: _collect_calendar(build("calendar", "v3", credentials=creds), hours, per_source),
-            "drive": lambda: _collect_drive(build("drive", "v3", credentials=creds), hours, per_source),
+            "gmail": lambda: _collect_gmail(api_client(config, 'gmail', 'v1'), hours, per_source),
+            "calendar": lambda: _collect_calendar(api_client(config, 'calendar', 'v3'), hours, per_source),
+            "drive": lambda: _collect_drive(api_client(config, 'drive', 'v3'), hours, per_source),
         }
 
         for source in selected:
@@ -200,7 +197,7 @@ def digest_handler(
             logger.info("Digest rendered: sources=%s", ",".join(selected))
             return content
 
-        docs = build("docs", "v1", credentials=creds)
+        docs = api_client(config, 'docs', 'v1')
         document = docs.documents().create(body={"title": title}).execute()
         document_id = document.get("documentId")
         docs.documents().batchUpdate(

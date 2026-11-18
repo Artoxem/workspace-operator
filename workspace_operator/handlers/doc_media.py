@@ -3,10 +3,8 @@
 import logging
 from typing import Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 
 
 def insert_image_handler(
@@ -24,7 +22,7 @@ def insert_image_handler(
         if not image_url or not str(image_url).startswith(("http://", "https://")):
             return "Error: image_url must be a public http(s) URL."
 
-        service = build("docs", "v1", credentials=get_creds(config))
+        service = api_client(config, 'docs', 'v1')
         document = service.documents().get(documentId=document_id).execute()
         content = (document.get("body") or {}).get("content") or []
         if not content:

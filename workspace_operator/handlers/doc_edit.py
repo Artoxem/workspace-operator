@@ -2,16 +2,14 @@
 
 import logging
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 from .docs import document_to_text
 
 
 def _docs(config: Config):
-    return build("docs", "v1", credentials=get_creds(config))
+    return api_client(config, 'docs', 'v1')
 
 
 def _excerpt(text: str, needle: str, match_case: bool) -> str:

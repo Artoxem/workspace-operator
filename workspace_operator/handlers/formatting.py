@@ -12,10 +12,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 
 _CELL = re.compile(r"^([A-Za-z]*)(\d*)$")
 _HEX = re.compile(r"^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
@@ -302,8 +300,7 @@ def format_sheet_handler(
         if not spreadsheet_id:
             return "Error: spreadsheet_id is required."
 
-        creds = get_creds(config)
-        service = build("sheets", "v4", credentials=creds)
+        service = api_client(config, 'sheets', 'v4')
 
         meta = (
             service.spreadsheets()

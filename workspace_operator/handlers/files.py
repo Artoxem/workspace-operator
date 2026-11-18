@@ -19,11 +19,10 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..secure_files import is_protected
 
 MAX_TRANSFER_BYTES = 100 * 1024 * 1024
@@ -217,8 +216,7 @@ def drive_upload_handler(
             or "application/octet-stream"
         )
 
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
         created = (
             service.files()
             .create(
@@ -258,8 +256,7 @@ def drive_export_handler(
                 f"Valid formats: {', '.join(sorted(EXPORT_MIME))}."
             )
 
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         meta = (
             service.files()

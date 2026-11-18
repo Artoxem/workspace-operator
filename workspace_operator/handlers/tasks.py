@@ -3,14 +3,12 @@
 import logging
 from typing import Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 
 
 def _service(config: Config):
-    return build("tasks", "v1", credentials=get_creds(config), cache_discovery=False)
+    return api_client(config, 'tasks', 'v1')
 
 
 def tasks_list_lists_handler(config: Config, logger: logging.Logger) -> str:

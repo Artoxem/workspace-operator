@@ -2,10 +2,8 @@ import logging
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..security import validate_email
 from ..text import clean_text
 
@@ -65,8 +63,7 @@ def list_events_handler(
     config: Config, logger: logging.Logger, calendar_id: str = "primary", max_results: int = 10
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("calendar", "v3", credentials=creds)
+        service = api_client(config, 'calendar', 'v3')
 
         events_result = (
             service.events()
@@ -115,8 +112,7 @@ def calendar_create_meeting_handler(
                 "To proceed, call again with confirm=True."
             )
 
-        creds = get_creds(config)
-        service = build("calendar", "v3", credentials=creds)
+        service = api_client(config, 'calendar', 'v3')
 
         event: dict = {
             "summary": summary,
@@ -148,7 +144,7 @@ def calendar_create_meeting_handler(
 
 def list_calendars_handler(config: Config, logger: logging.Logger) -> str:
     try:
-        service = build("calendar", "v3", credentials=get_creds(config))
+        service = api_client(config, 'calendar', 'v3')
         result = service.calendarList().list().execute()
         items = result.get("items", [])
         if not items:
@@ -175,7 +171,7 @@ def move_event_handler(
         if not event_id or not destination_calendar_id:
             return "Error: event_id and destination_calendar_id are required."
 
-        service = build("calendar", "v3", credentials=get_creds(config))
+        service = api_client(config, 'calendar', 'v3')
         event = (
             service.events()
             .move(
@@ -210,7 +206,7 @@ def set_event_color_handler(
         if not value.isdigit() or not 1 <= int(value) <= 11:
             return "Error: color_id must be a string from 1 to 11."
 
-        service = build("calendar", "v3", credentials=get_creds(config))
+        service = api_client(config, 'calendar', 'v3')
         event = (
             service.events()
             .patch(calendarId=calendar_id, eventId=event_id, body={"colorId": value})

@@ -1,9 +1,7 @@
 import logging
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 
 
@@ -44,8 +42,7 @@ def document_to_text(document: dict) -> str:
 
 def read_doc_handler(config: Config, logger: logging.Logger, document_id: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("docs", "v1", credentials=creds)
+        service = api_client(config, 'docs', 'v1')
 
         document = service.documents().get(documentId=document_id).execute()
         text = document_to_text(document) or "(the document has no readable text)"
@@ -57,8 +54,7 @@ def read_doc_handler(config: Config, logger: logging.Logger, document_id: str) -
 
 def create_doc_handler(config: Config, logger: logging.Logger, title: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("docs", "v1", credentials=creds)
+        service = api_client(config, 'docs', 'v1')
 
         body = {"title": title}
         doc = service.documents().create(body=body).execute()
@@ -70,8 +66,7 @@ def create_doc_handler(config: Config, logger: logging.Logger, title: str) -> st
 
 def append_to_doc_handler(config: Config, logger: logging.Logger, document_id: str, text: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("docs", "v1", credentials=creds)
+        service = api_client(config, 'docs', 'v1')
 
         requests = [
             {

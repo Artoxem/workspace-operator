@@ -1,10 +1,8 @@
 import logging
 from typing import Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..security import validate_email
 from ..text import format_timestamp
 
@@ -13,8 +11,7 @@ def create_folder_handler(
     config: Config, logger: logging.Logger, name: str, parent_id: Optional[str] = None
 ) -> str:
     try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         file_metadata: dict = {
             "name": name,
@@ -31,8 +28,7 @@ def create_folder_handler(
 
 def move_file_handler(config: Config, logger: logging.Logger, file_id: str, folder_id: str) -> str:
     try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         # Retrieve the existing parents to remove
         file = service.files().get(fileId=file_id, fields="parents").execute()
@@ -67,8 +63,7 @@ def share_file_handler(
                 "in config or MCP_ALLOW_PUBLIC_SHARING=1, then retry with "
                 "allow_public=true. Prefer sharing with named users."
             )
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         # Block public sharing without explicit confirmation
         if type == "anyone" and not allow_public:
@@ -135,8 +130,7 @@ def drive_search_advanced_handler(
 ) -> str:
     """Advanced Drive search with query and limit."""
     try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         if not query:
             return "Error: Query is required."
@@ -171,8 +165,7 @@ def drive_search_advanced_handler(
 def drive_list_permissions_handler(config: Config, logger: logging.Logger, file_id: str) -> str:
     """List permissions for a Drive file."""
     try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         perms = service.permissions().list(
             fileId=file_id,
@@ -203,8 +196,7 @@ def drive_revoke_public_handler(
 ) -> str:
     """Revoke public access (type=anyone) for a Drive file."""
     try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         perms = service.permissions().list(
             fileId=file_id, fields="permissions(id,type,role,allowFileDiscovery)"
@@ -245,8 +237,7 @@ def drive_copy_file_handler(
 ) -> str:
     """Copy a Drive file to a new file."""
     try:
-        creds = get_creds(config)
-        service = build("drive", "v3", credentials=creds)
+        service = api_client(config, 'drive', 'v3')
 
         body: dict = {}
         if name:

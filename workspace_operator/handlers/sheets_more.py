@@ -3,16 +3,14 @@
 import logging
 from typing import Any, Dict, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from .formatting import _grid_range, _resolve_sheet, _sheet_lookup, parse_a1_range
 from .sheets_structure import _dimension_request
 
 
 def _sheets(config: Config):
-    return build("sheets", "v4", credentials=get_creds(config))
+    return api_client(config, 'sheets', 'v4')
 
 
 def _properties(service, spreadsheet_id: str):

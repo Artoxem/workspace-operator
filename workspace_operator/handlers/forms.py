@@ -3,14 +3,12 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 
 
 def _service(config: Config):
-    return build("forms", "v1", credentials=get_creds(config), cache_discovery=False)
+    return api_client(config, 'forms', 'v1')
 
 
 def _question_requests(questions: List[Dict[str, Any]], start_index: int) -> List[Dict[str, Any]]:

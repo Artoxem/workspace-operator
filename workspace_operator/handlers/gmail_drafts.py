@@ -2,16 +2,14 @@
 
 import logging
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 from .gmail import _create_message
 
 
 def _gmail(config: Config):
-    return build("gmail", "v1", credentials=get_creds(config))
+    return api_client(config, 'gmail', 'v1')
 
 
 def _headers(message: dict) -> dict:

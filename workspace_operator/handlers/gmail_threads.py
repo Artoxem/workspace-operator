@@ -18,10 +18,8 @@ from email.mime.text import MIMEText
 from email.utils import getaddresses
 from typing import Any, Dict, List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text, parse_email_date
 from .files import conflict_message, ensure_parent, resolve_target
 from .gmail import _attachment_names, _header_map, _message_body
@@ -104,7 +102,7 @@ def attachment_catalog(attachments: List[Dict[str, Any]]) -> str:
 
 
 def _service(config: Config):
-    return build("gmail", "v1", credentials=get_creds(config))
+    return api_client(config, 'gmail', 'v1')
 
 
 def gmail_get_attachment_handler(

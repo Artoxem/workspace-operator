@@ -33,18 +33,14 @@ def fake_service():
 class DeleteEmailTests(unittest.TestCase):
     def test_confirm_required_does_not_touch_mail(self):
         service = fake_service()
-        with mock.patch.object(gmail_module, "get_creds", return_value=None), mock.patch.object(
-            gmail_module, "build", return_value=service
-        ):
+        with mock.patch.object(gmail_module, "api_client", return_value=service):
             text = gmail_module.delete_email_handler(CONFIG, LOGGER, "m1", confirm=False)
         self.assertIn("CONFIRMATION REQUIRED", text)
         service.users.return_value.messages.return_value.trash.assert_not_called()
 
     def test_delete_email_moves_to_trash(self):
         service = fake_service()
-        with mock.patch.object(gmail_module, "get_creds", return_value=None), mock.patch.object(
-            gmail_module, "build", return_value=service
-        ):
+        with mock.patch.object(gmail_module, "api_client", return_value=service):
             text = gmail_module.delete_email_handler(CONFIG, LOGGER, "m1", confirm=True)
         service.users.return_value.messages.return_value.trash.assert_called_once_with(
             userId="me", id="m1"

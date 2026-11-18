@@ -3,17 +3,15 @@
 import logging
 from typing import List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from .formatting import _grid_range, _resolve_sheet, _sheet_lookup, parse_a1_range
 
 SUMMARIES = {"SUM", "COUNT", "AVERAGE", "MIN", "MAX"}
 
 
 def _sheets(config: Config):
-    return build("sheets", "v4", credentials=get_creds(config))
+    return api_client(config, 'sheets', 'v4')
 
 
 def add_pivot_table_handler(

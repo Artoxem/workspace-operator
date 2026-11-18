@@ -12,6 +12,7 @@ from mcp.server.lowlevel.helper_types import ReadResourceContents
 from pydantic import AnyUrl
 
 from .config import Config
+from .google_clients import api_client
 from .handlers import document_to_text
 from .text import clean_text, format_timestamp, parse_email_date
 
@@ -66,7 +67,6 @@ def list_resource_templates() -> List[types.ResourceTemplate]:
 
 
 async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceContents]:
-    from googleapiclient.discovery import build
 
     from .auth import get_creds
 
@@ -74,8 +74,8 @@ async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceCon
 
     def _fetch() -> str:
         if uri_str == "gdrive://recent":
-            creds = get_creds(config)
-            svc = build("drive", "v3", credentials=creds)
+            get_creds(config)
+            svc = api_client(config, 'drive', 'v3')
             results = svc.files().list(
                 orderBy="modifiedTime desc",
                 pageSize=20,
@@ -95,8 +95,8 @@ async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceCon
             return "\n".join(lines)
 
         elif uri_str == "gmail://inbox":
-            creds = get_creds(config)
-            svc = build("gmail", "v1", credentials=creds)
+            get_creds(config)
+            svc = api_client(config, 'gmail', 'v1')
             results = svc.users().messages().list(
                 userId="me", maxResults=20, q="is:unread in:inbox"
             ).execute()
@@ -123,8 +123,8 @@ async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceCon
             return "\n".join(lines)
 
         elif uri_str == "gcalendar://upcoming":
-            creds = get_creds(config)
-            svc = build("calendar", "v3", credentials=creds)
+            get_creds(config)
+            svc = api_client(config, 'calendar', 'v3')
             now = datetime.now(timezone.utc)
             time_max = (now + timedelta(days=7)).isoformat()
             results = svc.events().list(
@@ -152,8 +152,8 @@ async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceCon
             file_id = uri_str.removeprefix("gdrive://file/")
             if not file_id:
                 raise ValueError("file_id is required in gdrive://file/{file_id}")
-            creds = get_creds(config)
-            svc = build("drive", "v3", credentials=creds)
+            get_creds(config)
+            svc = api_client(config, 'drive', 'v3')
             f = svc.files().get(
                 fileId=file_id,
                 fields="id,name,mimeType,size,createdTime,modifiedTime,owners,webViewLink,parents",
@@ -180,8 +180,8 @@ async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceCon
             range_name = parts[1] if len(parts) > 1 else "Sheet1"
             if not spreadsheet_id:
                 raise ValueError("spreadsheet_id is required in gsheets://{spreadsheet_id}/{range}")
-            creds = get_creds(config)
-            svc = build("sheets", "v4", credentials=creds)
+            get_creds(config)
+            svc = api_client(config, 'sheets', 'v4')
             result = svc.spreadsheets().values().get(
                 spreadsheetId=spreadsheet_id, range=range_name
             ).execute()
@@ -198,8 +198,7 @@ async def read_resource(config: Config, uri: AnyUrl) -> Iterable[ReadResourceCon
             document_id = uri_str.removeprefix("gdocs://")
             if not document_id:
                 raise ValueError("document_id is required in gdocs://{document_id}")
-            creds = get_creds(config)
-            svc = build("docs", "v1", credentials=creds)
+            svc = api_client(config, 'docs', 'v1')
             doc = svc.documents().get(documentId=document_id).execute()
             return (
                 f"Document: {doc.get('title')}\n\n"

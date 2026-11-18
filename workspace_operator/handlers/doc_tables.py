@@ -13,10 +13,8 @@ talks to Google.
 import logging
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 from ..text import clean_text
 
 MAX_ROWS = 200
@@ -140,8 +138,7 @@ def create_document_with_blocks(
 
     Returns the new document id.
     """
-    creds = get_creds(config)
-    docs = build("docs", "v1", credentials=creds)
+    docs = api_client(config, 'docs', 'v1')
 
     document = docs.documents().create(body={"title": title}).execute()
     document_id = document.get("documentId")

@@ -3,16 +3,14 @@
 import logging
 from typing import List, Optional
 
-from googleapiclient.discovery import build
-
-from ..auth import get_creds
 from ..config import Config
+from ..google_clients import api_client
 
 LABEL_FIELDS = "labels(id,name,type,messageListVisibility,labelListVisibility,messagesTotal)"
 
 
 def _gmail(config: Config):
-    return build("gmail", "v1", credentials=get_creds(config))
+    return api_client(config, 'gmail', 'v1')
 
 
 def list_labels_handler(config: Config, logger: logging.Logger) -> str:
