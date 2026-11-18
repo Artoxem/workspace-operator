@@ -26,6 +26,7 @@ import workspace_operator.server as server_module
 from workspace_operator.bulk.models import Job
 from workspace_operator.config import Config
 from workspace_operator.operations import BinaryResult
+from workspace_operator.results import ToolError, ToolResult
 
 LOGGER = logging.getLogger("test.branches")
 GOLDEN = Path(__file__).parent / "data" / "call_tool_branches.json"
@@ -181,6 +182,10 @@ SCENARIOS = {
     "handler_text_starting_with_error_word": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, handler="Errors found: 0"),
     "handler_binary_result": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, binary=True),
     "handler_raises": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, raises=RuntimeError("boom")),
+    # New contract: explicit signals instead of guessing from the text.
+    "handler_raises_tool_error": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, raises=ToolError("Quota exceeded for today.")),
+    "handler_result_marked_error": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, handler=ToolResult("boom", is_error=True)),
+    "handler_result_success_despite_error_word": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, handler=ToolResult("Error codes: none. All good.", is_error=False)),
     "handler_non_string_result": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, handler=12345),
     "missing_auth_token": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, config_overrides={"mcp_auth_token": None}),
 }

@@ -24,6 +24,7 @@ from .approvals import ApprovalError, ApprovalStore, challenge_text, summarize
 from .config import Config
 from .dispatch import build_handlers
 from .operations import BinaryResult
+from .results import ToolError, ToolResult, is_error_text
 from .runtime import AuditLog, call_with_retry
 from .security import require_token_configured
 from .text import humanize_http_error
@@ -290,11 +291,14 @@ class ToolRouter:
                     ]
                 )
 
-            text = str(result)
-            # Handlers report recoverable failures as "Error ..." strings; turn
-            # those into a protocol-level isError so clients can react to them,
-            # and strip googleapiclient's raw <HttpError ...> dumps.
-            is_error = text.lstrip().startswith("Error")
+            if isinstance(result, ToolResult):
+                text, is_error = result.text, result.is_error
+            else:
+                text = str(result)
+                # Legacy handlers report recoverable failures as "Error ..." strings;
+                # turn those into a protocol-level isError so clients can react to
+                # them, and strip googleapiclient's raw <HttpError ...> dumps.
+                is_error = is_error_text(text)
             if is_error:
                 text = humanize_http_error(text)
             self.audit.record(
@@ -308,6 +312,18 @@ class ToolRouter:
                 content=[types.TextContent(type="text", text=text)],
                 is_error=is_error,
             )
+
+        except ToolError as e:
+            # A deliberate, user-facing failure: the message is the output.
+            self.audit.record(
+                name,
+                self.profile_name,
+                "error",
+                int((time.perf_counter() - started) * 1000),
+                argument_names,
+                error=str(e),
+            )
+            return _error(str(e))
 
         except Exception as e:
             self.audit.record(

@@ -451,7 +451,33 @@
   ],
   "is_error": true
  },
- "handler_text_starting_with_error_word": {
+ "handler_raises_tool_error": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "Quota exceeded for today.",
+    "profile": "full",
+    "status": "error",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Quota exceeded for today."
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": true
+ },
+ "handler_result_marked_error": {
   "approvals_created": 0,
   "audit": [
    {
@@ -467,7 +493,7 @@
    }
   ],
   "content": [
-   "Errors found: 0"
+   "boom"
   ],
   "handler_calls": [
    [
@@ -475,6 +501,56 @@
    ]
   ],
   "is_error": true
+ },
+ "handler_result_success_despite_error_word": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Error codes: none. All good."
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "handler_text_starting_with_error_word": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Errors found: 0"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
  },
  "legacy_alias_direct_target": {
   "approvals_created": 0,
