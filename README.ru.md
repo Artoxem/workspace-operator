@@ -550,7 +550,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 410 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 421 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

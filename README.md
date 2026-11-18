@@ -555,7 +555,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 410 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 421 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```
