@@ -316,6 +316,13 @@ def cmd_approvals(args: argparse.Namespace) -> int:
                 if record.get(key):
                     print(f"{key}: {record[key]}")
             return 0
+        if action == "link":
+            link = store.human_link(args.approval_id, config.approval_url)
+            if not link:
+                print("error: approval_url is not configured")
+                return 1
+            print(link)
+            return 0
         if action == "approve":
             record = store.approve(args.approval_id)
             print(f"APPROVED {record['id']}: {record['summary']}")
@@ -390,6 +397,11 @@ def build_parser() -> argparse.ArgumentParser:
     approval_show = approval_sub.add_parser("show", help="show one approval")
     approval_show.add_argument("approval_id")
     approval_show.set_defaults(func=cmd_approvals)
+    approval_link = approval_sub.add_parser(
+        "link", help="print the browser approval link (contains a secret; for you only)"
+    )
+    approval_link.add_argument("approval_id")
+    approval_link.set_defaults(func=cmd_approvals)
     approval_approve = approval_sub.add_parser("approve", help="approve one call")
     approval_approve.add_argument("approval_id")
     approval_approve.set_defaults(func=cmd_approvals)

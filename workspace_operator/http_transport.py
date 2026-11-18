@@ -16,11 +16,11 @@ process simple.
 
 import hmac
 import html
-import json
 import logging
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
+from urllib.parse import quote, urlsplit
 
 import uvicorn
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
@@ -35,6 +35,30 @@ from .runtime import current_client
 
 LOOPBACK = {"127.0.0.1", "::1", "localhost"}
 DEFAULT_PORT = 8765
+
+_PAGE_HEADERS = {
+    "Cache-Control": "no-store",
+    "Referrer-Policy": "no-referrer",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
+}
+
+
+def secret_q(value: str) -> str:
+    return quote(value, safe="")
+
+
+def _same_origin(request) -> bool:
+    """Reject cross-site form posts: Origin (when sent) must match Host."""
+    origin = request.headers.get("origin")
+    if not origin:
+        # Non-browser clients (curl, tests) send no Origin; the secret still applies.
+        return request.headers.get("sec-fetch-site", "same-origin") in (
+            "same-origin",
+            "none",
+        )
+    host = request.headers.get("host", "")
+    return urlsplit(origin).netloc == host
 
 
 @dataclass
@@ -60,6 +84,23 @@ def resolve_bind(host: str, allow_network: bool, insecure: bool) -> Tuple[bool, 
             "front for anything beyond your machine",
         )
     return True, None
+
+
+WEAK_TOKENS = frozenset({"change_me", "changeme", "token", "secret", "password", "test"})
+MIN_TOKEN_LENGTH = 24
+
+
+def weak_token_problems(tokens: Dict[str, str]) -> List[str]:
+    """Describe tokens that are too guessable to protect an HTTP endpoint."""
+    problems = []
+    for name, token in tokens.items():
+        if token.lower() in WEAK_TOKENS:
+            problems.append(f"token '{name}' is a placeholder value")
+        elif len(token) < MIN_TOKEN_LENGTH:
+            problems.append(
+                f"token '{name}' is shorter than {MIN_TOKEN_LENGTH} characters"
+            )
+    return problems
 
 
 def build_tokens(config) -> Dict[str, str]:
@@ -156,14 +197,16 @@ def build_asgi_app(
         if approval_store is None:
             return JSONResponse({"error": "not found"}, status_code=404)
         approval_id = request.path_params.get("approval_id", "")
-        try:
-            record = approval_store.get(approval_id)
-        except Exception:
+        secret = request.query_params.get("k", "")
+        if not approval_store.verify_secret(approval_id, secret):
+            # Same answer for unknown id and wrong secret: no id probing.
             return HTMLResponse(
-                "<h1>Approval not found</h1><p>This approval id is unknown or expired.</p>",
+                "<h1>Approval not found</h1><p>This link is invalid or expired. "
+                "Use the link from <code>workspace-operator approvals link &lt;id&gt;</code>.</p>",
                 status_code=404,
-                headers={"Cache-Control": "no-store"},
+                headers=_PAGE_HEADERS,
             )
+        record = approval_store.get(approval_id)
         status = record.get("status", "?")
         summary = html.escape(str(record.get("summary", "")))
         expires = html.escape(str(record.get("expires_at", "")))
@@ -171,9 +214,11 @@ def build_asgi_app(
         if status == "pending":
             action_forms = f"""
             <form method="post" action="/approvals/{html.escape(approval_id)}/approve">
+              <input type="hidden" name="k" value="{html.escape(secret)}">
               <button type="submit" style="background:#2f6fdc;color:white;border:0;border-radius:8px;padding:10px 18px;font:inherit;cursor:pointer">Approve</button>
             </form>
             <form method="post" action="/approvals/{html.escape(approval_id)}/deny" style="margin-top:8px">
+              <input type="hidden" name="k" value="{html.escape(secret)}">
               <button type="submit" style="background:#3a1d1d;color:#f1b0b0;border:1px solid #5a2a2a;border-radius:8px;padding:9px 18px;font:inherit;cursor:pointer">Deny</button>
             </form>"""
         return HTMLResponse(
@@ -191,7 +236,7 @@ def build_asgi_app(
               {action_forms}
               <p style="color:#9a9aa8;margin-top:18px">After approving, return to the chat and tell the agent to retry the exact call with this <code>approval_id</code>. Nothing runs until then.</p>
             </div>""",
-            headers={"Cache-Control": "no-store"},
+            headers=_PAGE_HEADERS,
         )
 
     async def approval_action(request: Request):
@@ -199,6 +244,19 @@ def build_asgi_app(
             return JSONResponse({"error": "not found"}, status_code=404)
         approval_id = request.path_params.get("approval_id", "")
         action = request.path_params.get("action", "")
+        if not _same_origin(request):
+            return HTMLResponse(
+                "<h1>Forbidden</h1><p>Cross-origin request rejected.</p>",
+                status_code=403,
+                headers=_PAGE_HEADERS,
+            )
+        form = await request.form()
+        if not approval_store.verify_secret(approval_id, str(form.get("k", ""))):
+            return HTMLResponse(
+                "<h1>Forbidden</h1><p>Missing or wrong approval secret.</p>",
+                status_code=403,
+                headers=_PAGE_HEADERS,
+            )
         try:
             if action == "approve":
                 approval_store.approve(approval_id, actor="web")
@@ -210,9 +268,13 @@ def build_asgi_app(
             return HTMLResponse(
                 f"<h1>Approval failed</h1><p>{html.escape(str(exc))}</p>",
                 status_code=400,
-                headers={"Cache-Control": "no-store"},
+                headers=_PAGE_HEADERS,
             )
-        return RedirectResponse(f"/approvals/{approval_id}", status_code=303)
+        return RedirectResponse(
+            f"/approvals/{approval_id}?k={secret_q(str(form.get('k', '')))}",
+            status_code=303,
+            headers=_PAGE_HEADERS,
+        )
 
     class McpEndpoint:
         """Raw ASGI endpoint: the session manager writes its own response."""
@@ -272,9 +334,17 @@ def serve_http(server, config, logger: logging.Logger, options: HttpOptions, ver
     if not tokens:
         print("error: no bearer token configured (mcp_auth_token or http_tokens)")
         return 2
+    problems = weak_token_problems(tokens)
+    if problems:
+        print(
+            "error: " + "; ".join(problems) + ". Generate one with: "
+            'python -c "import secrets; print(secrets.token_urlsafe(32))"'
+        )
+        return 2
     options.tokens = tokens
 
     from dataclasses import replace
+
     from .server import create_server
 
     servers = {"/mcp": server}

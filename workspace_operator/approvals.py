@@ -8,16 +8,17 @@ one-time, short-lived and bound to a hash of the tool, action and arguments.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import secrets
 import threading
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Sequence
 
 from .config import Config
+from .secure_files import restrict_to_owner, write_private
 
 DEFAULT_TTL_SECONDS = 900
 _STATUSES = ("pending", "approved", "denied", "used")
@@ -105,18 +106,14 @@ def _record_path(root: Path, approval_id: str) -> Path:
 
 
 def _write(root: Path, data: Dict[str, Any]) -> None:
+    new_root = not root.exists()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    target = _record_path(root, data["id"])
-    temporary = target.with_name(f".{target.name}.{secrets.token_hex(4)}.tmp")
-    temporary.write_text(
+    if new_root:
+        restrict_to_owner(root)
+    write_private(
+        _record_path(root, data["id"]),
         json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
     )
-    os.replace(temporary, target)
-    try:
-        os.chmod(target, 0o600)
-    except OSError:
-        pass
 
 
 def _read(root: Path, approval_id: str) -> Dict[str, Any]:
@@ -166,6 +163,9 @@ class ApprovalStore:
             now = _now()
             record = {
                 "id": "apr_" + secrets.token_hex(8),
+                # Known only to the human channel (CLI / server log); never put in
+                # the tool result the agent sees.
+                "secret": secrets.token_urlsafe(24),
                 "tool": tool,
                 "action": action,
                 "arguments_hash": digest,
@@ -179,6 +179,24 @@ class ApprovalStore:
 
     def get(self, approval_id: str) -> Dict[str, Any]:
         return _read(self.root, approval_id)
+
+    def verify_secret(self, approval_id: str, candidate: Optional[str]) -> bool:
+        """Constant-time check of the human-only approval secret."""
+        try:
+            expected = self.get(approval_id).get("secret")
+        except ApprovalError:
+            return False
+        if not expected or not candidate:
+            return False
+        return hmac.compare_digest(str(expected), str(candidate))
+
+    def human_link(self, approval_id: str, base_url: Optional[str]) -> Optional[str]:
+        """Browser link that carries the secret. For the human only."""
+        base = (base_url or "").rstrip("/")
+        if not base:
+            return None
+        record = self.get(approval_id)
+        return f"{base}/approvals/{approval_id}?k={record.get('secret', '')}"
 
     def list_pending(self) -> list[Dict[str, Any]]:
         if not self.root.exists():
@@ -267,6 +285,7 @@ class ApprovalStore:
 
 
 def challenge_text(record: Dict[str, Any], approve_url: str | None = None) -> str:
+    """Text returned to the agent. ``approve_url`` must not contain the secret."""
     payload = json.dumps(
         {
             "status": "approval_required",
@@ -281,8 +300,8 @@ def challenge_text(record: Dict[str, Any], approve_url: str | None = None) -> st
         sort_keys=True,
     )
     browser = (
-        f"Or open this page in a browser and click Approve/Deny:\n\n"
-        f"    {approve_url}\n\n"
+        "The user can also open the approval page from the link printed by "
+        f"`workspace-operator approvals link {record['id']}`.\n\n"
         if approve_url
         else ""
     )
@@ -297,6 +316,11 @@ def challenge_text(record: Dict[str, Any], approve_url: str | None = None) -> st
         "If the user denies it, use `workspace-operator approvals deny "
         f"{record['id']}` and do not retry."
     )
+
+
+def public_view(record: Dict[str, Any]) -> Dict[str, Any]:
+    """A copy of the record without the human-only secret."""
+    return {key: value for key, value in record.items() if key != "secret"}
 
 
 def render_records(records: Iterable[Dict[str, Any]], *, show_status: bool = True) -> str:

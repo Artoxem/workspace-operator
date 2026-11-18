@@ -37,24 +37,67 @@ class ApprovalPageTests(unittest.TestCase):
         self.client.__enter__()
         self.addCleanup(self.client.__exit__, None, None, None)
 
+    def _k(self):
+        return self.store.get(self.record["id"])["secret"]
+
     def test_page_shows_summary_and_approves(self):
-        page = self.client.get(f"/approvals/{self.record['id']}")
+        rid, k = self.record["id"], self._k()
+        page = self.client.get(f"/approvals/{rid}?k={k}")
         self.assertEqual(page.status_code, 200)
         self.assertIn("drive_trash", page.text)
         self.assertIn("Approve", page.text)
+        self.assertEqual(page.headers["referrer-policy"], "no-referrer")
 
         response = self.client.post(
-            f"/approvals/{self.record['id']}/approve", follow_redirects=False
+            f"/approvals/{rid}/approve", data={"k": k}, follow_redirects=False
         )
         self.assertEqual(response.status_code, 303)
-        self.assertEqual(self.store.get(self.record["id"])["status"], "approved")
+        self.assertEqual(self.store.get(rid)["status"], "approved")
 
     def test_page_denies(self):
-        self.client.post(f"/approvals/{self.record['id']}/deny", follow_redirects=False)
-        self.assertEqual(self.store.get(self.record["id"])["status"], "denied")
+        rid = self.record["id"]
+        self.client.post(
+            f"/approvals/{rid}/deny", data={"k": self._k()}, follow_redirects=False
+        )
+        self.assertEqual(self.store.get(rid)["status"], "denied")
+
+    def test_page_without_secret_is_hidden(self):
+        rid = self.record["id"]
+        self.assertEqual(self.client.get(f"/approvals/{rid}").status_code, 404)
+        self.assertEqual(self.client.get(f"/approvals/{rid}?k=wrong").status_code, 404)
+
+    def test_post_without_secret_is_rejected(self):
+        rid = self.record["id"]
+        for data in ({}, {"k": "wrong"}):
+            response = self.client.post(
+                f"/approvals/{rid}/approve", data=data, follow_redirects=False
+            )
+            self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.store.get(rid)["status"], "pending")
+
+    def test_cross_origin_post_is_rejected(self):
+        rid = self.record["id"]
+        response = self.client.post(
+            f"/approvals/{rid}/approve",
+            data={"k": self._k()},
+            headers={"Origin": "http://evil.example"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.store.get(rid)["status"], "pending")
 
     def test_unknown_page(self):
-        self.assertEqual(self.client.get("/approvals/apr_missing").status_code, 404)
+        self.assertEqual(self.client.get("/approvals/apr_missing?k=x").status_code, 404)
+
+    def test_secret_not_in_agent_challenge(self):
+        from workspace_operator.approvals import challenge_text
+
+        text = challenge_text(self.store.get(self.record["id"]), "http://127.0.0.1:8765")
+        self.assertNotIn(self._k(), text)
+
+    def test_human_link_contains_secret(self):
+        link = self.store.human_link(self.record["id"], "http://127.0.0.1:8765")
+        self.assertIn("?k=" + self._k(), link)
 
 
 if __name__ == "__main__":
