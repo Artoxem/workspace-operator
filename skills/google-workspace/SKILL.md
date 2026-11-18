@@ -4,7 +4,7 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmai
 license: MIT
 metadata:
   server: workspace-operator
-  version: "2.1.2"
+  version: "2.2.0"
 ---
 
 # Google Workspace automation
@@ -52,9 +52,11 @@ Never guess an ID, sheet name or range.
   `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
   If the client supports elicitation, the user gets an in-chat approval dialog.
-  Otherwise show the `approval_id` and the browser link; the user can click
-  Approve on the local page or run `workspace-operator approvals approve <id>`,
-  then retry the exact call with that `approval_id`. Do not fabricate an id. `confirm=true` alone is not enough.
+  Otherwise show the user the `approval_id` and ask them to run
+  `workspace-operator approvals approve <id>` (or open the page from
+  `workspace-operator approvals link <id>` — you never receive that link, it holds a
+  secret), then retry the exact call with that `approval_id`. Do not fabricate an id
+  and never try to approve over HTTP yourself. `confirm=true` alone is not enough.
 - Public sharing is disabled by default; `drive_write` → `share` needs both
   `allow_public_sharing=true` in config and `allow_public=true`.
 - There is no permanent Drive deletion: `drive_trash` only moves to Trash.

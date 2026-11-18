@@ -35,6 +35,8 @@ workspace-operator doctor --offline  # то же, но без обновлени
 | `FileNotFoundError: oauth.keys.json` | неверный `client_secrets_file` | поправить путь в `config.yaml` или `GOOGLE_CLIENT_SECRETS_FILE` |
 | браузер не открывается | headless/удалённая сессия | скопировать напечатанный URL в браузер, код вставить обратно |
 | проверки проходят, инструмент отдаёт `404` | файл у другого аккаунта или неверный ID | проверить ID и доступ у аккаунта |
+| `doctor`: `[FAIL] stray secret files` | рядом с токеном остались `token.json.bak-*`, `service-account.json` или `credentials.json` | отозвать приложение в аккаунте Google, затем удалить файлы |
+| `doctor`: `[FAIL] secret file permissions` | секреты доступны другим пользователям | оставить права только вам (`chmod 600` / ACL только владельца); `token.json` создаётся именно так |
 | `403: Request had insufficient authentication scopes` | токен выдан до добавления скоупа (фильтрам нужен `gmail.settings.basic`) | удалить `token.json` и авторизоваться заново; `doctor` покажет `[FAIL] scopes` и код 1 |
 
 ## HTTP-транспорт
@@ -45,6 +47,8 @@ workspace-operator doctor --offline  # то же, но без обновлени
 | `421 Misdirected Request` | недопустимый `Host` (обычно remapped порт контейнера) | обновиться до 1.13.1+ или передать `--allow-host 127.0.0.1:8791` |
 | `403 Forbidden` от Google | квота или выключенный API | см. раздел про Google выше |
 | `address already in use` | порт занят | `--port 8790` |
+| отказ: *token 'default' is a placeholder value* / *shorter than 24 characters* | bearer для HTTP слишком простой | сгенерировать: `python -c "import secrets; print(secrets.token_urlsafe(32))"` и задать `MCP_AUTH_TOKEN` |
+| страница одобрения пишет *invalid or expired link* / `403` на Approve | в ссылке нет секрета или POST пришёл с другого origin | получить ссылку командой `workspace-operator approvals link <id>`; открывать напрямую, не через прокси, меняющий `Host`/`Origin` |
 | отказ: *non-loopback binding requires `--allow-network`* | сетевой bind без подтверждения | добавить **оба** флага `--allow-network` и `--insecure`, впереди поставить TLS-прокси |
 | `Empty reply from server` | неверный путь или метод | `POST /mcp`, а не `/`; `GET /healthz` — единственный GET |
 | CORS-ошибка в браузере | origin запрещены намеренно | использовать нативный MCP-клиент, а не веб-страницу |
@@ -71,6 +75,8 @@ curl -s http://127.0.0.1:8765/mcp \
 | контейнер `(unhealthy)` | неверный токен, нет конфига или падение | `docker logs <container>`, проверить `MCP_AUTH_TOKEN` и пути монтирования |
 | `421` на remapped порту | защита от DNS-rebinding (исправлено в 1.13.1) | взять `:latest` или добавить `--allow-host` |
 | `exec format error` | архитектура образа не совпадает | образ есть для `amd64` и `arm64`; перекачать на поддерживаемом хосте |
+| порт опубликован, но ответа нет | образ по умолчанию слушает `127.0.0.1` внутри контейнера | добавить `--http --host 0.0.0.0 --allow-network --insecure` (Compose уже добавляет) и оставить `-p 127.0.0.1:…` |
+| `Error: … protected location … cannot be uploaded` | `drive_write(action="upload")` отклоняет секреты, одобрения, логи и всё вне `upload_roots` | загрузить копию из разрешённой папки; проверить `MCP_UPLOAD_ROOTS` |
 | сервер стартует, инструменты отдают 401 | `MCP_AUTH_TOKEN` не передан | `-e MCP_AUTH_TOKEN=...` |
 | правки конфига игнорируются | файл запечён в образ | смонтировать `config.docker.yaml` поверх `/app/config.yaml` |
 
@@ -80,9 +86,14 @@ curl -s http://127.0.0.1:8765/mcp \
 docker run --rm -p 127.0.0.1:8765:8765 \
   -v "$HOME/.google:/home/app/.google" \
   -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
-  -e MCP_AUTH_TOKEN="change_me" \
-  ghcr.io/artoxem/workspace-operator:latest
+  -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
+  ghcr.io/artoxem/workspace-operator:latest \
+  --http --host 0.0.0.0 --port 8765 --allow-network --insecure
 ```
+
+Образ по умолчанию слушает `127.0.0.1`, поэтому без флагов в конце команды
+опубликованный порт ничего не отвечает. Оставьте префикс `127.0.0.1:` в `-p`:
+эндпоинт без TLS.
 
 ## Инструменты и данные
 

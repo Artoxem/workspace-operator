@@ -5,11 +5,15 @@ The package name is **`workspace-operator-mcp`** (checked free on PyPI on
 
 - `pyproject.toml` → `[project] version`
 - `workspace_operator/__init__.py` → `__version__`
+- `server.json` → `version` and `packages[0].version`
 
 ## Before every release
 
 ```bash
-python -m unittest discover -s tests -v     # 308 tests, no network
+pip install -e ".[dev]"
+python -m pytest                            # 334 tests, no network
+python -m ruff check workspace_operator tests
+python -m mypy
 python -m workspace_operator tools --profile core
 python -m build                             # sdist + wheel into dist/
 python -m twine check dist/*                # optional, needs twine
@@ -86,8 +90,9 @@ next patch version. Never reuse a version number.
 
 ## Checklist
 
-- [ ] versions match in `pyproject.toml` and `__init__.py`
-- [ ] 308 tests green; optional live read/write smoke on a synthetic doc
+- [ ] versions match in `pyproject.toml`, `__init__.py` and `server.json`
+- [ ] CI green (pytest, ruff, mypy, bandit, pip-audit); the publish workflows run it first
+- [ ] 334 tests green locally; optional live read/write smoke on a synthetic doc
 - [ ] `python -m build` produces both artifacts
 - [ ] tag pushed
 - [ ] pending publisher / token ready

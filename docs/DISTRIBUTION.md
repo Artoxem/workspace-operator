@@ -4,7 +4,7 @@ How to get Workspace Operator in front of people who run AI agents.
 
 Ready-to-post copy and submission fields: [LAUNCH_PACKAGE.md](LAUNCH_PACKAGE.md).
 
-Current baseline: 39 tools, 13 OAuth scopes, 308 unit tests, PyPI and GHCR
+Current baseline: 39 tools, 13 OAuth scopes, 334 tests, PyPI and GHCR
 releases, MIT. Discovery is the bottleneck, not the feature set.
 
 ## 1. Positioning
@@ -117,7 +117,7 @@ Install lines:
 
 ```bash
 pip install workspace-operator-mcp
-docker pull ghcr.io/artoxem/workspace-operator:1.22.1
+docker pull ghcr.io/artoxem/workspace-operator:latest
 ```
 
 ## 7. Metrics

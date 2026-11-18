@@ -121,7 +121,7 @@ workspace-operator version
 **Docker / HTTP (recommended for several clients)**
 
 ```bash
-docker pull ghcr.io/artoxem/workspace-operator:1.22.1
+docker pull ghcr.io/artoxem/workspace-operator:latest
 ```
 
 **From source (development)**
@@ -177,7 +177,7 @@ cp config.example.yaml config.yaml
 client_secrets_file: "/home/you/.google/oauth.keys.json"
 token_file: "/home/you/.google/token.json"
 backup_dir: "/home/you/.google/backups"
-mcp_auth_token: "put-a-long-random-string-here"
+# mcp_auth_token: prefer the MCP_AUTH_TOKEN environment variable (see below)
 tool_profile: "core"            # core | full | read-write | read-only
 ```
 
@@ -192,8 +192,17 @@ Two different secrets, do not mix them up:
 | `token.json` | Google OAuth token — proof that Google granted the scopes | Google, after you click **Allow** in the browser |
 | `mcp_auth_token` | Local bearer string — a gate for the MCP server (and the HTTP `Authorization` header) | You, any random string |
 
-`mcp_auth_token` is not network security by itself; it is an activation key and
-a per-request bearer for the HTTP transport.
+Over stdio `mcp_auth_token` is only an activation key. Over HTTP it is the real
+per-request bearer, so it must be random: the server refuses to start with a
+placeholder such as `change_me` or a token shorter than 24 characters.
+
+**Keep secrets out of `config.yaml`.** Set `MCP_AUTH_TOKEN` as an environment
+variable (generate one with `python -c "import secrets; print(secrets.token_urlsafe(32))"`);
+`workspace-operator doctor` warns when the token sits in the config file, when
+secret files are readable by other users and when stale credentials
+(`token.json.bak-*`, `service-account.json`) are left next to the token.
+`token.json` is written atomically with owner-only permissions. If a secret may
+have leaked, follow [docs/SECURITY.md](docs/SECURITY.md#secrets-on-disk).
 
 ### 4 — Connect a client
 
@@ -207,7 +216,7 @@ a per-request bearer for the HTTP transport.
       "args": ["serve"],
       "env": {
         "MCP_CONFIG_FILE": "C:/Users/you/.google/config.yaml",
-        "MCP_AUTH_TOKEN": "put-a-long-random-string-here"
+        "MCP_AUTH_TOKEN": "<paste a long random string>"
       }
     }
   }
@@ -280,7 +289,8 @@ python -m workspace_operator serve      # stdio server
 | **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes and API reachability; exits 1 when a critical check fails |
 | **Scope routing** | `MCP_SCOPE_ROUTING=1` (default) | Hides tools whose Google scope is missing; `0` disables hiding for debugging |
 | **Public sharing** | `MCP_ALLOW_PUBLIC_SHARING=0` (default) | Public links stay blocked unless explicitly enabled |
-| **Approval queue** | `workspace-operator approvals list` | Shows pending destructive calls; `approve <id>` / `deny <id>` releases or blocks the exact hashed call |
+| **Approval queue** | `workspace-operator approvals list` | Shows pending destructive calls; `approve <id>` / `deny <id>` releases or blocks the exact hashed call; `link <id>` prints the browser page link (it carries a secret the agent never sees) |
+| **Upload guard** | `MCP_UPLOAD_ROOTS=/a,/b` | `drive_write(action="upload")` always refuses OAuth secrets, `.env*`, keys and `~/.google`/`~/.ssh`; the optional allow-list restricts it to chosen folders |
 
 In dry-run the read-only tools still work, so an agent can explore data while every
 write is turned into an explicit preview.
@@ -304,8 +314,11 @@ surface it needs; the list stays stable for that connection.
 * `GET /healthz` is unauthenticated and returns only version and transport info;
 * binding a non-loopback address requires **both** `--allow-network` and
   `--insecure`; loopback names accept any host port (containers, proxies),
-  anything else needs an explicit `--allow-host`;
-  `--insecure`, so network exposure is always deliberate.
+  anything else needs an explicit `--allow-host`, so network exposure is always
+  deliberate;
+* refuses to start over HTTP with a placeholder or short (<24 chars) token;
+* the browser approval page needs a per-approval secret and rejects cross-origin
+  POSTs (see [docs/APPROVALS.md](docs/APPROVALS.md)).
 
 ### Docker
 
@@ -328,7 +341,12 @@ curl http://127.0.0.1:8765/healthz
 ```
 
 `docker-compose.yml` mounts `config.docker.yaml`, the Google folder read-write,
-and `./data` for the audit log and bulk jobs.
+and `./data` for the audit log and bulk jobs. The image itself binds `127.0.0.1`;
+Compose adds `--allow-network --insecure` and publishes the port on the host
+loopback only. With a plain `docker run`, append
+`--http --host 0.0.0.0 --allow-network --insecure` to the command **and** keep the
+`-p 127.0.0.1:8765:8765` mapping (otherwise the container is exposed without TLS).
+Uploads inside the container are limited to `/home/app/data/upload`.
 
 **docker run — Linux/macOS**
 
@@ -339,7 +357,8 @@ docker run -d --name workspace-operator --restart unless-stopped \
   -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
   -v "$PWD/data:/home/app/data" \
   -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
-  ghcr.io/artoxem/workspace-operator:1.22.1
+  ghcr.io/artoxem/workspace-operator:latest \
+  --http --host 0.0.0.0 --port 8765 --allow-network --insecure
 ```
 
 **docker run — Windows PowerShell**
@@ -352,7 +371,8 @@ docker run -d --name workspace-operator --restart unless-stopped `
   -v "${PWD}\config.docker.yaml:/app/config.yaml:ro" `
   -v "${PWD}\data:/home/app/data" `
   -e MCP_AUTH_TOKEN=$token `
-  ghcr.io/artoxem/workspace-operator:1.22.1
+  ghcr.io/artoxem/workspace-operator:latest `
+  --http --host 0.0.0.0 --port 8765 --allow-network --insecure
 ```
 
 Point the HTTP client at `http://127.0.0.1:8765/mcp` with
@@ -370,7 +390,7 @@ takes the same arguments as the CLI:
 docker run -i --rm \
   -v "$HOME/.google:/home/app/.google" \
   --entrypoint python \
-  ghcr.io/artoxem/workspace-operator:1.22.1 -m workspace_operator serve
+  ghcr.io/artoxem/workspace-operator:latest -m workspace_operator serve
 ```
 
 Something not working? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
@@ -500,12 +520,18 @@ Design rules:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v     # 308 unit and in-memory MCP tests
+pip install -e ".[dev]"
+python -m pytest                       # 334 unit and in-memory MCP tests (coverage via --cov)
+python -m ruff check workspace_operator tests
+python -m mypy
 ```
 
 The suite covers the catalog, action router, profiles, scope filtering, HTTP
-security decisions, handlers and documentation sync. Live Google calls are not
-part of CI; use `/mcp/full` with a test document when you want a manual smoke.
+security decisions, approvals, file/secret safety, handlers and documentation sync.
+GitHub Actions (`.github/workflows/ci.yml`) runs pytest on Linux and Windows
+(Python 3.10, 3.12, 3.13), ruff, mypy, bandit and a dependency audit; the PyPI and
+Docker publish workflows depend on it. Live Google calls are not part of CI; use
+`/mcp/full` with a test document when you want a manual smoke.
 
 ## Documentation
 

@@ -162,6 +162,25 @@ Re-authorize whenever you:
 The procedure is always the same: delete `token.json`, run
 `workspace-operator doctor`, approve the browser prompt.
 
+### Rotating or revoking access
+
+Do this when a token, backup or key may have leaked, or when you stop using the
+server:
+
+1. Revoke the app at <https://myaccount.google.com/permissions>. This invalidates
+   **every** copy of the refresh token at once, including old `token.json.bak-*`
+   backups.
+2. If you ever created a service-account key, delete it in Cloud Console →
+   IAM → Service accounts → Keys. This server does not use one.
+3. Delete `token.json`, its backups and any unused `credentials.json` /
+   `service-account.json` next to it.
+4. Generate a new `MCP_AUTH_TOKEN` (`python -c "import secrets; print(secrets.token_urlsafe(32))"`)
+   and store it in the environment, not in `config.yaml`.
+5. Run `workspace-operator doctor` and approve the browser prompt; the new
+   `token.json` is written with owner-only permissions.
+6. Run `workspace-operator doctor` again: it must report no stray files, owner-only
+   permissions and all scopes granted.
+
 ## Step 8 — Verify
 
 ```bash
@@ -196,5 +215,8 @@ More failure modes: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 - Never commit `oauth.keys.json` or `token.json`.
 - The token can do everything the granted scopes allow. Prefer the `read-only`
   profile and read-only scopes when you do not need writes.
-- Keep `mcp_auth_token` random and out of git; it is the HTTP bearer value.
+- Keep `mcp_auth_token` random and out of git and `config.yaml`; it is the HTTP
+  bearer value. Prefer the `MCP_AUTH_TOKEN` environment variable.
+- Do not keep copies of `token.json` (`*.bak`, `*.old`): a backup is a working
+  credential until it is revoked. `doctor` flags them.
 - The audit log records tool names and argument names, never values.

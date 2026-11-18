@@ -18,16 +18,15 @@ to delete something; it cannot approve its own request.
 the chat: **Approve this action?** Accepting runs it once; declining cancels it.
 
    If the client does not support elicitation, the server does **not** touch
-   Drive and returns a normal tool result with an `approval_id`. In HTTP mode it
-   also returns a browser link:
+   Drive and returns a normal tool result with an `approval_id`:
 
    ```text
    ⚠️ APPROVAL REQUIRED — the action has NOT run.
    {"status": "approval_required", "approval_id": "apr_…", ...}
    ```
 
-3. In the fallback flow, the agent shows that id/link to the user. The user
-   clicks **Approve** on the local page, or runs the CLI:
+3. In the fallback flow, the agent shows that id to the user. The user runs the
+   CLI (or opens the browser page, see below):
 
    ```bash
    workspace-operator approvals list
@@ -73,6 +72,7 @@ itself; the human approval is what releases the action.
 ```bash
 workspace-operator approvals list          # pending requests
 workspace-operator approvals show apr_…    # details for one request
+workspace-operator approvals link apr_…    # browser link (contains a secret)
 workspace-operator approvals approve apr_… # allow exactly this call
 workspace-operator approvals deny apr_…    # block it
 ```
@@ -103,16 +103,26 @@ Environment: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`.
 
 ## Browser page
 
-When the HTTP transport is used, the challenge includes:
+The browser page is optional and requires the HTTP transport. Each approval has
+a random **secret** stored only in the approval record. The agent never sees it:
+the tool result carries the `approval_id` and a CLI hint, not a link. The human
+obtains the link locally:
 
-```text
-http://127.0.0.1:8765/approvals/apr_…
+```bash
+workspace-operator approvals link apr_…
+# http://127.0.0.1:8765/approvals/apr_…?k=<secret>
 ```
 
-Open it, check the summary, and click **Approve** or **Deny**. The page is
-loopback-oriented and unauthenticated by design; do not expose the HTTP server
-to an untrusted network without a TLS/auth proxy. After approving, return to the
-chat and tell the agent to retry with the `approval_id`.
+The page and the Approve/Deny POST both require the secret (constant-time
+comparison). POSTs are additionally rejected when the `Origin` header does not
+match the `Host` (CSRF), and pages are served with `no-store`,
+`Referrer-Policy: no-referrer`, a restrictive CSP and `X-Frame-Options: DENY`.
+Unknown ids and wrong secrets get the same 404 answer. After approving, return
+to the chat and tell the agent to retry with the `approval_id`.
+
+Without the secret, an agent that knows the `approval_id` and the server URL
+cannot approve its own request over HTTP. Do not expose the HTTP server to an
+untrusted network without a TLS proxy: the secret travels in the URL.
 
 ## What is gated
 
@@ -128,7 +138,8 @@ executes the reviewed plan.
 ## Threat model
 
 Approval protects against an agent acting alone through MCP. It does not protect
-against an agent that can run arbitrary local commands outside MCP, nor against
+against an agent that can run arbitrary local commands or read the approval
+directory (`data/approvals/*.json` holds the secrets) outside MCP, nor against
 a human who approves a call without reading its summary. Keep the approval
 directory local, run the CLI as the same user as the server, and do not expose
 the MCP endpoint to untrusted users.

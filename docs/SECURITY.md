@@ -3,7 +3,8 @@
 The server includes safeguards to reduce accidental destructive actions.
 
 ## Confirmations and human approval
-- Destructive calls first return `APPROVAL_REQUIRED`; a human must run `workspace-operator approvals approve <id>`. The agent retries with the one-time `approval_id`.
+- Destructive calls first return `APPROVAL_REQUIRED`; a human must run `workspace-operator approvals approve <id>` (or open the page from `workspace-operator approvals link <id>`). The agent retries with the one-time `approval_id`.
+- The agent never receives the browser link: it contains a per-approval secret that only the human channel (CLI) can read. See [APPROVALS.md](APPROVALS.md).
 - Approval is bound to a hash of the tool/action/arguments, expires after `approval_ttl` and is single-use.
 - `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` and `bulk_undo`
@@ -56,6 +57,7 @@ Every key has an environment override:
 | `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; mount it read-write |
 | `MCP_APPROVAL_TTL` | `approval_ttl` | approval lifetime in seconds |
 | `MCP_APPROVAL_URL` | `approval_url` | base URL for the browser approval page |
+| `MCP_UPLOAD_ROOTS` | `upload_roots` | comma-separated folders `drive_write(action="upload")` may read; empty = any folder except secrets |
 | `MCP_SCOPE_ROUTING` | `scope_routing` | hide tools whose Google scope is missing |
 | `MCP_ALLOW_PUBLIC_SHARING` | `allow_public_sharing` | enable public links (off by default) |
 | `MCP_ALLOWED_TOOLS` | `allowed_tools` | comma-separated allow list |
@@ -114,7 +116,7 @@ docker run -d --name workspace-alice \
   -v /home/alice/.google:/home/app/.google \
   -v /home/alice/workspace-data:/home/app/data \
   -e MCP_AUTH_TOKEN=... \
-  ghcr.io/artoxem/workspace-operator:1.22.2
+  ghcr.io/artoxem/workspace-operator:latest
 ```
 
 Repeat with another port, config and Google folder for each person. A reverse
@@ -134,13 +136,46 @@ All tool calls require `MCP_AUTH_TOKEN` to be configured (environment variable o
 that ensures the operator has consciously enabled the server before it becomes
 operational. It does **not** perform per-request client authentication.
 
-You can think of `MCP_AUTH_TOKEN` as a **local “activation key” for this MCP
-server** — an extra safeguard against accidental startup without configuration,
-not a security boundary or network protection mechanism.
+Over **stdio** you can think of `MCP_AUTH_TOKEN` as a **local “activation key”** —
+the transport is inherently local (the IDE launches the server process directly), so
+the token only prevents accidental starts without a deliberate setup step.
 
-For STDIO-based MCP servers the transport is inherently local (the IDE launches the
-server process directly), so there is no network endpoint to protect. The token
-simply prevents accidental starts without a deliberate setup step.
+Over **HTTP** the same value (or the per-client `http_tokens`) is the real
+`Authorization: Bearer` credential for every request, so it must be random and
+secret: the server refuses to start with a placeholder (`change_me`, …) or a token
+shorter than 24 characters.
+
+Where to keep it:
+
+- Prefer the `MCP_AUTH_TOKEN` environment variable (or your secret manager) over
+  `mcp_auth_token` in `config.yaml`; `workspace-operator doctor` warns when the token
+  is stored in the config file.
+- Generate it with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
+- Rotating it does not require a new Google authorization.
+
+## Secrets on disk
+
+| File | What it grants | Handling |
+|---|---|---|
+| `token.json` | access to your Google account within the granted scopes | written atomically under a file lock, owner-only permissions (`0600`, an owner-only ACL on Windows) |
+| `oauth.keys.json` | the OAuth client identity (client secret) | keep outside the repository, owner-only |
+| `data/approvals/*.json` | one-time approval secrets | created owner-only; never returned to the agent |
+| `.env` | `MCP_AUTH_TOKEN` for Docker Compose | git-ignored; keep owner-only |
+
+`workspace-operator doctor` checks that secret files are not readable by other
+users and flags leftovers next to the token (old `token.json.bak-*`,
+`service-account.json`, `credentials.json`). Delete credentials you do not use: a
+backup of a token is a working credential until it is revoked.
+
+**If a secret may have leaked:** revoke the app at
+<https://myaccount.google.com/permissions> (this invalidates every copy of the
+refresh token at once), delete the Cloud service-account key if you had one, delete
+`token.json` and the backups, generate a new `MCP_AUTH_TOKEN`, then run
+`workspace-operator doctor` to authorize again.
+
+`drive_write(action="upload")`, local file exports and approvals all go through one
+list of protected paths (`secure_files.protected_paths`), so an agent cannot use
+them to move your credentials around.
 
 ## Understanding OAuth Scopes
 
@@ -250,8 +285,18 @@ For questions about specific scopes, see [Google's OAuth 2.0 Scopes documentatio
 - `drive_read(action="export")` writes to the local filesystem on the machine
   running the server — `save_to` is honoured literally and the absolute path is
   echoed back. Never overwrite without `overwrite=true`.
-- `drive_write(action="upload")` reads any local file the process can read (100 MB cap); treat the
-  server process as having the file access of its user.
+- `drive_write(action="upload")` reads local files (100 MB cap). OAuth secrets are
+  always refused: the configured token, client-secrets and backup paths, `~/.google`,
+  `~/.ssh`, `~/.aws`, `~/.gnupg`, and files named `token.json`, `.env*`,
+  `oauth.keys.json` and similar. Set `upload_roots` (`MCP_UPLOAD_ROOTS`) to restrict
+  uploads to specific folders; in the Docker config it defaults to
+  `/home/app/data/upload`. Without `upload_roots` the process otherwise has the
+  file access of its user.
+- Names that come from remote data (mail attachments, Drive titles) are reduced to a
+  leaf file name before saving (`../`, drive letters, reserved Windows names and
+  invalid characters are removed), so a malicious attachment cannot write outside
+  the target directory. An explicit `save_to` file path chosen by the caller is
+  still honoured.
 
 ## HTTP transport (v1.9)
 
@@ -263,6 +308,15 @@ For questions about specific scopes, see [Google's OAuth 2.0 Scopes documentatio
 - DNS-rebinding protection rejects unexpected `Host` headers and every browser
   `Origin` that was not explicitly allowed.
 - `GET /healthz` is public by design and exposes no data.
+- The server refuses to start over HTTP with a placeholder token (`change_me`, …) or
+  one shorter than 24 characters. Generate one with
+  `python -c "import secrets; print(secrets.token_urlsafe(32))"` and keep it out of
+  `config.yaml`: prefer the `MCP_AUTH_TOKEN` environment variable.
+- The browser approval pages are protected by a per-approval secret, an
+  `Origin`/`Host` check and restrictive response headers; see `APPROVALS.md`.
+- The Docker image binds `127.0.0.1` by default. `docker-compose.yml` passes
+  `--allow-network --insecure` together with a loopback-only port mapping; with a
+  plain `docker run` you must opt in to network binding yourself.
 - The audit log records the token name as `client`, so a shared deployment can be
   traced back to a specific token.
 - Network exposure means everyone shares one Google identity. For real multi-user

@@ -117,7 +117,7 @@ workspace-operator version
 **Docker / HTTP (для нескольких клиентов)**
 
 ```bash
-docker pull ghcr.io/artoxem/workspace-operator:1.22.1
+docker pull ghcr.io/artoxem/workspace-operator:latest
 ```
 
 **Из исходников (разработка)**
@@ -173,7 +173,7 @@ cp config.example.yaml config.yaml
 client_secrets_file: "/home/you/.google/oauth.keys.json"
 token_file: "/home/you/.google/token.json"
 backup_dir: "/home/you/.google/backups"
-mcp_auth_token: "длинная-случайная-строка"
+# mcp_auth_token: лучше переменная окружения MCP_AUTH_TOKEN (см. ниже)
 tool_profile: "core"            # core | full | read-write | read-only
 ```
 
@@ -188,8 +188,17 @@ tool_profile: "core"            # core | full | read-write | read-only
 | `token.json` | Google OAuth токен — подтверждение, что Google выдал доступы | Google после нажатия **Allow** в браузере |
 | `mcp_auth_token` | Локальная bearer-строка — ключ активации сервера и заголовок `Authorization` для HTTP | Вы, любая случайная строка |
 
-`mcp_auth_token` сам по себе не сетевая защита: это ключ активации и bearer для
-HTTP-транспорта.
+По stdio `mcp_auth_token` — лишь ключ активации. По HTTP это настоящий bearer на
+каждый запрос, поэтому он должен быть случайным: сервер не запустится с заглушкой
+вроде `change_me` или токеном короче 24 символов.
+
+**Не храните секреты в `config.yaml`.** Задайте `MCP_AUTH_TOKEN` переменной окружения
+(генерация: `python -c "import secrets; print(secrets.token_urlsafe(32))"`);
+`workspace-operator doctor` предупредит, если токен лежит в конфиге, если секретные
+файлы доступны другим пользователям и если рядом с токеном остались старые учётные
+данные (`token.json.bak-*`, `service-account.json`). `token.json` пишется атомарно с
+правами только для владельца. Если секрет мог утечь, действуйте по
+[docs/ru/SECURITY.md](docs/ru/SECURITY.md#секреты-на-диске).
 
 ### 4 — Подключение клиента
 
@@ -203,7 +212,7 @@ HTTP-транспорта.
       "args": ["serve"],
       "env": {
         "MCP_CONFIG_FILE": "C:/Users/you/.google/config.yaml",
-        "MCP_AUTH_TOKEN": "длинная-случайная-строка"
+        "MCP_AUTH_TOKEN": "<вставьте длинную случайную строку>"
       }
     }
   }
@@ -275,7 +284,8 @@ python -m workspace_operator serve      # stdio-сервер
 | **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, скоупы и доступность API; код 1 при критичной ошибке |
 | **Scope routing** | `MCP_SCOPE_ROUTING=1` (по умолчанию) | Скрывает инструменты без нужного Google-скоупа; `0` отключает скрытие для отладки |
 | **Публичный шаринг** | `MCP_ALLOW_PUBLIC_SHARING=0` (по умолчанию) | Публичные ссылки заблокированы, пока не включены явно |
-| **Очередь подтверждений** | `workspace-operator approvals list` | Показывает ожидающие destructive-вызовы; `approve <id>` / `deny <id>` разрешает или блокирует конкретный вызов |
+| **Очередь подтверждений** | `workspace-operator approvals list` | Показывает ожидающие destructive-вызовы; `approve <id>` / `deny <id>` разрешает или блокирует конкретный вызов; `link <id>` печатает ссылку на страницу в браузере (в ней секрет, которого агент не видит) |
+| **Защита загрузки** | `MCP_UPLOAD_ROOTS=/a,/b` | `drive_write(action="upload")` всегда отклоняет секреты OAuth, `.env*`, ключи и `~/.google`/`~/.ssh`; необязательный белый список ограничивает выбранными папками |
 
 В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
 данные, пока каждая запись превращается в явное превью.
@@ -299,8 +309,11 @@ python -m workspace_operator serve --http --port 8765
 * `GET /healthz` не требует токена и отдаёт только версию и транспорт;
 * привязка к не-loopback адресу требует **одновременно** `--allow-network` и
   `--insecure`; loopback-имена принимают любой порт (контейнеры, прокси),
-  для остального нужен явный `--allow-host`;
-  `--insecure`, поэтому выход в сеть всегда осознанный.
+  для остального нужен явный `--allow-host`, поэтому выход в сеть всегда
+  осознанный;
+* по HTTP не запускается с токеном-заглушкой или коротким (<24 символов) токеном;
+* страница одобрений в браузере требует секрет конкретного одобрения и отклоняет
+  кросс-доменные POST (см. [docs/ru/APPROVALS.md](docs/ru/APPROVALS.md)).
 
 ### Docker
 
@@ -323,7 +336,12 @@ curl http://127.0.0.1:8765/healthz
 ```
 
 `docker-compose.yml` монтирует `config.docker.yaml`, каталог Google **на запись**
-и `./data` для аудит-лога и массовых задач.
+и `./data` для аудит-лога и массовых задач. Сам образ слушает `127.0.0.1`; Compose
+добавляет `--allow-network --insecure` и публикует порт только на loopback хоста.
+При обычном `docker run` добавьте в конец команды
+`--http --host 0.0.0.0 --allow-network --insecure` **и** оставьте проброс
+`-p 127.0.0.1:8765:8765` (иначе контейнер окажется в сети без TLS). Загрузка файлов
+внутри контейнера ограничена папкой `/home/app/data/upload`.
 
 **docker run — Linux/macOS**
 
@@ -334,7 +352,8 @@ docker run -d --name workspace-operator --restart unless-stopped \
   -v "$PWD/config.docker.yaml:/app/config.yaml:ro" \
   -v "$PWD/data:/home/app/data" \
   -e MCP_AUTH_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" \
-  ghcr.io/artoxem/workspace-operator:1.22.1
+  ghcr.io/artoxem/workspace-operator:latest \
+  --http --host 0.0.0.0 --port 8765 --allow-network --insecure
 ```
 
 **docker run — Windows PowerShell**
@@ -347,7 +366,8 @@ docker run -d --name workspace-operator --restart unless-stopped `
   -v "${PWD}\config.docker.yaml:/app/config.yaml:ro" `
   -v "${PWD}\data:/home/app/data" `
   -e MCP_AUTH_TOKEN=$token `
-  ghcr.io/artoxem/workspace-operator:1.22.1
+  ghcr.io/artoxem/workspace-operator:latest `
+  --http --host 0.0.0.0 --port 8765 --allow-network --insecure
 ```
 
 Укажите HTTP-клиенту `http://127.0.0.1:8765/mcp` и заголовок
@@ -365,7 +385,7 @@ entrypoint принимает те же аргументы, что и CLI:
 docker run -i --rm \
   -v "$HOME/.google:/home/app/.google" \
   --entrypoint python \
-  ghcr.io/artoxem/workspace-operator:1.22.1 -m workspace_operator serve
+  ghcr.io/artoxem/workspace-operator:latest -m workspace_operator serve
 ```
 
 Что-то не работает? Смотрите [docs/ru/TROUBLESHOOTING.md](docs/ru/TROUBLESHOOTING.md).
@@ -495,12 +515,18 @@ skills/google-workspace/     Agent Skill: какой инструмент ког
 ## Тестирование
 
 ```bash
-python -m unittest discover -s tests -v     # 308 unit и in-memory MCP тестов
+pip install -e ".[dev]"
+python -m pytest                       # 334 unit и in-memory MCP тестов (покрытие через --cov)
+python -m ruff check workspace_operator tests
+python -m mypy
 ```
 
 Набор покрывает каталог, роутер действий, профили, scope-фильтрацию, HTTP-
-безопасность, handlers и синхронизацию документации. Живые вызовы Google в CI
-не входят; для ручного smoke используйте `/mcp/full` и тестовый документ.
+безопасность, одобрения, безопасность файлов и секретов, handlers и синхронизацию
+документации. GitHub Actions (`.github/workflows/ci.yml`) запускает pytest на Linux
+и Windows (Python 3.10, 3.12, 3.13), ruff, mypy, bandit и аудит зависимостей;
+публикации в PyPI и Docker зависят от него. Живые вызовы Google в CI не входят;
+для ручного smoke используйте `/mcp/full` и тестовый документ.
 
 ## Документация
 

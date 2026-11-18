@@ -18,9 +18,11 @@ workspace-operator doctor        # one-time Google authorization
 
 Use absolute paths in client configs. On Windows either double the backslashes
 (`C:\\Users\\you\\config.yaml`) or use forward slashes
-(`C:/Users/you/config.yaml`). Replace `your_token_here` with your
-`mcp_auth_token`; if the variable is already set in the environment, the `env`
-block can be omitted.
+(`C:/Users/you/config.yaml`). Replace `your_token_here` with a long random
+token (`python -c "import secrets; print(secrets.token_urlsafe(32))"`); if
+`MCP_AUTH_TOKEN` is already set in the environment, the `env` block can be omitted
+and the token stays out of the client config. Over HTTP the server rejects
+placeholders and tokens shorter than 24 characters.
 
 ## stdio, any client
 

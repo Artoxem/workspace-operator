@@ -161,6 +161,26 @@ Gmail, Calendar, Apps Script, Tasks, Forms, Postmaster). Полный списо
 Процедура одна: удалить `token.json`, запустить `workspace-operator doctor`,
 подтвердить доступ в браузере.
 
+### Смена и отзыв доступа
+
+Делайте это, если токен, бэкап или ключ мог утечь, или если вы перестаёте
+пользоваться сервером:
+
+1. Отзовите доступ приложения на <https://myaccount.google.com/permissions>. Это
+   сразу обнуляет **все** копии refresh-токена, включая старые бэкапы
+   `token.json.bak-*`.
+2. Если вы когда-либо создавали ключ сервисного аккаунта, удалите его в Cloud
+   Console → IAM → Service accounts → Keys. Этот сервер его не использует.
+3. Удалите `token.json`, его бэкапы и неиспользуемые `credentials.json` /
+   `service-account.json` рядом с ним.
+4. Сгенерируйте новый `MCP_AUTH_TOKEN`
+   (`python -c "import secrets; print(secrets.token_urlsafe(32))"`) и храните его в
+   окружении, а не в `config.yaml`.
+5. Запустите `workspace-operator doctor` и подтвердите доступ в браузере; новый
+   `token.json` записывается с правами только для владельца.
+6. Запустите `workspace-operator doctor` ещё раз: не должно быть лишних файлов,
+   права должны быть только у владельца, все scopes выданы.
+
 ## Шаг 8 — Проверка
 
 ```bash
@@ -195,5 +215,8 @@ scope: переавторизуйтесь.
 - Никогда не коммитьте `oauth.keys.json` и `token.json`.
 - Токен может всё, что разрешено выданными scopes. Для чтения используйте
   профиль `read-only` и read-only scopes.
-- `mcp_auth_token` держите случайным и вне git; это bearer для HTTP.
+- `mcp_auth_token` держите случайным и вне git и `config.yaml`; это bearer для HTTP.
+  Предпочитайте переменную окружения `MCP_AUTH_TOKEN`.
+- Не храните копии `token.json` (`*.bak`, `*.old`): бэкап остаётся рабочим
+  ключом, пока его не отозвали. `doctor` их находит.
 - Аудит-лог пишет имена инструментов и аргументов, но не значения.

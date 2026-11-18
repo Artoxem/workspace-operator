@@ -40,7 +40,7 @@ Install lines:
 
 ```bash
 pip install workspace-operator-mcp
-docker pull ghcr.io/artoxem/workspace-operator:1.22.5
+docker pull ghcr.io/artoxem/workspace-operator:latest
 ```
 
 
@@ -147,7 +147,7 @@ Body:
 > audit log, and 39 tools across Drive, Docs, Sheets, Gmail, Calendar,
 > Tasks, Forms, Apps Script and Postmaster.
 >
-> MIT, Python, 358 tests. Source: https://github.com/Artoxem/workspace-operator
+> MIT, Python, 334 tests. Source: https://github.com/Artoxem/workspace-operator
 
 Post Tuesday–Thursday, 08:00–10:00 US Eastern. Reply to every comment for the
 first three hours.
@@ -187,7 +187,7 @@ Title:
 > Local Google Workspace MCP server: 39 tools, bulk file operations with undo
 
 Angle: local OAuth, no hosted middleman, Docker on loopback, read-only profile,
-what runs where. Link the same repository, mention 358 tests and MIT.
+what runs where. Link the same repository, mention 334 tests and MIT.
 
 ### X / LinkedIn thread
 

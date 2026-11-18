@@ -17,9 +17,11 @@ workspace-operator doctor        # одноразовая авторизация
 
 В конфигах клиентов используйте абсолютные пути. В Windows либо удваивайте
 обратные слэши (`C:\\Users\\you\\config.yaml`), либо пишите прямые
-(`C:/Users/you/config.yaml`). Замените `your_token_here` на свой
-`mcp_auth_token`; если переменная уже задана в окружении, блок `env` можно
-опустить.
+(`C:/Users/you/config.yaml`). Замените `your_token_here` на длинный случайный
+токен (`python -c "import secrets; print(secrets.token_urlsafe(32))"`); если
+`MCP_AUTH_TOKEN` уже задан в окружении, блок `env` можно опустить, и токен не
+будет лежать в конфиге клиента. По HTTP сервер отклоняет заглушки и токены короче
+24 символов.
 
 ## stdio, любой клиент
 

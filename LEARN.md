@@ -111,7 +111,8 @@ def load_config() -> Config:
 ```yaml
 client_secrets_file: "C:\\Users\\you\\.google\\oauth.keys.json"
 token_file: "C:\\Users\\you\\.google\\token.json"
-mcp_auth_token: "change_me"
+# Prefer the MCP_AUTH_TOKEN environment variable; never commit a real token.
+# mcp_auth_token: "<random string>"
 
 scopes:
   - "https://www.googleapis.com/auth/spreadsheets"
