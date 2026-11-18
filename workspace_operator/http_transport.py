@@ -48,17 +48,49 @@ def secret_q(value: str) -> str:
     return quote(value, safe="")
 
 
+_LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def _authority(value: str) -> str:
+    """``scheme://Host:port`` → ``host:port``, normalised for comparison.
+
+    Loopback spellings are one server: ``localhost``, ``127.0.0.1`` and ``[::1]``
+    all normalise to ``127.0.0.1``, and a missing port falls back to the scheme
+    default, so ``http://localhost:8765`` compares equal to a Host of
+    ``127.0.0.1:8765``.
+    """
+    raw = value.strip()
+    if "//" not in raw:
+        raw = "//" + raw
+    try:
+        parts = urlsplit(raw)
+        port = parts.port
+    except ValueError:
+        return raw.lower()
+    host = (parts.hostname or "").lower()
+    if host in _LOOPBACK_HOSTS:
+        host = "127.0.0.1"
+    if port is None:
+        port = {"http": 80, "https": 443}.get(parts.scheme.lower())
+    return f"{host}:{port}" if port else host
+
+
 def _same_origin(request) -> bool:
     """Reject cross-site form posts: Origin (when sent) must match Host."""
-    origin = request.headers.get("origin")
+    origin = (request.headers.get("origin") or "").strip()
+    host = request.headers.get("host", "")
+    if origin and origin.lower() != "null":
+        return _authority(origin) == _authority(host)
     if not origin:
         # Non-browser clients (curl, tests) send no Origin; the secret still applies.
         return request.headers.get("sec-fetch-site", "same-origin") in (
             "same-origin",
             "none",
         )
-    host = request.headers.get("host", "")
-    return urlsplit(origin).netloc == host
+    # Opaque origin: sandboxed previews and embedded webviews send ``Origin: null``
+    # and their Sec-Fetch-Site looks cross-site even for our own page. The approval
+    # secret is still required for the POST, so accept it when we are loopback-only.
+    return (urlsplit("//" + host).hostname or "").lower() in _LOOPBACK_HOSTS
 
 
 @dataclass

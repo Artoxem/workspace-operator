@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from workspace_operator.http_transport import (
     HttpOptions,
+    _same_origin,
     _security_settings,
     authenticate,
     build_tokens,
@@ -108,6 +109,57 @@ class OptionsTests(unittest.TestCase):
             ["serve", "--http", "--allow-host", "a.example:443", "--allow-host", "b"]
         )
         self.assertEqual(args.allow_host, ["a.example:443", "b"])
+
+
+class SameOriginTests(unittest.TestCase):
+    """The approval page is a plain HTML form; its POST must survive real browsers."""
+
+    @staticmethod
+    def _request(origin=None, host="127.0.0.1:8765", site=None):
+        headers = {"host": host}
+        if origin is not None:
+            headers["origin"] = origin
+        if site is not None:
+            headers["sec-fetch-site"] = site
+        return SimpleNamespace(headers=headers)
+
+    def test_matching_origin_is_accepted(self):
+        self.assertTrue(_same_origin(self._request("http://127.0.0.1:8765")))
+
+    def test_localhost_and_loopback_ip_are_one_server(self):
+        for origin in (
+            "http://localhost:8765",
+            "http://[::1]:8765",
+            "http://LOCALHOST:8765",
+        ):
+            with self.subTest(origin=origin):
+                self.assertTrue(_same_origin(self._request(origin)))
+
+    def test_cross_site_origin_is_rejected(self):
+        self.assertFalse(_same_origin(self._request("https://evil.example")))
+        self.assertFalse(_same_origin(self._request("http://127.0.0.1:9999")))
+
+    def test_opaque_null_origin_is_accepted_on_loopback(self):
+        # Sandboxed previews and embedded webviews: no real site name, still our page.
+        self.assertTrue(
+            _same_origin(self._request("null", site="cross-site"))
+        )
+
+    def test_opaque_null_origin_is_rejected_when_bound_to_the_network(self):
+        self.assertFalse(
+            _same_origin(
+                self._request("null", host="192.168.1.10:8765", site="cross-site")
+            )
+        )
+
+    def test_missing_origin_falls_back_to_fetch_metadata(self):
+        self.assertTrue(_same_origin(self._request(site="same-origin")))
+        self.assertTrue(_same_origin(self._request(site="none")))
+        self.assertFalse(_same_origin(self._request(site="cross-site")))
+
+    def test_default_ports_are_equivalent(self):
+        self.assertTrue(_same_origin(self._request("http://127.0.0.1", host="127.0.0.1:80")))
+        self.assertTrue(_same_origin(self._request("https://127.0.0.1", host="127.0.0.1:443")))
 
 
 if __name__ == "__main__":
