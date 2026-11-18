@@ -46,5 +46,6 @@ build/
 ## Local secrets
 .env
 
-## Local runtime state (audit log, bulk jobs)
-data/
+## Local runtime state (audit log, bulk jobs, approvals): the top-level data/ only.
+## A bare "data/" would also hide tests/data/ and workspace_operator/definitions data.
+/data/

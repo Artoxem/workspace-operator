@@ -1,0 +1,1404 @@
+{
+ "populated": [
+  {
+   "case": [
+    "resource",
+    "gdrive://recent",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Recent Google Drive files (by last modified):\n\n- Plan.docx (ID: f1) [application/msword] modified=2026-01-02 10:00 owner=a@x.com\n- NoOwner (ID: f2) [?] modified=2026-01-03 10:00 owner=?"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "drive",
+      "v3"
+     ]
+    ],
+    [
+     "files.list",
+     {
+      "fields": "files(id,name,mimeType,modifiedTime,owners)",
+      "orderBy": "modifiedTime desc",
+      "pageSize": 20
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gmail://inbox",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Unread inbox messages (2):\n\n- [m1] 2026-01-06 09:30 | Bob <bob@x.com> | Hi\n- [m2] 2026-01-06 09:30 | Bob <bob@x.com> | Hi"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "gmail",
+      "v1"
+     ]
+    ],
+    [
+     "users.messages.list",
+     {
+      "maxResults": 20,
+      "q": "is:unread in:inbox",
+      "userId": "me"
+     }
+    ],
+    [
+     "users.messages.get",
+     {
+      "format": "metadata",
+      "id": "m1",
+      "metadataHeaders": [
+       "From",
+       "Subject",
+       "Date"
+      ],
+      "userId": "me"
+     }
+    ],
+    [
+     "users.messages.get",
+     {
+      "format": "metadata",
+      "id": "m2",
+      "metadataHeaders": [
+       "From",
+       "Subject",
+       "Date"
+      ],
+      "userId": "me"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gcalendar://upcoming",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Upcoming calendar events (next 7 days):\n\n- 2026-01-07T09:00:00Z | Standup (ID: e1)\n- 2026-01-08 | (no title) (ID: e2)"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "calendar",
+      "v3"
+     ]
+    ],
+    [
+     "events.list",
+     {
+      "calendarId": "primary",
+      "maxResults": 25,
+      "orderBy": "startTime",
+      "singleEvents": true,
+      "timeMax": "2026-01-12T12:00:00+00:00",
+      "timeMin": "2026-01-05T12:00:00+00:00"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gdrive://file/f1",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "File: Plan.docx\nID: f1\nType: t\nSize: 2,048 bytes\nCreated: 2026-01-01 00:00\nModified: 2026-01-02 00:00\nOwner: a@x.com\nLink: https://x/f1"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "drive",
+      "v3"
+     ]
+    ],
+    [
+     "files.get",
+     {
+      "fields": "id,name,mimeType,size,createdTime,modifiedTime,owners,webViewLink,parents",
+      "fileId": "f1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gsheets://SHEET1/Data!A1:B3",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Sheet data (Data!A1:B3):\n| a | b |\n| 1 | 2 |\n| x |"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "Data!A1:B3",
+      "spreadsheetId": "SHEET1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gsheets://SHEET1",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Sheet data (Sheet1):\n| a | b |\n| 1 | 2 |\n| x |"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "Sheet1",
+      "spreadsheetId": "SHEET1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gdocs://DOC1",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Document: Notes\n\nHello doc"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "docs",
+      "v1"
+     ]
+    ],
+    [
+     "documents.get",
+     {
+      "documentId": "DOC1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gdrive://file/",
+    null
+   ],
+   "result": {
+    "error": "file_id is required in gdrive://file/{file_id}"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gsheets:///Sheet1",
+    null
+   ],
+   "result": {
+    "error": "spreadsheet_id is required in gsheets://{spreadsheet_id}/{range}"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gdocs://",
+    null
+   ],
+   "result": {
+    "error": "document_id is required in gdocs://{document_id}"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "nope://x",
+    null
+   ],
+   "result": {
+    "error": "Unknown resource URI scheme: nope://x"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "summarize_inbox",
+    null
+   ],
+   "result": {
+    "ok": {
+     "description": "Gmail inbox summary — query: is:unread in:inbox",
+     "messages": [
+      [
+       "user",
+       "Here are the recent emails from Gmail (query: 'is:unread in:inbox'):\n\nFound 2 message(s) for 'is:unread in:inbox':\n\n\n---\nID: m1\nDate: 2026-01-06 09:30\nFrom: Bob <bob@x.com>\nSubject: Hi\nPreview: hello world\n\n---\nID: m2\nDate: 2026-01-06 09:30\nFrom: Bob <bob@x.com>\nSubject: Hi\nPreview: hello world\n\nPlease summarize these emails, grouping by sender or topic where relevant. Highlight any urgent or action-required items."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "gmail",
+      "v1"
+     ]
+    ],
+    [
+     "users.messages.list",
+     {
+      "maxResults": 20,
+      "q": "is:unread in:inbox",
+      "userId": "me"
+     }
+    ],
+    [
+     "users.messages.get",
+     {
+      "format": "metadata",
+      "id": "m1",
+      "metadataHeaders": [
+       "From",
+       "Subject",
+       "Date"
+      ],
+      "userId": "me"
+     }
+    ],
+    [
+     "users.messages.get",
+     {
+      "format": "metadata",
+      "id": "m2",
+      "metadataHeaders": [
+       "From",
+       "Subject",
+       "Date"
+      ],
+      "userId": "me"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "summarize_inbox",
+    {
+     "query": "from:boss",
+     "max_results": "500"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Gmail inbox summary — query: from:boss",
+     "messages": [
+      [
+       "user",
+       "Here are the recent emails from Gmail (query: 'from:boss'):\n\nFound 2 message(s) for 'from:boss':\n\n\n---\nID: m1\nDate: 2026-01-06 09:30\nFrom: Bob <bob@x.com>\nSubject: Hi\nPreview: hello world\n\n---\nID: m2\nDate: 2026-01-06 09:30\nFrom: Bob <bob@x.com>\nSubject: Hi\nPreview: hello world\n\nPlease summarize these emails, grouping by sender or topic where relevant. Highlight any urgent or action-required items."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "gmail",
+      "v1"
+     ]
+    ],
+    [
+     "users.messages.list",
+     {
+      "maxResults": 50,
+      "q": "from:boss",
+      "userId": "me"
+     }
+    ],
+    [
+     "users.messages.get",
+     {
+      "format": "metadata",
+      "id": "m1",
+      "metadataHeaders": [
+       "From",
+       "Subject",
+       "Date"
+      ],
+      "userId": "me"
+     }
+    ],
+    [
+     "users.messages.get",
+     {
+      "format": "metadata",
+      "id": "m2",
+      "metadataHeaders": [
+       "From",
+       "Subject",
+       "Date"
+      ],
+      "userId": "me"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {
+     "spreadsheet_id": "S1",
+     "range": "A1:B2"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Analysis prompt for spreadsheet: Budget",
+     "messages": [
+      [
+       "user",
+       "Here is data from Google Spreadsheet 'Budget' (range: A1:B2):\n\n| a | b |\n| 1 | 2 |\n| x |\n\nPlease analyse this data. Identify patterns, trends, and notable insights. If there are headers in the first row, use them to understand the data structure."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.get",
+     {
+      "spreadsheetId": "S1"
+     }
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "A1:B2",
+      "spreadsheetId": "S1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {
+     "spreadsheet_id": "S1"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Analysis prompt for spreadsheet: Budget",
+     "messages": [
+      [
+       "user",
+       "Here is data from Google Spreadsheet 'Budget' (range: Sheet1):\n\n| a | b |\n| 1 | 2 |\n| x |\n\nPlease analyse this data. Identify patterns, trends, and notable insights. If there are headers in the first row, use them to understand the data structure."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.get",
+     {
+      "spreadsheetId": "S1"
+     }
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "Sheet1",
+      "spreadsheetId": "S1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {}
+   ],
+   "result": {
+    "error": "spreadsheet_id is required for the analyze_spreadsheet prompt"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "plan_week",
+    null
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly planning — next 7 days",
+     "messages": [
+      [
+       "user",
+       "Calendar events for the next 7 days:\n\n- 2026-01-07T09:00:00Z → 2026-01-07T09:15:00Z\n  Title: Standup\n  Attendees: a@x.com\n  ID: e1\n- 2026-01-08 → 2026-01-09\n  Title: (no title)\n  Attendees: none\n  ID: e2\n\nBased on these calendar events, please help me plan my week. Identify busy periods, suggest preparation for important meetings, and highlight any scheduling conflicts or time blocks that need attention."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "calendar",
+      "v3"
+     ]
+    ],
+    [
+     "events.list",
+     {
+      "calendarId": "primary",
+      "maxResults": 50,
+      "orderBy": "startTime",
+      "singleEvents": true,
+      "timeMax": "2026-01-12T12:00:00+00:00",
+      "timeMin": "2026-01-05T12:00:00+00:00"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "plan_week",
+    {
+     "days_ahead": "3"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly planning — next 3 days",
+     "messages": [
+      [
+       "user",
+       "Calendar events for the next 3 days:\n\n- 2026-01-07T09:00:00Z → 2026-01-07T09:15:00Z\n  Title: Standup\n  Attendees: a@x.com\n  ID: e1\n- 2026-01-08 → 2026-01-09\n  Title: (no title)\n  Attendees: none\n  ID: e2\n\nBased on these calendar events, please help me plan my week. Identify busy periods, suggest preparation for important meetings, and highlight any scheduling conflicts or time blocks that need attention."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "calendar",
+      "v3"
+     ]
+    ],
+    [
+     "events.list",
+     {
+      "calendarId": "primary",
+      "maxResults": 50,
+      "orderBy": "startTime",
+      "singleEvents": true,
+      "timeMax": "2026-01-08T12:00:00+00:00",
+      "timeMin": "2026-01-05T12:00:00+00:00"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "search_drive",
+    {
+     "query": "name contains 'x'",
+     "limit": "999"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Drive search results — query: name contains 'x'",
+     "messages": [
+      [
+       "user",
+       "Found 2 file(s) for query 'name contains 'x'':\n\n- Plan.docx\n  ID: f1 | Type: application/msword\n  Modified: 2026-01-02 10:00 | Owner: a@x.com\n  Link: https://x/f1\n- NoOwner\n  ID: f2 | Type: ?\n  Modified: 2026-01-03 10:00 | Owner: ?\n  Link: N/A\n\nPlease review these Google Drive files and provide a summary report. Group related files, identify the most recently modified ones, and suggest any organisation improvements if relevant."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "drive",
+      "v3"
+     ]
+    ],
+    [
+     "files.list",
+     {
+      "fields": "files(id,name,mimeType,modifiedTime,owners,webViewLink)",
+      "pageSize": 50,
+      "q": "name contains 'x'"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "search_drive",
+    {}
+   ],
+   "result": {
+    "error": "query is required for the search_drive prompt"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "weekly_review",
+    null
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly review — last 7 days",
+     "messages": [
+      [
+       "user",
+       "DIGEST-TEXT\n\nReview this week: what needs a decision, which threads are waiting on someone, what changed unexpectedly, and which three things deserve attention first."
+      ]
+     ]
+    }
+   },
+   "api": [],
+   "handlers": [
+    [
+     "digest_handler",
+     [
+      "gmail,calendar,drive",
+      168,
+      15,
+      "text",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "case": [
+    "prompt",
+    "weekly_review",
+    {
+     "days_back": "0"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly review — last 1 days",
+     "messages": [
+      [
+       "user",
+       "DIGEST-TEXT\n\nReview this week: what needs a decision, which threads are waiting on someone, what changed unexpectedly, and which three things deserve attention first."
+      ]
+     ]
+    }
+   },
+   "api": [],
+   "handlers": [
+    [
+     "digest_handler",
+     [
+      "gmail,calendar,drive",
+      24,
+      15,
+      "text",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "case": [
+    "prompt",
+    "weekly_review",
+    {
+     "days_back": "3"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly review — last 3 days",
+     "messages": [
+      [
+       "user",
+       "DIGEST-TEXT\n\nReview this week: what needs a decision, which threads are waiting on someone, what changed unexpectedly, and which three things deserve attention first."
+      ]
+     ]
+    }
+   },
+   "api": [],
+   "handlers": [
+    [
+     "digest_handler",
+     [
+      "gmail,calendar,drive",
+      72,
+      15,
+      "text",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "case": [
+    "prompt",
+    "inbox_triage",
+    null
+   ],
+   "result": {
+    "ok": {
+     "description": "Inbox triage — query: is:unread in:inbox",
+     "messages": [
+      [
+       "user",
+       "SEARCH-TEXT\n\nTriage these messages into: needs a reply today, waiting on someone else, informational, and archive candidates. For each, give one line of reasoning. Do not send or delete anything — propose actions only."
+      ]
+     ]
+    }
+   },
+   "api": [],
+   "handlers": [
+    [
+     "gmail_search_and_summarize_handler",
+     [
+      "is:unread in:inbox",
+      15
+     ]
+    ]
+   ]
+  },
+  {
+   "case": [
+    "prompt",
+    "inbox_triage",
+    {
+     "query": "label:x",
+     "max_results": "5"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Inbox triage — query: label:x",
+     "messages": [
+      [
+       "user",
+       "SEARCH-TEXT\n\nTriage these messages into: needs a reply today, waiting on someone else, informational, and archive candidates. For each, give one line of reasoning. Do not send or delete anything — propose actions only."
+      ]
+     ]
+    }
+   },
+   "api": [],
+   "handlers": [
+    [
+     "gmail_search_and_summarize_handler",
+     [
+      "label:x",
+      5
+     ]
+    ]
+   ]
+  },
+  {
+   "case": [
+    "prompt",
+    "compare_brief",
+    {
+     "spreadsheet_id": "S",
+     "range_a": "A1:B2",
+     "range_b": "D1:E2"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Reconciliation brief — A1:B2 vs D1:E2",
+     "messages": [
+      [
+       "user",
+       "DIFF-TEXT\n\nExplain this diff in business terms: which changes look intentional, which look like errors, and what should be checked before applying the new data."
+      ]
+     ]
+    }
+   },
+   "api": [],
+   "handlers": [
+    [
+     "compare_tables_handler",
+     [
+      "S",
+      "A1:B2",
+      "D1:E2",
+      null,
+      "1",
+      true,
+      "text",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "case": [
+    "prompt",
+    "compare_brief",
+    {
+     "spreadsheet_id": "S",
+     "range_a": "A1:B2"
+    }
+   ],
+   "result": {
+    "error": "spreadsheet_id, range_a and range_b are required for compare_brief"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "nope",
+    null
+   ],
+   "result": {
+    "error": "Unknown prompt: nope"
+   },
+   "api": [],
+   "handlers": []
+  }
+ ],
+ "empty": [
+  {
+   "case": [
+    "resource",
+    "gdrive://recent",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "No files found."
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "drive",
+      "v3"
+     ]
+    ],
+    [
+     "files.list",
+     {
+      "fields": "files(id,name,mimeType,modifiedTime,owners)",
+      "orderBy": "modifiedTime desc",
+      "pageSize": 20
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gmail://inbox",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "No unread messages in inbox."
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "gmail",
+      "v1"
+     ]
+    ],
+    [
+     "users.messages.list",
+     {
+      "maxResults": 20,
+      "q": "is:unread in:inbox",
+      "userId": "me"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gcalendar://upcoming",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "No upcoming events in the next 7 days."
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "calendar",
+      "v3"
+     ]
+    ],
+    [
+     "events.list",
+     {
+      "calendarId": "primary",
+      "maxResults": 25,
+      "orderBy": "startTime",
+      "singleEvents": true,
+      "timeMax": "2026-01-12T12:00:00+00:00",
+      "timeMin": "2026-01-05T12:00:00+00:00"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gsheets://SHEET1",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "No data found."
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "Sheet1",
+      "spreadsheetId": "SHEET1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "summarize_inbox",
+    null
+   ],
+   "result": {
+    "ok": {
+     "description": "Gmail inbox summary — query: is:unread in:inbox",
+     "messages": [
+      [
+       "user",
+       "Here are the recent emails from Gmail (query: 'is:unread in:inbox'):\n\nNo messages found for query: is:unread in:inbox\n\nPlease summarize these emails, grouping by sender or topic where relevant. Highlight any urgent or action-required items."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "gmail",
+      "v1"
+     ]
+    ],
+    [
+     "users.messages.list",
+     {
+      "maxResults": 20,
+      "q": "is:unread in:inbox",
+      "userId": "me"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "summarize_inbox",
+    {
+     "query": "from:boss",
+     "max_results": "500"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Gmail inbox summary — query: from:boss",
+     "messages": [
+      [
+       "user",
+       "Here are the recent emails from Gmail (query: 'from:boss'):\n\nNo messages found for query: from:boss\n\nPlease summarize these emails, grouping by sender or topic where relevant. Highlight any urgent or action-required items."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "gmail",
+      "v1"
+     ]
+    ],
+    [
+     "users.messages.list",
+     {
+      "maxResults": 50,
+      "q": "from:boss",
+      "userId": "me"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {
+     "spreadsheet_id": "S1",
+     "range": "A1:B2"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Analysis prompt for spreadsheet: S1",
+     "messages": [
+      [
+       "user",
+       "Here is data from Google Spreadsheet 'S1' (range: A1:B2):\n\nNo data found in the specified range.\n\nPlease analyse this data. Identify patterns, trends, and notable insights. If there are headers in the first row, use them to understand the data structure."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.get",
+     {
+      "spreadsheetId": "S1"
+     }
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "A1:B2",
+      "spreadsheetId": "S1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {
+     "spreadsheet_id": "S1"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Analysis prompt for spreadsheet: S1",
+     "messages": [
+      [
+       "user",
+       "Here is data from Google Spreadsheet 'S1' (range: Sheet1):\n\nNo data found in the specified range.\n\nPlease analyse this data. Identify patterns, trends, and notable insights. If there are headers in the first row, use them to understand the data structure."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.get",
+     {
+      "spreadsheetId": "S1"
+     }
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "Sheet1",
+      "spreadsheetId": "S1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {}
+   ],
+   "result": {
+    "error": "spreadsheet_id is required for the analyze_spreadsheet prompt"
+   },
+   "api": [],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "plan_week",
+    null
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly planning — next 7 days",
+     "messages": [
+      [
+       "user",
+       "No events in the next 7 days.\n\nBased on these calendar events, please help me plan my week. Identify busy periods, suggest preparation for important meetings, and highlight any scheduling conflicts or time blocks that need attention."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "calendar",
+      "v3"
+     ]
+    ],
+    [
+     "events.list",
+     {
+      "calendarId": "primary",
+      "maxResults": 50,
+      "orderBy": "startTime",
+      "singleEvents": true,
+      "timeMax": "2026-01-12T12:00:00+00:00",
+      "timeMin": "2026-01-05T12:00:00+00:00"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "plan_week",
+    {
+     "days_ahead": "3"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Weekly planning — next 3 days",
+     "messages": [
+      [
+       "user",
+       "No events in the next 3 days.\n\nBased on these calendar events, please help me plan my week. Identify busy periods, suggest preparation for important meetings, and highlight any scheduling conflicts or time blocks that need attention."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "calendar",
+      "v3"
+     ]
+    ],
+    [
+     "events.list",
+     {
+      "calendarId": "primary",
+      "maxResults": 50,
+      "orderBy": "startTime",
+      "singleEvents": true,
+      "timeMax": "2026-01-08T12:00:00+00:00",
+      "timeMin": "2026-01-05T12:00:00+00:00"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "search_drive",
+    {
+     "query": "name contains 'x'",
+     "limit": "999"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Drive search results — query: name contains 'x'",
+     "messages": [
+      [
+       "user",
+       "No files found for: name contains 'x'\n\nPlease review these Google Drive files and provide a summary report. Group related files, identify the most recently modified ones, and suggest any organisation improvements if relevant."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "drive",
+      "v3"
+     ]
+    ],
+    [
+     "files.list",
+     {
+      "fields": "files(id,name,mimeType,modifiedTime,owners,webViewLink)",
+      "pageSize": 50,
+      "q": "name contains 'x'"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "prompt",
+    "search_drive",
+    {}
+   ],
+   "result": {
+    "error": "query is required for the search_drive prompt"
+   },
+   "api": [],
+   "handlers": []
+  }
+ ],
+ "big": [
+  {
+   "case": [
+    "prompt",
+    "analyze_spreadsheet",
+    {
+     "spreadsheet_id": "S1",
+     "range": "A1:B250"
+    }
+   ],
+   "result": {
+    "ok": {
+     "description": "Analysis prompt for spreadsheet: Budget",
+     "messages": [
+      [
+       "user",
+       "Here is data from Google Spreadsheet 'Budget' (range: A1:B250):\n\n| r0 | 0 |\n| r1 | 1 |\n| r2 | 2 |\n| r3 | 3 |\n| r4 | 4 |\n| r5 | 5 |\n| r6 | 6 |\n| r7 | 7 |\n| r8 | 8 |\n| r9 | 9 |\n| r10 | 10 |\n| r11 | 11 |\n| r12 | 12 |\n| r13 | 13 |\n| r14 | 14 |\n| r15 | 15 |\n| r16 | 16 |\n| r17 | 17 |\n| r18 | 18 |\n| r19 | 19 |\n| r20 | 20 |\n| r21 | 21 |\n| r22 | 22 |\n| r23 | 23 |\n| r24 | 24 |\n| r25 | 25 |\n| r26 | 26 |\n| r27 | 27 |\n| r28 | 28 |\n| r29 | 29 |\n| r30 | 30 |\n| r31 | 31 |\n| r32 | 32 |\n| r33 | 33 |\n| r34 | 34 |\n| r35 | 35 |\n| r36 | 36 |\n| r37 | 37 |\n| r38 | 38 |\n| r39 | 39 |\n| r40 | 40 |\n| r41 | 41 |\n| r42 | 42 |\n| r43 | 43 |\n| r44 | 44 |\n| r45 | 45 |\n| r46 | 46 |\n| r47 | 47 |\n| r48 | 48 |\n| r49 | 49 |\n| r50 | 50 |\n| r51 | 51 |\n| r52 | 52 |\n| r53 | 53 |\n| r54 | 54 |\n| r55 | 55 |\n| r56 | 56 |\n| r57 | 57 |\n| r58 | 58 |\n| r59 | 59 |\n| r60 | 60 |\n| r61 | 61 |\n| r62 | 62 |\n| r63 | 63 |\n| r64 | 64 |\n| r65 | 65 |\n| r66 | 66 |\n| r67 | 67 |\n| r68 | 68 |\n| r69 | 69 |\n| r70 | 70 |\n| r71 | 71 |\n| r72 | 72 |\n| r73 | 73 |\n| r74 | 74 |\n| r75 | 75 |\n| r76 | 76 |\n| r77 | 77 |\n| r78 | 78 |\n| r79 | 79 |\n| r80 | 80 |\n| r81 | 81 |\n| r82 | 82 |\n| r83 | 83 |\n| r84 | 84 |\n| r85 | 85 |\n| r86 | 86 |\n| r87 | 87 |\n| r88 | 88 |\n| r89 | 89 |\n| r90 | 90 |\n| r91 | 91 |\n| r92 | 92 |\n| r93 | 93 |\n| r94 | 94 |\n| r95 | 95 |\n| r96 | 96 |\n| r97 | 97 |\n| r98 | 98 |\n| r99 | 99 |\n| r100 | 100 |\n| r101 | 101 |\n| r102 | 102 |\n| r103 | 103 |\n| r104 | 104 |\n| r105 | 105 |\n| r106 | 106 |\n| r107 | 107 |\n| r108 | 108 |\n| r109 | 109 |\n| r110 | 110 |\n| r111 | 111 |\n| r112 | 112 |\n| r113 | 113 |\n| r114 | 114 |\n| r115 | 115 |\n| r116 | 116 |\n| r117 | 117 |\n| r118 | 118 |\n| r119 | 119 |\n| r120 | 120 |\n| r121 | 121 |\n| r122 | 122 |\n| r123 | 123 |\n| r124 | 124 |\n| r125 | 125 |\n| r126 | 126 |\n| r127 | 127 |\n| r128 | 128 |\n| r129 | 129 |\n| r130 | 130 |\n| r131 | 131 |\n| r132 | 132 |\n| r133 | 133 |\n| r134 | 134 |\n| r135 | 135 |\n| r136 | 136 |\n| r137 | 137 |\n| r138 | 138 |\n| r139 | 139 |\n| r140 | 140 |\n| r141 | 141 |\n| r142 | 142 |\n| r143 | 143 |\n| r144 | 144 |\n| r145 | 145 |\n| r146 | 146 |\n| r147 | 147 |\n| r148 | 148 |\n| r149 | 149 |\n| r150 | 150 |\n| r151 | 151 |\n| r152 | 152 |\n| r153 | 153 |\n| r154 | 154 |\n| r155 | 155 |\n| r156 | 156 |\n| r157 | 157 |\n| r158 | 158 |\n| r159 | 159 |\n| r160 | 160 |\n| r161 | 161 |\n| r162 | 162 |\n| r163 | 163 |\n| r164 | 164 |\n| r165 | 165 |\n| r166 | 166 |\n| r167 | 167 |\n| r168 | 168 |\n| r169 | 169 |\n| r170 | 170 |\n| r171 | 171 |\n| r172 | 172 |\n| r173 | 173 |\n| r174 | 174 |\n| r175 | 175 |\n| r176 | 176 |\n| r177 | 177 |\n| r178 | 178 |\n| r179 | 179 |\n| r180 | 180 |\n| r181 | 181 |\n| r182 | 182 |\n| r183 | 183 |\n| r184 | 184 |\n| r185 | 185 |\n| r186 | 186 |\n| r187 | 187 |\n| r188 | 188 |\n| r189 | 189 |\n| r190 | 190 |\n| r191 | 191 |\n| r192 | 192 |\n| r193 | 193 |\n| r194 | 194 |\n| r195 | 195 |\n| r196 | 196 |\n| r197 | 197 |\n| r198 | 198 |\n| r199 | 199 |\n\nPlease analyse this data. Identify patterns, trends, and notable insights. If there are headers in the first row, use them to understand the data structure."
+      ]
+     ]
+    }
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.get",
+     {
+      "spreadsheetId": "S1"
+     }
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "A1:B250",
+      "spreadsheetId": "S1"
+     }
+    ]
+   ],
+   "handlers": []
+  },
+  {
+   "case": [
+    "resource",
+    "gsheets://SHEET1/Data!A1:B250",
+    null
+   ],
+   "result": {
+    "ok": [
+     [
+      "text/plain",
+      "Sheet data (Data!A1:B250):\n| r0 | 0 |\n| r1 | 1 |\n| r2 | 2 |\n| r3 | 3 |\n| r4 | 4 |\n| r5 | 5 |\n| r6 | 6 |\n| r7 | 7 |\n| r8 | 8 |\n| r9 | 9 |\n| r10 | 10 |\n| r11 | 11 |\n| r12 | 12 |\n| r13 | 13 |\n| r14 | 14 |\n| r15 | 15 |\n| r16 | 16 |\n| r17 | 17 |\n| r18 | 18 |\n| r19 | 19 |\n| r20 | 20 |\n| r21 | 21 |\n| r22 | 22 |\n| r23 | 23 |\n| r24 | 24 |\n| r25 | 25 |\n| r26 | 26 |\n| r27 | 27 |\n| r28 | 28 |\n| r29 | 29 |\n| r30 | 30 |\n| r31 | 31 |\n| r32 | 32 |\n| r33 | 33 |\n| r34 | 34 |\n| r35 | 35 |\n| r36 | 36 |\n| r37 | 37 |\n| r38 | 38 |\n| r39 | 39 |\n| r40 | 40 |\n| r41 | 41 |\n| r42 | 42 |\n| r43 | 43 |\n| r44 | 44 |\n| r45 | 45 |\n| r46 | 46 |\n| r47 | 47 |\n| r48 | 48 |\n| r49 | 49 |\n| r50 | 50 |\n| r51 | 51 |\n| r52 | 52 |\n| r53 | 53 |\n| r54 | 54 |\n| r55 | 55 |\n| r56 | 56 |\n| r57 | 57 |\n| r58 | 58 |\n| r59 | 59 |\n| r60 | 60 |\n| r61 | 61 |\n| r62 | 62 |\n| r63 | 63 |\n| r64 | 64 |\n| r65 | 65 |\n| r66 | 66 |\n| r67 | 67 |\n| r68 | 68 |\n| r69 | 69 |\n| r70 | 70 |\n| r71 | 71 |\n| r72 | 72 |\n| r73 | 73 |\n| r74 | 74 |\n| r75 | 75 |\n| r76 | 76 |\n| r77 | 77 |\n| r78 | 78 |\n| r79 | 79 |\n| r80 | 80 |\n| r81 | 81 |\n| r82 | 82 |\n| r83 | 83 |\n| r84 | 84 |\n| r85 | 85 |\n| r86 | 86 |\n| r87 | 87 |\n| r88 | 88 |\n| r89 | 89 |\n| r90 | 90 |\n| r91 | 91 |\n| r92 | 92 |\n| r93 | 93 |\n| r94 | 94 |\n| r95 | 95 |\n| r96 | 96 |\n| r97 | 97 |\n| r98 | 98 |\n| r99 | 99 |\n| r100 | 100 |\n| r101 | 101 |\n| r102 | 102 |\n| r103 | 103 |\n| r104 | 104 |\n| r105 | 105 |\n| r106 | 106 |\n| r107 | 107 |\n| r108 | 108 |\n| r109 | 109 |\n| r110 | 110 |\n| r111 | 111 |\n| r112 | 112 |\n| r113 | 113 |\n| r114 | 114 |\n| r115 | 115 |\n| r116 | 116 |\n| r117 | 117 |\n| r118 | 118 |\n| r119 | 119 |\n| r120 | 120 |\n| r121 | 121 |\n| r122 | 122 |\n| r123 | 123 |\n| r124 | 124 |\n| r125 | 125 |\n| r126 | 126 |\n| r127 | 127 |\n| r128 | 128 |\n| r129 | 129 |\n| r130 | 130 |\n| r131 | 131 |\n| r132 | 132 |\n| r133 | 133 |\n| r134 | 134 |\n| r135 | 135 |\n| r136 | 136 |\n| r137 | 137 |\n| r138 | 138 |\n| r139 | 139 |\n| r140 | 140 |\n| r141 | 141 |\n| r142 | 142 |\n| r143 | 143 |\n| r144 | 144 |\n| r145 | 145 |\n| r146 | 146 |\n| r147 | 147 |\n| r148 | 148 |\n| r149 | 149 |\n| r150 | 150 |\n| r151 | 151 |\n| r152 | 152 |\n| r153 | 153 |\n| r154 | 154 |\n| r155 | 155 |\n| r156 | 156 |\n| r157 | 157 |\n| r158 | 158 |\n| r159 | 159 |\n| r160 | 160 |\n| r161 | 161 |\n| r162 | 162 |\n| r163 | 163 |\n| r164 | 164 |\n| r165 | 165 |\n| r166 | 166 |\n| r167 | 167 |\n| r168 | 168 |\n| r169 | 169 |\n| r170 | 170 |\n| r171 | 171 |\n| r172 | 172 |\n| r173 | 173 |\n| r174 | 174 |\n| r175 | 175 |\n| r176 | 176 |\n| r177 | 177 |\n| r178 | 178 |\n| r179 | 179 |\n| r180 | 180 |\n| r181 | 181 |\n| r182 | 182 |\n| r183 | 183 |\n| r184 | 184 |\n| r185 | 185 |\n| r186 | 186 |\n| r187 | 187 |\n| r188 | 188 |\n| r189 | 189 |\n| r190 | 190 |\n| r191 | 191 |\n| r192 | 192 |\n| r193 | 193 |\n| r194 | 194 |\n| r195 | 195 |\n| r196 | 196 |\n| r197 | 197 |\n| r198 | 198 |\n| r199 | 199 |\n| r200 | 200 |\n| r201 | 201 |\n| r202 | 202 |\n| r203 | 203 |\n| r204 | 204 |\n| r205 | 205 |\n| r206 | 206 |\n| r207 | 207 |\n| r208 | 208 |\n| r209 | 209 |\n| r210 | 210 |\n| r211 | 211 |\n| r212 | 212 |\n| r213 | 213 |\n| r214 | 214 |\n| r215 | 215 |\n| r216 | 216 |\n| r217 | 217 |\n| r218 | 218 |\n| r219 | 219 |\n| r220 | 220 |\n| r221 | 221 |\n| r222 | 222 |\n| r223 | 223 |\n| r224 | 224 |\n| r225 | 225 |\n| r226 | 226 |\n| r227 | 227 |\n| r228 | 228 |\n| r229 | 229 |\n| r230 | 230 |\n| r231 | 231 |\n| r232 | 232 |\n| r233 | 233 |\n| r234 | 234 |\n| r235 | 235 |\n| r236 | 236 |\n| r237 | 237 |\n| r238 | 238 |\n| r239 | 239 |\n| r240 | 240 |\n| r241 | 241 |\n| r242 | 242 |\n| r243 | 243 |\n| r244 | 244 |\n| r245 | 245 |\n| r246 | 246 |\n| r247 | 247 |\n| r248 | 248 |\n| r249 | 249 |"
+     ]
+    ]
+   },
+   "api": [
+    [
+     "build",
+     [
+      "sheets",
+      "v4"
+     ]
+    ],
+    [
+     "spreadsheets.values.get",
+     {
+      "range": "Data!A1:B250",
+      "spreadsheetId": "SHEET1"
+     }
+    ]
+   ],
+   "handlers": []
+  }
+ ]
+}

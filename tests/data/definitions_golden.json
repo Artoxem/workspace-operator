@@ -1,0 +1,4170 @@
+{
+ "tools": [
+  {
+   "name": "workspace_search",
+   "title": null,
+   "description": "Search Google Drive, Gmail and Calendar with one query and get a merged, date-sorted result list. Use it for 'find everything about X' questions before falling back to per-service tools.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "description": "Free-text query, e.g. 'Q3 budget'"
+     },
+     "sources": {
+      "type": "string",
+      "default": "drive,gmail",
+      "description": "Comma-separated sources to search: drive, gmail, calendar"
+     },
+     "limit": {
+      "type": "integer",
+      "default": 10,
+      "description": "Maximum results per source (1-25)"
+     },
+     "calendar_days_back": {
+      "type": "integer",
+      "default": 30,
+      "description": "Calendar only: how far back to search"
+     },
+     "calendar_days_ahead": {
+      "type": "integer",
+      "default": 180,
+      "description": "Calendar only: how far ahead to search"
+     }
+    },
+    "required": [
+     "query"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_search_advanced",
+   "title": null,
+   "description": "Advanced Google Drive search with full query syntax",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string"
+     },
+     "limit": {
+      "type": "integer",
+      "default": 50
+     }
+    },
+    "required": [
+     "query"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_list_permissions",
+   "title": null,
+   "description": "List permissions for a Drive file",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "file_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "create_folder",
+   "title": null,
+   "description": "Create a folder in Google Drive",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "parent_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "move_file",
+   "title": null,
+   "description": "Move a file to a different folder",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "folder_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "file_id",
+     "folder_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_copy_file",
+   "title": null,
+   "description": "Copy a Drive file to a new file",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "parent_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "file_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "share_file",
+   "title": null,
+   "description": "Share a file with a user or make it public. REQUIRES allow_public=True to share publicly!",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "enum": [
+       "reader",
+       "commenter",
+       "writer"
+      ]
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "user",
+       "group",
+       "domain",
+       "anyone"
+      ],
+      "description": "Access type. 'anyone' requires allow_public=True"
+     },
+     "email_address": {
+      "type": "string",
+      "description": "Required for type 'user' or 'group'"
+     },
+     "allow_public": {
+      "type": "boolean",
+      "description": "MUST be true to share with type='anyone'. Security check.",
+      "default": false
+     }
+    },
+    "required": [
+     "file_id",
+     "role"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_revoke_public",
+   "title": null,
+   "description": "Revoke public access (type=anyone) for a Drive file. Requires confirm=True.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "file_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_upload",
+   "title": null,
+   "description": "Upload a local file to Google Drive. Use convert_to to turn a docx/xlsx into a native Google Doc or Sheet.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "local_path": {
+      "type": "string",
+      "description": "Path on the machine running this server"
+     },
+     "name": {
+      "type": "string",
+      "description": "Drive file name (default: the local file name)"
+     },
+     "parent_id": {
+      "type": "string",
+      "description": "Destination folder ID (default: My Drive root)"
+     },
+     "mime_type": {
+      "type": "string",
+      "description": "Override the detected content type"
+     },
+     "convert_to": {
+      "type": "string",
+      "enum": [
+       "google-docs",
+       "google-sheets"
+      ],
+      "description": "Convert to a native Google file on upload"
+     }
+    },
+    "required": [
+     "local_path"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_export",
+   "title": null,
+   "description": "Export a Google Doc or Sheet to a local file: pdf, docx, xlsx, csv, txt and more.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "format": {
+      "type": "string",
+      "description": "pdf | docx | xlsx | csv | txt | md | html | …"
+     },
+     "save_to": {
+      "type": "string",
+      "description": "File or directory path (default: ~/Downloads)"
+     },
+     "overwrite": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "file_id",
+     "format"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "read_sheet",
+   "title": null,
+   "description": "Read data from a Google Sheet",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "get_spreadsheet_meta",
+   "title": null,
+   "description": "Get metadata (sheets, titles) of a spreadsheet",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_export_csv",
+   "title": null,
+   "description": "Export a range as CSV text",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_name": {
+      "type": "string"
+     },
+     "max_rows": {
+      "type": "integer",
+      "default": 5000
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "create_spreadsheet",
+   "title": null,
+   "description": "Create a new Google Spreadsheet",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "add_sheet",
+   "title": null,
+   "description": "Add a new sheet (tab) to a spreadsheet",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "append_row",
+   "title": null,
+   "description": "Append a row to a Google Sheet",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_name": {
+      "type": "string"
+     },
+     "values": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_name",
+     "values"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "update_sheet",
+   "title": null,
+   "description": "Update data in a Google Sheet. 'values' must be a list of lists of strings (rows of columns).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_name": {
+      "type": "string"
+     },
+     "values": {
+      "type": "array",
+      "items": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_name",
+     "values"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "clear_range",
+   "title": null,
+   "description": "Clear values in a spreadsheet range. Auto dry-run for large ranges (>100 cells).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_name": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "description": "Must be true to clear large ranges (>100 cells)",
+      "default": false
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_find_replace",
+   "title": null,
+   "description": "Find/replace in a range with dry-run preview",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_name": {
+      "type": "string"
+     },
+     "find_text": {
+      "type": "string"
+     },
+     "replace_text": {
+      "type": "string"
+     },
+     "dry_run": {
+      "type": "boolean",
+      "default": true
+     },
+     "match_case": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_name",
+     "find_text",
+     "replace_text"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_create_filter_view",
+   "title": null,
+   "description": "Create a filter view for a sheet with grid range",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_id": {
+      "type": "integer"
+     },
+     "title": {
+      "type": "string"
+     },
+     "start_row": {
+      "type": "integer",
+      "default": 0
+     },
+     "end_row": {
+      "type": "integer"
+     },
+     "start_col": {
+      "type": "integer",
+      "default": 0
+     },
+     "end_col": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "sheet_id",
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_create_named_range",
+   "title": null,
+   "description": "Create a named range using grid indexes",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "sheet_id": {
+      "type": "integer"
+     },
+     "start_row": {
+      "type": "integer"
+     },
+     "end_row": {
+      "type": "integer"
+     },
+     "start_col": {
+      "type": "integer"
+     },
+     "end_col": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "name",
+     "sheet_id",
+     "start_row",
+     "end_row",
+     "start_col",
+     "end_col"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_format",
+   "title": null,
+   "description": "Format a Google Sheets range or sheet: bold/italic/size, number format, colours, alignment, wrap, column width, row height and frozen panes — all in one call.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string",
+      "description": "Sheet tab name (default: first sheet or the one in range)"
+     },
+     "range": {
+      "type": "string",
+      "description": "A1 range, e.g. A1:C10, A:C or 1:10 (default: whole sheet)"
+     },
+     "bold": {
+      "type": "boolean"
+     },
+     "italic": {
+      "type": "boolean"
+     },
+     "font_size": {
+      "type": "number"
+     },
+     "number_format": {
+      "type": "string",
+      "description": "Sheets number pattern, e.g. '#,##0.00' or '0.0%'"
+     },
+     "background_color": {
+      "type": "string",
+      "description": "#RRGGBB"
+     },
+     "text_color": {
+      "type": "string",
+      "description": "#RRGGBB"
+     },
+     "horizontal_alignment": {
+      "type": "string",
+      "enum": [
+       "LEFT",
+       "CENTER",
+       "RIGHT"
+      ]
+     },
+     "wrap": {
+      "type": "string",
+      "enum": [
+       "OVERFLOW_CELL",
+       "CLIP",
+       "WRAP"
+      ]
+     },
+     "column_width": {
+      "type": "number",
+      "description": "Pixels"
+     },
+     "row_height": {
+      "type": "number",
+      "description": "Pixels"
+     },
+     "freeze_rows": {
+      "type": "integer"
+     },
+     "freeze_cols": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "spreadsheet_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "read_doc",
+   "title": null,
+   "description": "Read the content of a Google Doc",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "document_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "document_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "create_doc",
+   "title": null,
+   "description": "Create a new Google Doc",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "append_to_doc",
+   "title": null,
+   "description": "Append text to a Google Doc",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "document_id": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "document_id",
+     "text"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "create_script_project",
+   "title": null,
+   "description": "Create a new Google Apps Script project",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     },
+     "parent_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "get_script_content",
+   "title": null,
+   "description": "Get the content of a Google Apps Script project",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "script_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "script_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "prepare_script_update",
+   "title": null,
+   "description": "STEP 1: Prepare a Google Apps Script update with automatic backup. Returns operation_id.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "script_id": {
+      "type": "string",
+      "description": "The Apps Script project ID"
+     },
+     "files": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "type": {
+         "type": "string"
+        },
+        "source": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "name",
+        "type",
+        "source"
+       ]
+      },
+      "description": "Array of files to update"
+     }
+    },
+    "required": [
+     "script_id",
+     "files"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "execute_operation",
+   "title": null,
+   "description": "STEP 2: Execute a prepared operation by operation_id (from prepare_script_update)",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "operation_id": {
+      "type": "string",
+      "description": "The operation ID from prepare_script_update"
+     }
+    },
+    "required": [
+     "operation_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "cancel_operation",
+   "title": null,
+   "description": "Cancel a prepared operation before execution",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "operation_id": {
+      "type": "string",
+      "description": "The operation ID to cancel"
+     }
+    },
+    "required": [
+     "operation_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": true,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "restore_script_backup",
+   "title": null,
+   "description": "Restore a script from a backup file",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "backup_path": {
+      "type": "string",
+      "description": "Full path to the backup JSON file"
+     }
+    },
+    "required": [
+     "backup_path"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "script_run_function",
+   "title": null,
+   "description": "Run a function from an Apps Script project deployed as an API executable. Executes arbitrary code with your account's authority.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "script_id": {
+      "type": "string"
+     },
+     "function_name": {
+      "type": "string"
+     },
+     "parameters": {
+      "type": "array",
+      "items": {},
+      "description": "Positional arguments passed to the function"
+     },
+     "dev_mode": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run the latest saved code instead of the deployed version"
+     }
+    },
+    "required": [
+     "script_id",
+     "function_name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_update_event",
+   "title": null,
+   "description": "Update an existing event. Only the fields you pass are changed; send_updates controls attendee notifications.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "event_id": {
+      "type": "string"
+     },
+     "calendar_id": {
+      "type": "string",
+      "default": "primary"
+     },
+     "summary": {
+      "type": "string"
+     },
+     "start_time": {
+      "type": "string",
+      "description": "ISO datetime"
+     },
+     "end_time": {
+      "type": "string",
+      "description": "ISO datetime"
+     },
+     "description": {
+      "type": "string"
+     },
+     "location": {
+      "type": "string"
+     },
+     "attendees": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "send_updates": {
+      "type": "string",
+      "enum": [
+       "all",
+       "externalOnly",
+       "none"
+      ],
+      "default": "none"
+     }
+    },
+    "required": [
+     "event_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_delete_event",
+   "title": null,
+   "description": "Delete an event. Requires confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "event_id": {
+      "type": "string"
+     },
+     "calendar_id": {
+      "type": "string",
+      "default": "primary"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     },
+     "send_updates": {
+      "type": "string",
+      "enum": [
+       "all",
+       "externalOnly",
+       "none"
+      ],
+      "default": "none"
+     }
+    },
+    "required": [
+     "event_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_respond_to_invite",
+   "title": null,
+   "description": "Answer an invitation: accepted, declined or tentative. Requires confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "event_id": {
+      "type": "string"
+     },
+     "response": {
+      "type": "string",
+      "enum": [
+       "accepted",
+       "declined",
+       "tentative"
+      ]
+     },
+     "calendar_id": {
+      "type": "string",
+      "default": "primary"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     },
+     "send_updates": {
+      "type": "string",
+      "enum": [
+       "all",
+       "externalOnly",
+       "none"
+      ],
+      "default": "all"
+     }
+    },
+    "required": [
+     "event_id",
+     "response"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "digest",
+   "title": null,
+   "description": "Composite: one digest across Gmail, Calendar and Drive for the last N hours. Returns text by default, or creates a Google Doc.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "sources": {
+      "type": "string",
+      "default": "gmail,calendar,drive",
+      "description": "Comma-separated subset of gmail, calendar, drive"
+     },
+     "since_hours": {
+      "type": "integer",
+      "default": 24
+     },
+     "limit": {
+      "type": "integer",
+      "default": 10
+     },
+     "output": {
+      "type": "string",
+      "enum": [
+       "text",
+       "doc"
+      ],
+      "default": "text"
+     },
+     "doc_title": {
+      "type": "string"
+     }
+    },
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "compare_tables",
+   "title": null,
+   "description": "Composite: diff two ranges by a key column (added / removed / changed rows). Works across sheets or spreadsheets.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range_a": {
+      "type": "string"
+     },
+     "range_b": {
+      "type": "string"
+     },
+     "other_spreadsheet_id": {
+      "type": "string"
+     },
+     "key_column": {
+      "type": "string",
+      "default": "1",
+      "description": "Column name or 1-based index"
+     },
+     "header": {
+      "type": "boolean",
+      "default": true
+     },
+     "output": {
+      "type": "string",
+      "enum": [
+       "text",
+       "doc"
+      ],
+      "default": "text"
+     },
+     "doc_title": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range_a",
+     "range_b"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "get_gmail_profile",
+   "title": null,
+   "description": "Get the authenticated Gmail address for the current OAuth token",
+   "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "list_emails",
+   "title": null,
+   "description": "List emails from Gmail",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "max_results": {
+      "type": "integer"
+     },
+     "query": {
+      "type": "string",
+      "description": "Gmail search query (e.g. 'is:unread')"
+     }
+    },
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "read_email",
+   "title": null,
+   "description": "Read a specific email by ID",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "message_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "message_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_search_and_summarize",
+   "title": null,
+   "description": "Search Gmail and return a brief summary",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string"
+     },
+     "max_results": {
+      "type": "integer",
+      "default": 50
+     }
+    },
+    "required": [
+     "query"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "create_draft",
+   "title": null,
+   "description": "Create a draft email in Gmail",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "to": {
+      "type": "string"
+     },
+     "subject": {
+      "type": "string"
+     },
+     "body_text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "to",
+     "subject",
+     "body_text"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "send_email",
+   "title": null,
+   "description": "Send an email via Gmail. Defaults to draft_mode=True for safety!",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "to": {
+      "type": "string",
+      "description": "Recipient email address"
+     },
+     "subject": {
+      "type": "string"
+     },
+     "body_text": {
+      "type": "string"
+     },
+     "draft_mode": {
+      "type": "boolean",
+      "description": "If true (default), creates draft instead of sending. Set to false to actually send.",
+      "default": true
+     }
+    },
+    "required": [
+     "to",
+     "subject",
+     "body_text"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "send_draft",
+   "title": null,
+   "description": "Send an existing draft email by draft ID",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "draft_id": {
+      "type": "string",
+      "description": "The ID of the draft to send"
+     }
+    },
+    "required": [
+     "draft_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "delete_email",
+   "title": null,
+   "description": "Move one email to Trash by ID (recoverable 30 days). REQUIRES confirm=True.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "message_id": {
+      "type": "string",
+      "description": "The ID of the email to delete"
+     },
+     "confirm": {
+      "type": "boolean",
+      "description": "MUST be true to actually delete the email. Safety check.",
+      "default": false
+     }
+    },
+    "required": [
+     "message_id",
+     "confirm"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_archive",
+   "title": null,
+   "description": "Archive a Gmail message (remove INBOX). Requires confirm=True.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "message_id": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "message_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_label_apply",
+   "title": null,
+   "description": "Apply a label to messages with dry-run preview",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "message_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "label_name": {
+      "type": "string"
+     },
+     "dry_run": {
+      "type": "boolean",
+      "default": true
+     },
+     "create_if_missing": {
+      "type": "boolean",
+      "default": true
+     }
+    },
+    "required": [
+     "message_ids",
+     "label_name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_get_thread",
+   "title": null,
+   "description": "Read a whole Gmail conversation: every message with date, sender, labels and attachments. Pass thread_id or any message_id.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "thread_id": {
+      "type": "string"
+     },
+     "message_id": {
+      "type": "string"
+     },
+     "include_body": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_get_attachment",
+   "title": null,
+   "description": "Save an attachment from a Gmail message to disk. Select it by filename or attachment_id; with a single attachment both are optional.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "message_id": {
+      "type": "string"
+     },
+     "filename": {
+      "type": "string"
+     },
+     "attachment_id": {
+      "type": "string"
+     },
+     "save_to": {
+      "type": "string",
+      "description": "File or directory path (default: ~/Downloads)"
+     },
+     "overwrite": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "message_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_reply",
+   "title": null,
+   "description": "Reply inside the original thread with correct In-Reply-To/References headers. Creates a draft by default; set draft_mode=false to send.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "message_id": {
+      "type": "string"
+     },
+     "body_text": {
+      "type": "string"
+     },
+     "reply_all": {
+      "type": "boolean",
+      "default": false
+     },
+     "draft_mode": {
+      "type": "boolean",
+      "default": true
+     }
+    },
+    "required": [
+     "message_id",
+     "body_text"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "list_events",
+   "title": null,
+   "description": "List upcoming calendar events",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "calendar_id": {
+      "type": "string"
+     },
+     "max_results": {
+      "type": "integer"
+     }
+    },
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_create_meeting",
+   "title": null,
+   "description": "Create a calendar meeting with attendees. Requires confirm=True.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "summary": {
+      "type": "string"
+     },
+     "start_time": {
+      "type": "string",
+      "description": "ISO format start time"
+     },
+     "end_time": {
+      "type": "string",
+      "description": "ISO format end time"
+     },
+     "attendees": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "description": {
+      "type": "string"
+     },
+     "location": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "summary",
+     "start_time",
+     "end_time"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_get_metadata",
+   "title": null,
+   "description": "Read file metadata: name, type, size, owner, parents, created and modified time, sharing state and link.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string",
+      "description": "The Drive file ID"
+     }
+    },
+    "required": [
+     "file_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_rename_file",
+   "title": null,
+   "description": "Rename a Drive file without moving or copying it.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string",
+      "description": "New file name"
+     }
+    },
+    "required": [
+     "file_id",
+     "name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_delete_file",
+   "title": null,
+   "description": "Move a file to the trash. Requires confirm=true; the file stays recoverable for 30 days. Permanent deletion is not exposed.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "file_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_restore_file",
+   "title": null,
+   "description": "Restore a file from the Drive trash (trashed=false).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "file_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "drive_remove_permission",
+   "title": null,
+   "description": "Remove one permission from a file (revoke a person, group or public link). Requires confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "file_id": {
+      "type": "string"
+     },
+     "permission_id": {
+      "type": "string",
+      "description": "Permission ID from drive_list_permissions"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "file_id",
+     "permission_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "doc_replace_text",
+   "title": null,
+   "description": "Find and replace text in a Google Doc. Without confirm=true it returns a preview with the number of occurrences.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "document_id": {
+      "type": "string"
+     },
+     "find": {
+      "type": "string",
+      "description": "Text to search for"
+     },
+     "replace": {
+      "type": "string",
+      "description": "Replacement text"
+     },
+     "match_case": {
+      "type": "boolean",
+      "default": false
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "document_id",
+     "find",
+     "replace"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_conditional_format",
+   "title": null,
+   "description": "Add a conditional formatting rule to a range: colour cells when the condition matches (text, number or emptiness).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string",
+      "description": "A1 range, e.g. A2:C100"
+     },
+     "condition": {
+      "type": "string",
+      "description": "TEXT_CONTAINS, TEXT_EQ, NUMBER_GREATER, NUMBER_LESS, NUMBER_BETWEEN, IS_EMPTY, IS_NOT_EMPTY, …"
+     },
+     "value": {
+      "type": "string",
+      "description": "Comparison value"
+     },
+     "value2": {
+      "type": "string",
+      "description": "Upper bound for NUMBER_BETWEEN"
+     },
+     "background_color": {
+      "type": "string",
+      "default": "#FFF2CC"
+     },
+     "text_color": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range",
+     "condition"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_add_chart",
+   "title": null,
+   "description": "Insert a chart from a range: COLUMN, BAR, LINE, AREA, SCATTER, COMBO, STEPPED_AREA or PIE. The first column is the domain.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string",
+      "description": "A1 range with headers"
+     },
+     "chart_type": {
+      "type": "string",
+      "enum": [
+       "COLUMN",
+       "BAR",
+       "LINE",
+       "AREA",
+       "SCATTER",
+       "COMBO",
+       "STEPPED_AREA",
+       "PIE"
+      ],
+      "default": "COLUMN"
+     },
+     "title": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     },
+     "header": {
+      "type": "boolean",
+      "default": true
+     },
+     "anchor_row": {
+      "type": "integer",
+      "default": 0
+     },
+     "anchor_col": {
+      "type": "integer",
+      "default": 0
+     },
+     "width": {
+      "type": "integer",
+      "default": 600
+     },
+     "height": {
+      "type": "integer",
+      "default": 371
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_delete_sheet",
+   "title": null,
+   "description": "Delete a sheet (tab) and everything on it. Requires confirm=true; the last remaining sheet cannot be deleted.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string",
+      "description": "Tab to delete"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "sheet_name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_insert_rows",
+   "title": null,
+   "description": "Insert empty rows before a 1-based row number.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     },
+     "start_row": {
+      "type": "integer",
+      "default": 1
+     },
+     "count": {
+      "type": "integer",
+      "default": 1
+     }
+    },
+    "required": [
+     "spreadsheet_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_delete_rows",
+   "title": null,
+   "description": "Delete rows starting at a 1-based row number. Requires confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     },
+     "start_row": {
+      "type": "integer",
+      "default": 1
+     },
+     "count": {
+      "type": "integer",
+      "default": 1
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "spreadsheet_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_merge_cells",
+   "title": null,
+   "description": "Merge a range (MERGE_ALL, MERGE_ROWS, MERGE_COLUMNS) or unmerge it.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string",
+      "description": "A1 range"
+     },
+     "merge_type": {
+      "type": "string",
+      "enum": [
+       "MERGE_ALL",
+       "MERGE_COLUMNS",
+       "MERGE_ROWS",
+       "UNMERGE"
+      ],
+      "default": "MERGE_ALL"
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_list_labels",
+   "title": null,
+   "description": "List Gmail labels with their IDs, split into user and system labels.",
+   "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_create_label",
+   "title": null,
+   "description": "Create a Gmail label (a duplicate name is rejected by Gmail).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "label_list_visibility": {
+      "type": "string",
+      "enum": [
+       "labelShow",
+       "labelShowIfUnread",
+       "labelHide"
+      ],
+      "default": "labelShow"
+     },
+     "message_list_visibility": {
+      "type": "string",
+      "enum": [
+       "show",
+       "hide"
+      ],
+      "default": "show"
+     }
+    },
+    "required": [
+     "name"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_insert_columns",
+   "title": null,
+   "description": "Insert empty columns before a 1-based column number.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     },
+     "start_column": {
+      "type": "integer",
+      "default": 1
+     },
+     "count": {
+      "type": "integer",
+      "default": 1
+     }
+    },
+    "required": [
+     "spreadsheet_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_delete_columns",
+   "title": null,
+   "description": "Delete columns starting at a 1-based column. Requires confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     },
+     "start_column": {
+      "type": "integer",
+      "default": 1
+     },
+     "count": {
+      "type": "integer",
+      "default": 1
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "spreadsheet_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_sort_range",
+   "title": null,
+   "description": "Sort a range by a 1-based column inside that range, ascending or descending. The header row is sorted with the data unless excluded from the range.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string"
+     },
+     "column": {
+      "type": "integer",
+      "default": 1
+     },
+     "ascending": {
+      "type": "boolean",
+      "default": true
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "docs_insert_image",
+   "title": null,
+   "description": "Insert an inline image from a public URL at the end of a document; width/height are in points.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "document_id": {
+      "type": "string"
+     },
+     "image_url": {
+      "type": "string"
+     },
+     "width": {
+      "type": "number"
+     },
+     "height": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "document_id",
+     "image_url"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_list_calendars",
+   "title": null,
+   "description": "List calendars available to the account with access roles.",
+   "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_send_with_attachments",
+   "title": null,
+   "description": "Send or draft an email with local file attachments (20 MB total). Draft by default.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "to": {
+      "type": "string"
+     },
+     "subject": {
+      "type": "string"
+     },
+     "body_text": {
+      "type": "string"
+     },
+     "attachments": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Local paths on the server machine"
+     },
+     "draft_mode": {
+      "type": "boolean",
+      "default": true
+     }
+    },
+    "required": [
+     "to",
+     "subject",
+     "body_text",
+     "attachments"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "script_list_deployments",
+   "title": null,
+   "description": "List deployments of an Apps Script project.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "script_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "script_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_add_pivot_table",
+   "title": null,
+   "description": "Create a pivot table on a new sheet from a source range. Columns are 1-based positions inside that range.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "source_range": {
+      "type": "string",
+      "description": "A1 range with headers"
+     },
+     "rows": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     },
+     "values": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     },
+     "columns": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     },
+     "aggregation": {
+      "type": "string",
+      "enum": [
+       "SUM",
+       "COUNT",
+       "AVERAGE",
+       "MIN",
+       "MAX"
+      ],
+      "default": "SUM"
+     },
+     "target_sheet_name": {
+      "type": "string",
+      "default": "Pivot"
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "source_range",
+     "rows",
+     "values"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "docs_format_text",
+   "title": null,
+   "description": "Style every occurrence of a text: bold, italic, font size and/or heading. Without confirm returns a preview.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "document_id": {
+      "type": "string"
+     },
+     "find": {
+      "type": "string"
+     },
+     "bold": {
+      "type": "boolean",
+      "default": false
+     },
+     "italic": {
+      "type": "boolean",
+      "default": false
+     },
+     "font_size": {
+      "type": "number",
+      "description": "Points"
+     },
+     "heading": {
+      "type": "string",
+      "description": "NORMAL_TEXT, HEADING_1..6, TITLE, SUBTITLE"
+     },
+     "match_case": {
+      "type": "boolean",
+      "default": false
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "document_id",
+     "find"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_list_drafts",
+   "title": null,
+   "description": "List Gmail drafts with recipient and subject.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer",
+      "default": 10
+     }
+    },
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_delete_draft",
+   "title": null,
+   "description": "Delete a draft. Requires confirm=true; nothing is sent.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "draft_id": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "draft_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": true,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_move_event",
+   "title": null,
+   "description": "Move an event to another calendar.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "event_id": {
+      "type": "string"
+     },
+     "destination_calendar_id": {
+      "type": "string"
+     },
+     "calendar_id": {
+      "type": "string",
+      "default": "primary"
+     }
+    },
+    "required": [
+     "event_id",
+     "destination_calendar_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "script_create_deployment",
+   "title": null,
+   "description": "Create an Apps Script deployment from a saved version (latest when version_number is omitted).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "script_id": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "version_number": {
+      "type": "integer",
+      "default": 0
+     }
+    },
+    "required": [
+     "script_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_set_data_validation",
+   "title": null,
+   "description": "Add a data validation rule to a range: one of a list of values, or a number between two bounds.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string"
+     },
+     "values": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "minimum": {
+      "type": "number"
+     },
+     "maximum": {
+      "type": "number"
+     },
+     "strict": {
+      "type": "boolean",
+      "default": true
+     },
+     "input_message": {
+      "type": "string"
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_protect_range",
+   "title": null,
+   "description": "Protect a range: warning-only by default, or locked for everyone except the listed editors.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "warning_only": {
+      "type": "boolean",
+      "default": true
+     },
+     "editors": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "sheet_set_borders",
+   "title": null,
+   "description": "Draw borders around and inside a range: SOLID, DOTTED, DASHED, SOLID_MEDIUM, SOLID_THICK or NONE.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "spreadsheet_id": {
+      "type": "string"
+     },
+     "range": {
+      "type": "string"
+     },
+     "style": {
+      "type": "string",
+      "enum": [
+       "SOLID",
+       "DOTTED",
+       "DASHED",
+       "SOLID_MEDIUM",
+       "SOLID_THICK",
+       "NONE"
+      ],
+      "default": "SOLID"
+     },
+     "color": {
+      "type": "string",
+      "default": "#000000"
+     },
+     "sides": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "sheet_name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spreadsheet_id",
+     "range"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_list_filters",
+   "title": null,
+   "description": "List Gmail filters with their criteria and actions.",
+   "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_create_filter",
+   "title": null,
+   "description": "Create a Gmail filter: match from/subject/query, then add or remove labels (use label IDs).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "from_address": {
+      "type": "string"
+     },
+     "subject": {
+      "type": "string"
+     },
+     "query": {
+      "type": "string"
+     },
+     "add_labels": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "remove_labels": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "gmail_update_draft",
+   "title": null,
+   "description": "Replace the content of an existing draft.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "draft_id": {
+      "type": "string"
+     },
+     "to": {
+      "type": "string"
+     },
+     "subject": {
+      "type": "string"
+     },
+     "body_text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "draft_id",
+     "to",
+     "subject",
+     "body_text"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "calendar_set_event_color",
+   "title": null,
+   "description": "Set an event colour by Google Calendar colour id (\"1\"–\"11\").",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "event_id": {
+      "type": "string"
+     },
+     "color_id": {
+      "type": "string"
+     },
+     "calendar_id": {
+      "type": "string",
+      "default": "primary"
+     }
+    },
+    "required": [
+     "event_id",
+     "color_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "script_update_deployment",
+   "title": null,
+   "description": "Point an Apps Script deployment at a newer version.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "script_id": {
+      "type": "string"
+     },
+     "deployment_id": {
+      "type": "string"
+     },
+     "version_number": {
+      "type": "integer",
+      "default": 0
+     },
+     "description": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "script_id",
+     "deployment_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_plan",
+   "title": null,
+   "description": "Resolve a Drive, Gmail, Docs or Sheets selector into a reviewed plan (dry run). Returns a plan_id, matched count, total size, a small sample and warnings. Cap: 300 items by default; allow_large raises it to the hard limit. Nothing is changed until bulk_run is called with confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "domain": {
+      "type": "string",
+      "enum": [
+       "drive",
+       "gmail",
+       "docs",
+       "sheets"
+      ],
+      "default": "drive"
+     },
+     "action": {
+      "type": "string",
+      "enum": [
+       "move",
+       "trash",
+       "restore",
+       "rename",
+       "share",
+       "revoke_public",
+       "archive",
+       "label",
+       "mark_read",
+       "mark_unread",
+       "replace_text",
+       "find_replace"
+      ]
+     },
+     "selector": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string"
+       },
+       "folder_id": {
+        "type": "string"
+       },
+       "recursive": {
+        "type": "boolean",
+        "default": false
+       },
+       "mime_types": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "name_contains": {
+        "type": "string"
+       },
+       "ids": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "exclude_ids": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "modified": {
+        "type": "object",
+        "properties": {
+         "after": {
+          "type": "string"
+         },
+         "before": {
+          "type": "string"
+         }
+        }
+       },
+       "include_trashed": {
+        "type": "boolean",
+        "default": false
+       },
+       "include_spam_trash": {
+        "type": "boolean",
+        "default": false
+       },
+       "limit": {
+        "type": "integer"
+       }
+      }
+     },
+     "options": {
+      "type": "object",
+      "properties": {
+       "target_folder_id": {
+        "type": "string"
+       },
+       "pattern": {
+        "type": "string"
+       },
+       "find": {
+        "type": "string"
+       },
+       "replace": {
+        "type": "string"
+       },
+       "role": {
+        "type": "string"
+       },
+       "type": {
+        "type": "string"
+       },
+       "email_address": {
+        "type": "string"
+       },
+       "domain": {
+        "type": "string"
+       },
+       "send_notification": {
+        "type": "boolean"
+       },
+       "allow_public": {
+        "type": "boolean"
+       },
+       "add_labels": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "remove_labels": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "match_case": {
+        "type": "boolean",
+        "default": false
+       },
+       "sheet_id": {
+        "type": "integer"
+       }
+      }
+     },
+     "allow_large": {
+      "type": "boolean",
+      "default": false
+     },
+     "sample": {
+      "type": "integer",
+      "default": 5
+     }
+    },
+    "required": [
+     "action"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_run",
+   "title": null,
+   "description": "Execute a reviewed bulk plan as a background job. Requires confirm=true and a non-expired plan_id. Pass job_id to resume an interrupted job. Returns immediately with a job_id; poll bulk_status for progress.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "plan_id": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     },
+     "job_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "plan_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_status",
+   "title": null,
+   "description": "Compact progress for a bulk job: state, done/total, ok, skipped, failed percentages and the result file path.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "job_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "job_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_cancel",
+   "title": null,
+   "description": "Request cancellation of a running bulk job. In-flight items finish; the job state becomes cancelled and can be resumed later.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "job_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "job_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_result",
+   "title": null,
+   "description": "Read one page of per-item bulk results (id, name, status, error). Paginated: 50 items by default, 200 maximum. Use the result_file path for the full artifact.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "job_id": {
+      "type": "string"
+     },
+     "offset": {
+      "type": "integer",
+      "default": 0
+     },
+     "limit": {
+      "type": "integer",
+      "default": 50
+     }
+    },
+    "required": [
+     "job_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_list",
+   "title": null,
+   "description": "List recent bulk jobs in this profile, newest first.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer",
+      "default": 10
+     }
+    }
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "bulk_undo",
+   "title": null,
+   "description": "Revert a completed bulk job using the state saved in its results. Supports Drive move (restore previous parents), rename (restore previous names) and trash (restore from trash). Requires confirm=true.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "job_id": {
+      "type": "string"
+     },
+     "confirm": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    "required": [
+     "job_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "tasks_list_lists",
+   "title": null,
+   "description": "List Google Tasks task lists with their ids.",
+   "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "tasks_list",
+   "title": null,
+   "description": "List tasks in a Google Tasks list. Default list is '@default'; show_completed includes finished tasks.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "tasklist_id": {
+      "type": "string",
+      "default": "@default"
+     },
+     "show_completed": {
+      "type": "boolean",
+      "default": false
+     },
+     "max_results": {
+      "type": "integer",
+      "default": 50
+     }
+    }
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "tasks_create",
+   "title": null,
+   "description": "Create a Google Task. due is an RFC 3339 timestamp (for example 2026-11-20T00:00:00.000Z).",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     },
+     "notes": {
+      "type": "string"
+     },
+     "due": {
+      "type": "string"
+     },
+     "tasklist_id": {
+      "type": "string",
+      "default": "@default"
+     }
+    },
+    "required": [
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "tasks_complete",
+   "title": null,
+   "description": "Mark a Google Task as completed.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "task_id": {
+      "type": "string"
+     },
+     "tasklist_id": {
+      "type": "string",
+      "default": "@default"
+     }
+    },
+    "required": [
+     "task_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "forms_create",
+   "title": null,
+   "description": "Create a Google Form with a title and optional description.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "title"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "forms_add_questions",
+   "title": null,
+   "description": "Append short-answer questions to a Google Form. Each question is an object with title, optional description and required.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "form_id": {
+      "type": "string"
+     },
+     "questions": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string"
+        },
+        "description": {
+         "type": "string"
+        },
+        "required": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "title"
+       ]
+      }
+     }
+    },
+    "required": [
+     "form_id",
+     "questions"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": false,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "forms_get",
+   "title": null,
+   "description": "Read a Google Form: title, description, responder link and questions.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "form_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "form_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "forms_list_responses",
+   "title": null,
+   "description": "List Google Form responses with answers mapped to question titles.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "form_id": {
+      "type": "string"
+     },
+     "max_results": {
+      "type": "integer",
+      "default": 50
+     }
+    },
+    "required": [
+     "form_id"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "postmaster_list_domains",
+   "title": null,
+   "description": "List domains verified in Gmail Postmaster Tools with the account's permission level.",
+   "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  },
+  {
+   "name": "postmaster_traffic_stats",
+   "title": null,
+   "description": "Read Gmail Postmaster traffic stats for a verified domain: spam rate, domain reputation, DKIM/DMARC/SPF ratios and delivery errors.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "domain": {
+      "type": "string"
+     },
+     "days": {
+      "type": "integer",
+      "default": 7
+     }
+    },
+    "required": [
+     "domain"
+    ]
+   },
+   "execution": null,
+   "output_schema": null,
+   "icons": null,
+   "annotations": {
+    "title": null,
+    "read_only_hint": true,
+    "destructive_hint": false,
+    "idempotent_hint": null,
+    "open_world_hint": null
+   },
+   "meta": null
+  }
+ ],
+ "prompts": [
+  {
+   "name": "summarize_inbox",
+   "title": null,
+   "description": "Fetch recent Gmail messages and prepare them for AI summarization. Optionally filter by a Gmail search query.",
+   "arguments": [
+    {
+     "name": "query",
+     "title": null,
+     "description": "Gmail search query (default: 'is:unread in:inbox')",
+     "required": false
+    },
+    {
+     "name": "max_results",
+     "title": null,
+     "description": "Maximum number of emails to include (default: 20)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  },
+  {
+   "name": "analyze_spreadsheet",
+   "title": null,
+   "description": "Read a Google Sheet range and prepare the data for AI analysis or visualization.",
+   "arguments": [
+    {
+     "name": "spreadsheet_id",
+     "title": null,
+     "description": "The Google Spreadsheet ID",
+     "required": true
+    },
+    {
+     "name": "range",
+     "title": null,
+     "description": "Sheet range to read (default: Sheet1)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  },
+  {
+   "name": "plan_week",
+   "title": null,
+   "description": "Fetch upcoming calendar events and prepare a weekly planning summary for AI-assisted scheduling.",
+   "arguments": [
+    {
+     "name": "days_ahead",
+     "title": null,
+     "description": "Number of days to look ahead (default: 7)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  },
+  {
+   "name": "search_drive",
+   "title": null,
+   "description": "Search Google Drive for files and prepare a structured list for AI review or organisation suggestions.",
+   "arguments": [
+    {
+     "name": "query",
+     "title": null,
+     "description": "Drive search query (e.g. 'name contains \"budget\"')",
+     "required": true
+    },
+    {
+     "name": "limit",
+     "title": null,
+     "description": "Maximum number of results (default: 20)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  },
+  {
+   "name": "weekly_review",
+   "title": null,
+   "description": "Cross-source review of the last N days: mail, changed files and the coming agenda, prepared for a weekly summary.",
+   "arguments": [
+    {
+     "name": "days_back",
+     "title": null,
+     "description": "How many days to look back (default: 7)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  },
+  {
+   "name": "inbox_triage",
+   "title": null,
+   "description": "Fetch a Gmail slice and prepare it for triage: urgent, waiting, informational, archive candidates.",
+   "arguments": [
+    {
+     "name": "query",
+     "title": null,
+     "description": "Gmail search query (default: 'is:unread in:inbox')",
+     "required": false
+    },
+    {
+     "name": "max_results",
+     "title": null,
+     "description": "Maximum messages to include (default: 15)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  },
+  {
+   "name": "compare_brief",
+   "title": null,
+   "description": "Diff two ranges by a key column and prepare a reconciliation report.",
+   "arguments": [
+    {
+     "name": "spreadsheet_id",
+     "title": null,
+     "description": "Spreadsheet ID",
+     "required": true
+    },
+    {
+     "name": "range_a",
+     "title": null,
+     "description": "Baseline range",
+     "required": true
+    },
+    {
+     "name": "range_b",
+     "title": null,
+     "description": "New range",
+     "required": true
+    },
+    {
+     "name": "key_column",
+     "title": null,
+     "description": "Column name or 1-based index (default: 1)",
+     "required": false
+    }
+   ],
+   "icons": null,
+   "meta": null
+  }
+ ]
+}

@@ -1,0 +1,862 @@
+{
+ "add_sheet": {
+  "args": [
+   "<spreadsheet_id>",
+   "<title>"
+  ],
+  "kwargs": []
+ },
+ "append_row": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_name>",
+   "<values>"
+  ],
+  "kwargs": []
+ },
+ "append_to_doc": {
+  "args": [
+   "<document_id>",
+   "<text>"
+  ],
+  "kwargs": []
+ },
+ "bulk_cancel": {
+  "args": [
+   "<job_id>"
+  ],
+  "kwargs": []
+ },
+ "bulk_list": {
+  "args": [
+   "<limit>"
+  ],
+  "kwargs": []
+ },
+ "bulk_plan": {
+  "args": [
+   "<domain>",
+   null,
+   "<selector>",
+   "<options>",
+   "<allow_large>",
+   "<sample>"
+  ],
+  "kwargs": []
+ },
+ "bulk_result": {
+  "args": [
+   "<job_id>",
+   "<offset>",
+   "<limit>"
+  ],
+  "kwargs": []
+ },
+ "bulk_run": {
+  "args": [
+   "<plan_id>",
+   true,
+   "<callable>",
+   "<job_id>"
+  ],
+  "kwargs": []
+ },
+ "bulk_status": {
+  "args": [
+   "<job_id>"
+  ],
+  "kwargs": []
+ },
+ "bulk_undo": {
+  "args": [
+   "<job_id>",
+   true,
+   "<callable>"
+  ],
+  "kwargs": []
+ },
+ "calendar_create_meeting": {
+  "args": [
+   "<summary>",
+   "<start_time>",
+   "<end_time>",
+   "<attendees>",
+   "<description>",
+   "<location>",
+   true
+  ],
+  "kwargs": []
+ },
+ "calendar_delete_event": {
+  "args": [
+   "<event_id>",
+   "<calendar_id>",
+   true,
+   "<send_updates>"
+  ],
+  "kwargs": []
+ },
+ "calendar_list_calendars": {
+  "args": [],
+  "kwargs": []
+ },
+ "calendar_move_event": {
+  "args": [
+   "<event_id>",
+   "<destination_calendar_id>",
+   "<calendar_id>"
+  ],
+  "kwargs": []
+ },
+ "calendar_respond_to_invite": {
+  "args": [
+   "<event_id>",
+   "<response>",
+   "<calendar_id>",
+   true,
+   "<send_updates>"
+  ],
+  "kwargs": []
+ },
+ "calendar_set_event_color": {
+  "args": [
+   "<event_id>",
+   "<color_id>",
+   "<calendar_id>"
+  ],
+  "kwargs": []
+ },
+ "calendar_update_event": {
+  "args": [
+   "<event_id>",
+   "<calendar_id>",
+   "<summary>",
+   "<start_time>",
+   "<end_time>",
+   "<description>",
+   "<location>",
+   "<attendees>",
+   "<send_updates>"
+  ],
+  "kwargs": []
+ },
+ "cancel_operation": {
+  "args": [
+   "<operation_id>"
+  ],
+  "kwargs": []
+ },
+ "clear_range": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_name>",
+   true
+  ],
+  "kwargs": []
+ },
+ "compare_tables": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_a>",
+   "<range_b>",
+   "<other_spreadsheet_id>",
+   "<key_column>",
+   "<header>",
+   "<output>",
+   "<doc_title>"
+  ],
+  "kwargs": []
+ },
+ "create_doc": {
+  "args": [
+   "<title>"
+  ],
+  "kwargs": []
+ },
+ "create_draft": {
+  "args": [
+   "<to>",
+   "<subject>",
+   "<body_text>"
+  ],
+  "kwargs": []
+ },
+ "create_folder": {
+  "args": [
+   "<name>",
+   "<parent_id>"
+  ],
+  "kwargs": []
+ },
+ "create_script_project": {
+  "args": [
+   "<title>",
+   "<parent_id>"
+  ],
+  "kwargs": []
+ },
+ "create_spreadsheet": {
+  "args": [
+   "<title>"
+  ],
+  "kwargs": []
+ },
+ "delete_email": {
+  "args": [
+   "<message_id>",
+   true
+  ],
+  "kwargs": []
+ },
+ "digest": {
+  "args": [
+   "<sources>",
+   "<since_hours>",
+   "<limit>",
+   "<output>",
+   "<doc_title>"
+  ],
+  "kwargs": []
+ },
+ "doc_replace_text": {
+  "args": [
+   "<document_id>",
+   "<find>",
+   "<replace>",
+   "<match_case>",
+   true
+  ],
+  "kwargs": []
+ },
+ "docs_format_text": {
+  "args": [
+   "<document_id>",
+   "<find>",
+   "<bold>",
+   "<italic>",
+   "<font_size>",
+   "<heading>",
+   "<match_case>",
+   true
+  ],
+  "kwargs": []
+ },
+ "docs_insert_image": {
+  "args": [
+   "<document_id>",
+   "<image_url>",
+   "<width>",
+   "<height>"
+  ],
+  "kwargs": []
+ },
+ "drive_copy_file": {
+  "args": [
+   "<file_id>",
+   "<name>",
+   "<parent_id>"
+  ],
+  "kwargs": []
+ },
+ "drive_delete_file": {
+  "args": [
+   "<file_id>",
+   true
+  ],
+  "kwargs": []
+ },
+ "drive_export": {
+  "args": [
+   "<file_id>",
+   "<format>",
+   "<save_to>",
+   "<overwrite>"
+  ],
+  "kwargs": []
+ },
+ "drive_get_metadata": {
+  "args": [
+   "<file_id>"
+  ],
+  "kwargs": []
+ },
+ "drive_list_permissions": {
+  "args": [
+   "<file_id>"
+  ],
+  "kwargs": []
+ },
+ "drive_remove_permission": {
+  "args": [
+   "<file_id>",
+   "<permission_id>",
+   true
+  ],
+  "kwargs": []
+ },
+ "drive_rename_file": {
+  "args": [
+   "<file_id>",
+   "<name>"
+  ],
+  "kwargs": []
+ },
+ "drive_restore_file": {
+  "args": [
+   "<file_id>"
+  ],
+  "kwargs": []
+ },
+ "drive_revoke_public": {
+  "args": [
+   "<file_id>",
+   true
+  ],
+  "kwargs": []
+ },
+ "drive_search_advanced": {
+  "args": [
+   "<query>",
+   "<limit>"
+  ],
+  "kwargs": []
+ },
+ "drive_upload": {
+  "args": [
+   "<local_path>",
+   "<name>",
+   "<parent_id>",
+   "<mime_type>",
+   "<convert_to>"
+  ],
+  "kwargs": []
+ },
+ "execute_operation": {
+  "args": [
+   "<operation_id>"
+  ],
+  "kwargs": []
+ },
+ "forms_add_questions": {
+  "args": [
+   "<form_id>",
+   "<questions>"
+  ],
+  "kwargs": []
+ },
+ "forms_create": {
+  "args": [
+   "<title>",
+   "<description>"
+  ],
+  "kwargs": []
+ },
+ "forms_get": {
+  "args": [
+   "<form_id>"
+  ],
+  "kwargs": []
+ },
+ "forms_list_responses": {
+  "args": [
+   "<form_id>",
+   "<max_results>"
+  ],
+  "kwargs": []
+ },
+ "get_gmail_profile": {
+  "args": [],
+  "kwargs": []
+ },
+ "get_script_content": {
+  "args": [
+   "<script_id>"
+  ],
+  "kwargs": []
+ },
+ "get_spreadsheet_meta": {
+  "args": [
+   "<spreadsheet_id>"
+  ],
+  "kwargs": []
+ },
+ "gmail_archive": {
+  "args": [
+   "<message_id>",
+   true
+  ],
+  "kwargs": []
+ },
+ "gmail_create_filter": {
+  "args": [
+   "<from_address>",
+   "<subject>",
+   "<query>",
+   "<add_labels>",
+   "<remove_labels>"
+  ],
+  "kwargs": []
+ },
+ "gmail_create_label": {
+  "args": [
+   "<name>",
+   "<label_list_visibility>",
+   "<message_list_visibility>"
+  ],
+  "kwargs": []
+ },
+ "gmail_delete_draft": {
+  "args": [
+   "<draft_id>",
+   true
+  ],
+  "kwargs": []
+ },
+ "gmail_get_attachment": {
+  "args": [
+   "<message_id>",
+   "<attachment_id>",
+   "<filename>",
+   "<save_to>",
+   "<overwrite>"
+  ],
+  "kwargs": []
+ },
+ "gmail_get_thread": {
+  "args": [
+   "<thread_id>",
+   "<message_id>",
+   "<include_body>"
+  ],
+  "kwargs": []
+ },
+ "gmail_label_apply": {
+  "args": [
+   "<message_ids>",
+   "<label_name>",
+   "<dry_run>",
+   "<create_if_missing>"
+  ],
+  "kwargs": []
+ },
+ "gmail_list_drafts": {
+  "args": [
+   "<limit>"
+  ],
+  "kwargs": []
+ },
+ "gmail_list_filters": {
+  "args": [],
+  "kwargs": []
+ },
+ "gmail_list_labels": {
+  "args": [],
+  "kwargs": []
+ },
+ "gmail_reply": {
+  "args": [
+   "<message_id>",
+   "<body_text>",
+   "<reply_all>",
+   "<draft_mode>"
+  ],
+  "kwargs": []
+ },
+ "gmail_search_and_summarize": {
+  "args": [
+   "<query>",
+   "<max_results>"
+  ],
+  "kwargs": []
+ },
+ "gmail_send_with_attachments": {
+  "args": [
+   "<to>",
+   "<subject>",
+   "<body_text>",
+   "<attachments>",
+   "<draft_mode>"
+  ],
+  "kwargs": []
+ },
+ "gmail_update_draft": {
+  "args": [
+   "<draft_id>",
+   "<to>",
+   "<subject>",
+   "<body_text>"
+  ],
+  "kwargs": []
+ },
+ "list_emails": {
+  "args": [
+   "<max_results>",
+   "<query>"
+  ],
+  "kwargs": []
+ },
+ "list_events": {
+  "args": [
+   "<calendar_id>",
+   "<max_results>"
+  ],
+  "kwargs": []
+ },
+ "move_file": {
+  "args": [
+   "<file_id>",
+   "<folder_id>"
+  ],
+  "kwargs": []
+ },
+ "postmaster_list_domains": {
+  "args": [],
+  "kwargs": []
+ },
+ "postmaster_traffic_stats": {
+  "args": [
+   "<domain>",
+   "<days>"
+  ],
+  "kwargs": []
+ },
+ "prepare_script_update": {
+  "args": [
+   "<script_id>",
+   "<files>"
+  ],
+  "kwargs": []
+ },
+ "read_doc": {
+  "args": [
+   "<document_id>"
+  ],
+  "kwargs": []
+ },
+ "read_email": {
+  "args": [
+   "<message_id>"
+  ],
+  "kwargs": []
+ },
+ "read_sheet": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_name>"
+  ],
+  "kwargs": []
+ },
+ "restore_script_backup": {
+  "args": [
+   "<backup_path>"
+  ],
+  "kwargs": []
+ },
+ "script_create_deployment": {
+  "args": [
+   "<script_id>",
+   "<description>",
+   "<version_number>"
+  ],
+  "kwargs": []
+ },
+ "script_list_deployments": {
+  "args": [
+   "<script_id>"
+  ],
+  "kwargs": []
+ },
+ "script_run_function": {
+  "args": [
+   "<script_id>",
+   "<function_name>",
+   "<parameters>",
+   "<dev_mode>"
+  ],
+  "kwargs": []
+ },
+ "script_update_deployment": {
+  "args": [
+   "<script_id>",
+   "<deployment_id>",
+   "<version_number>",
+   "<description>"
+  ],
+  "kwargs": []
+ },
+ "send_draft": {
+  "args": [
+   "<draft_id>"
+  ],
+  "kwargs": []
+ },
+ "send_email": {
+  "args": [
+   "<to>",
+   "<subject>",
+   "<body_text>",
+   "<draft_mode>"
+  ],
+  "kwargs": []
+ },
+ "share_file": {
+  "args": [
+   "<file_id>",
+   "<role>",
+   "<type>",
+   "<email_address>",
+   "<allow_public>"
+  ],
+  "kwargs": []
+ },
+ "sheet_add_chart": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<chart_type>",
+   "<title>",
+   "<sheet_name>",
+   "<header>",
+   "<anchor_row>",
+   "<anchor_col>",
+   "<width>",
+   "<height>"
+  ],
+  "kwargs": []
+ },
+ "sheet_add_pivot_table": {
+  "args": [
+   "<spreadsheet_id>",
+   "<source_range>",
+   "<rows>",
+   "<values>",
+   "<columns>",
+   "<aggregation>",
+   "<target_sheet_name>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "sheet_conditional_format": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<condition>",
+   "<value>",
+   "<value2>",
+   "<background_color>",
+   "<text_color>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "sheet_create_filter_view": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_id>",
+   "<title>",
+   "<start_row>",
+   "<end_row>",
+   "<start_col>",
+   "<end_col>"
+  ],
+  "kwargs": []
+ },
+ "sheet_create_named_range": {
+  "args": [
+   "<spreadsheet_id>",
+   "<name>",
+   "<sheet_id>",
+   "<start_row>",
+   "<end_row>",
+   "<start_col>",
+   "<end_col>"
+  ],
+  "kwargs": []
+ },
+ "sheet_delete_columns": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_name>",
+   "<start_column>",
+   "<count>",
+   true
+  ],
+  "kwargs": []
+ },
+ "sheet_delete_rows": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_name>",
+   "<start_row>",
+   "<count>",
+   true
+  ],
+  "kwargs": []
+ },
+ "sheet_delete_sheet": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_name>",
+   true
+  ],
+  "kwargs": []
+ },
+ "sheet_export_csv": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_name>",
+   "<max_rows>"
+  ],
+  "kwargs": []
+ },
+ "sheet_find_replace": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_name>",
+   "<find_text>",
+   "<replace_text>",
+   "<dry_run>",
+   "<match_case>"
+  ],
+  "kwargs": []
+ },
+ "sheet_format": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_name>",
+   "<range>",
+   "<bold>",
+   "<italic>",
+   "<font_size>",
+   "<number_format>",
+   "<background_color>",
+   "<text_color>",
+   "<horizontal_alignment>",
+   "<wrap>",
+   "<column_width>",
+   "<row_height>",
+   "<freeze_rows>",
+   "<freeze_cols>"
+  ],
+  "kwargs": []
+ },
+ "sheet_insert_columns": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_name>",
+   "<start_column>",
+   "<count>"
+  ],
+  "kwargs": []
+ },
+ "sheet_insert_rows": {
+  "args": [
+   "<spreadsheet_id>",
+   "<sheet_name>",
+   "<start_row>",
+   "<count>"
+  ],
+  "kwargs": []
+ },
+ "sheet_merge_cells": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<merge_type>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "sheet_protect_range": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<description>",
+   "<warning_only>",
+   "<editors>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "sheet_set_borders": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<style>",
+   "<color>",
+   "<sides>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "sheet_set_data_validation": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<values>",
+   "<minimum>",
+   "<maximum>",
+   "<strict>",
+   "<input_message>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "sheet_sort_range": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range>",
+   "<column>",
+   "<ascending>",
+   "<sheet_name>"
+  ],
+  "kwargs": []
+ },
+ "tasks_complete": {
+  "args": [
+   "<task_id>",
+   "<tasklist_id>"
+  ],
+  "kwargs": []
+ },
+ "tasks_create": {
+  "args": [
+   "<title>",
+   "<notes>",
+   "<due>",
+   "<tasklist_id>"
+  ],
+  "kwargs": []
+ },
+ "tasks_list": {
+  "args": [
+   "<tasklist_id>",
+   "<show_completed>",
+   "<max_results>"
+  ],
+  "kwargs": []
+ },
+ "tasks_list_lists": {
+  "args": [],
+  "kwargs": []
+ },
+ "update_sheet": {
+  "args": [
+   "<spreadsheet_id>",
+   "<range_name>",
+   "<values>"
+  ],
+  "kwargs": []
+ },
+ "workspace_search": {
+  "args": [
+   "<query>",
+   "<sources>",
+   "<limit>",
+   "<calendar_days_back>",
+   "<calendar_days_ahead>"
+  ],
+  "kwargs": []
+ }
+}

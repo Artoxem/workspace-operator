@@ -1,0 +1,772 @@
+{
+ "approved_by_id_runs_handler_with_confirm": {
+  "approvals_created": 1,
+  "audit": [
+   {
+    "arguments": [
+     "approval_id",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-required",
+    "tool": "drive_trash"
+   },
+   {
+    "arguments": [
+     "approval_id",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "f",
+    true
+   ]
+  ],
+  "is_error": false
+ },
+ "bulk_run_challenge": {
+  "approvals_created": 1,
+  "audit": [
+   {
+    "arguments": [
+     "approval_id",
+     "confirm",
+     "plan_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-required",
+    "tool": "bulk_run"
+   }
+  ],
+  "content": [
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"bulk_run (plan_id=bp_x)\",\n  \"tool\": \"bulk_run\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "calendar_delete_challenge": {
+  "approvals_created": 1,
+  "audit": [
+   {
+    "arguments": [
+     "approval_id",
+     "event_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-required",
+    "tool": "calendar_delete"
+   }
+  ],
+  "content": [
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"calendar_delete (event_id=e)\",\n  \"tool\": \"calendar_delete\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "destructive_challenge": {
+  "approvals_created": 1,
+  "audit": [
+   {
+    "arguments": [
+     "approval_id",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-required",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "destructive_challenge_no_url": {
+  "approvals_created": 1,
+  "audit": [
+   {
+    "arguments": [
+     "approval_id",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-required",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "destructive_wrong_approval_id": {
+  "approvals_created": 1,
+  "audit": [
+   {
+    "arguments": [
+     "approval_id",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "Unknown approval id 'apr_missing'.",
+    "profile": "full",
+    "status": "approval-rejected",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "Approval could not be used: Unknown approval id 'apr_missing'.\n\n⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "dry_run_destructive_is_preview": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "dry-run",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "DRY RUN: 'drive_trash' was not executed. Arguments: ['file_id']. Unset dry_run / MCP_DRY_RUN to apply changes."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "dry_run_read_runs": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "dry_run_write_is_preview": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id",
+     "name"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "dry-run",
+    "tool": "drive_write"
+   }
+  ],
+  "content": [
+   "DRY RUN: 'drive_write' was not executed. Arguments: ['action', 'file_id', 'name']. Unset dry_run / MCP_DRY_RUN to apply changes."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "elicitation_accept": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approved-in-chat",
+    "tool": "drive_trash"
+   },
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "f",
+    true
+   ]
+  ],
+  "is_error": false
+ },
+ "elicitation_accept_unchecked": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-declined",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "The user did not approve this action; nothing was changed. Do not retry unless the user asks."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "elicitation_cancel": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-cancelled",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "The user did not approve this action; nothing was changed. Do not retry unless the user asks."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "elicitation_decline": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "approval-declined",
+    "tool": "drive_trash"
+   }
+  ],
+  "content": [
+   "The user did not approve this action; nothing was changed. Do not retry unless the user asks."
+  ],
+  "handler_calls": [],
+  "is_error": false
+ },
+ "gives_up_after_configured_attempts": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "exception",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Error: "
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ],
+   [
+    "F"
+   ]
+  ],
+  "is_error": true
+ },
+ "handler_binary_result": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   {
+    "blob": "JVBERi0xLjQgZGF0YQ==",
+    "mime": "application/pdf",
+    "type": "resource"
+   }
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "handler_error_string": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "error",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Error reading file: <HttpError 404 when requesting x returned \"Not Found\">"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": true
+ },
+ "handler_error_string_indented": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "error",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Error: quota"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": true
+ },
+ "handler_non_string_result": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "12345"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "handler_raises": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "boom",
+    "profile": "full",
+    "status": "exception",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Error: boom"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": true
+ },
+ "handler_text_starting_with_error_word": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "error",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Errors found: 0"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": true
+ },
+ "legacy_alias_direct_target": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "query"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_search_advanced"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "x",
+    50
+   ]
+  ],
+  "is_error": false
+ },
+ "legacy_alias_hidden_by_profile": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   "Tool 'drive_remove_permission' maps to 'drive_permissions', which is hidden by the active profile (core) or by scope routing."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "legacy_alias_with_action": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_get_metadata"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "missing_action": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "Tool 'drive_read' requires an 'action'. Available actions: metadata, export, list_permissions.",
+    "profile": "full",
+    "status": "invalid",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Tool 'drive_read' requires an 'action'. Available actions: metadata, export, list_permissions."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "missing_auth_token": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "MCP_AUTH_TOKEN is not set. Set environment variable MCP_AUTH_TOKEN to enable MCP access.",
+    "profile": "full",
+    "status": "exception",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Error: MCP_AUTH_TOKEN is not set. Set environment variable MCP_AUTH_TOKEN to enable MCP access."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "missing_required_argument": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "Action 'metadata' requires: file_id.",
+    "profile": "full",
+    "status": "invalid",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Action 'metadata' requires: file_id."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "no_arguments_at_all": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "Tool 'drive_read' requires an 'action'. Available actions: metadata, export, list_permissions.",
+    "profile": "full",
+    "status": "invalid",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Tool 'drive_read' requires an 'action'. Available actions: metadata, export, list_permissions."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "ok_default_profile_core": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "core",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "ok_direct_tool": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "outside_profile_read_only": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   "Tool 'drive_write' is disabled by the active tool profile (read-only). Adjust tool_profile, allowed_tools or denied_tools in config.yaml to enable it."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "outside_profile_unknown": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   "Tool 'totally_unknown' is disabled by the active tool profile (full). Adjust tool_profile, allowed_tools or denied_tools in config.yaml to enable it."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "removed_tool": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   "Tool 'slides_create' was removed in Workspace Operator 2.0. See docs/MIGRATION_2.0.md for the replacement."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "retries_transient_errors_then_succeeds": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "ok",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "OK-RESULT"
+  ],
+  "handler_calls": [
+   [
+    "F"
+   ],
+   [
+    "F"
+   ],
+   [
+    "F"
+   ]
+  ],
+  "is_error": false
+ },
+ "unknown_action": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "error": "Unknown action 'explode' for 'drive_read'. Available actions: metadata, export, list_permissions.",
+    "profile": "full",
+    "status": "invalid",
+    "tool": "drive_read"
+   }
+  ],
+  "content": [
+   "Unknown action 'explode' for 'drive_read'. Available actions: metadata, export, list_permissions."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "write_reaches_handler_without_credentials": {
+  "approvals_created": 0,
+  "audit": [
+   {
+    "arguments": [
+     "action",
+     "file_id",
+     "name"
+    ],
+    "client": "stdio",
+    "duration_ms": "int",
+    "profile": "full",
+    "status": "error",
+    "tool": "drive_write"
+   }
+  ],
+  "content": [
+   "Error renaming file: Client secrets file not found at s"
+  ],
+  "handler_calls": [],
+  "is_error": true
+ }
+}
