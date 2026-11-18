@@ -41,4 +41,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8765/healthz', timeout=2).status == 200 else 1)"
 
 ENTRYPOINT ["python", "-m", "workspace_operator", "serve"]
-CMD ["--http", "--host", "0.0.0.0", "--port", "8765", "--allow-network", "--insecure"]
+# Safe default: bind inside the container only. Publishing the port to the network
+# is a deliberate decision; docker-compose.yml passes --allow-network/--insecure
+# together with a loopback-only port mapping. For a plain `docker run` add them
+# yourself:  docker run -p 127.0.0.1:8765:8765 IMAGE --http --host 0.0.0.0 \
+#            --allow-network --insecure
+CMD ["--http", "--host", "127.0.0.1", "--port", "8765"]

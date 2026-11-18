@@ -62,6 +62,11 @@ dry_run: false
 # Leave empty to disable.
 audit_log: ""
 
+# Local folders drive_upload may read from. Empty = any folder except OAuth/secret
+# files (token, client secrets, .env, ~/.ssh ...), which are always refused.
+# Env override: MCP_UPLOAD_ROOTS="/path/a,/path/b"
+# upload_roots: ["C:\\Users\\your_user\\Documents"]
+
 # Retries for transient Google API errors (429/5xx), exponential backoff
 retry_attempts: 3
 

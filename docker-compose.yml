@@ -17,4 +17,7 @@ services:
       # and writes it back after it expires.
       - "${GOOGLE_DIR:-${HOME}/.google}:/home/app/.google"
       - ./data:/home/app/data
+    # The container must bind 0.0.0.0 for port publishing; the loopback-only
+    # `ports` mapping above is what keeps it off the network.
+    command: ["--http", "--host", "0.0.0.0", "--port", "8765", "--allow-network", "--insecure"]
     restart: unless-stopped

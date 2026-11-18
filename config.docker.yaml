@@ -15,6 +15,8 @@ tool_profile: "core"
 approval_dir: "/home/app/data/approvals"
 approval_ttl: 900
 approval_url: "http://127.0.0.1:8765"
+# Only this folder is readable by drive_upload inside the container.
+upload_roots: ["/home/app/data/upload"]
 scope_routing: true
 allow_public_sharing: false
 

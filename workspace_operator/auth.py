@@ -6,21 +6,35 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 from .config import Config
+from .secure_files import file_lock, write_private
+
+
+def _load(config: Config) -> Optional[Credentials]:
+    if not os.path.exists(config.token_file):
+        return None
+    try:
+        return Credentials.from_authorized_user_file(config.token_file, config.scopes)
+    except Exception:
+        return None
 
 
 def get_creds(config: Config) -> Credentials:
-    """Get OAuth credentials, refreshing or running auth flow if needed."""
-    creds: Optional[Credentials] = None
+    """Get OAuth credentials, refreshing or running the auth flow if needed.
 
-    if os.path.exists(config.token_file):
-        try:
-            creds = Credentials.from_authorized_user_file(
-                config.token_file, config.scopes
-            )
-        except Exception:
-            creds = None
+    The token file is rewritten atomically, readable by the owner only, and a
+    lock serialises refreshes so concurrent tool calls and bulk workers cannot
+    corrupt it or burn the refresh token twice.
+    """
+    creds = _load(config)
+    if creds and creds.valid:
+        return creds
 
-    if not creds or not creds.valid:
+    with file_lock(config.token_file):
+        # Another thread/process may have refreshed while we waited.
+        creds = _load(config)
+        if creds and creds.valid:
+            return creds
+
         if creds and creds.expired and creds.refresh_token:
             try:
                 creds.refresh(Request())
@@ -37,10 +51,6 @@ def get_creds(config: Config) -> Credentials:
             )
             creds = flow.run_local_server(port=0)
 
-        token_dir = os.path.dirname(config.token_file)
-        if token_dir:
-            os.makedirs(token_dir, exist_ok=True)
-        with open(config.token_file, "w", encoding="utf-8") as token:
-            token.write(creds.to_json())
+        write_private(config.token_file, creds.to_json())
 
     return creds
