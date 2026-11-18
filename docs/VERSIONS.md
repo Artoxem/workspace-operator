@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.2.2**.
+Current release: **2.2.3**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|
+| **2.2.3** | Internal refactor, no behaviour change: the 104 tool definitions and 7 prompts (about 2,000 lines of Python literals in `server.py`) are now data in `workspace_operator/definitions/` (one JSON per domain, `order.json` for the `tools/list` order, `prompts.json`) loaded by `load_tools()` / `load_prompts()`; `_tools()` and `_prompts()` keep their names. Packaging: JSON is not included in a wheel by default, so `[tool.setuptools.package-data]` was added (a wheel built without it contained no definitions and could not start); verified by installing the built wheel in a clean environment. `tests/test_definitions.py` pins the loaded result against a snapshot taken before the extraction (names, schemas, safety hints, order) and checks the packaging config; 7 injected data/packaging mistakes are caught. `server.py` 3142 → 1127 lines; 406 tests. |
 | **2.2.2** | Internal refactor, no behaviour change: the 600-line table of handler lambdas moved out of `server.py` into the declarative `workspace_operator/dispatch.py` (name → function, argument mapping, defaults, `or {}` fallbacks). A golden test (`tests/test_handler_dispatch.py`) pins the arguments each of the 104 handlers receives, with all and with only the required arguments, and checks that destructive handlers never run without approval; its snapshots come from the pre-refactor code and it catches 5/5 injected table mistakes. `server.py` 3740 → 3142 lines; 394 tests. |
 | **2.2.1** | Fixed bulk jobs losing results on cancel: items already running when a job was cancelled changed Google data but were not written to the result file, so `bulk_undo` skipped them and resume repeated them; they are now recorded. Added engine, selector and service tests with fake Google clients (bulk engine coverage 18% → 77%, selector 17% → 95%); 390 tests. |
 | **2.2.0** | Security hardening: mail-attachment/Drive names are sanitised (path traversal fix); `drive_upload` refuses secrets and honours `upload_roots`; browser approvals need a per-approval secret, an Origin check and strict headers (`approvals link`); HTTP mode rejects placeholder/short tokens; `token.json` is refreshed under a lock and written atomically owner-only; `doctor` checks secret hygiene; the Docker image binds `127.0.0.1` by default. CI (pytest, ruff, mypy, bandit, pip-audit) gates publishing; mypy 152 → 0; 334 tests. |
