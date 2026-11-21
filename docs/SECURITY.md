@@ -51,7 +51,7 @@ Every key has an environment override:
 
 | Variable | Overrides | Notes |
 |---|---|---|
-| `MCP_CONFIG_FILE` | — | path to `config.yaml` / `config.json` |
+| `MCP_CONFIG_FILE` | — | path to `config.yaml` / `config.json`; wins over the lookup (`./config.yaml`, then `<user config dir>/workspace-operator/config.yaml`), and must exist |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | required before any tool call is served |
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
 | `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; default `~/.google/approvals` (read-write in Docker) |

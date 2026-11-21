@@ -1,8 +1,10 @@
 import json
 import logging as _logging
 import os
+import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from .runtime import parse_bool
 
@@ -21,6 +23,15 @@ DEFAULT_SCOPES = [
     "https://www.googleapis.com/auth/postmaster.domain",
     "https://www.googleapis.com/auth/postmaster.traffic.readonly",
 ]
+
+# File names looked for by the config lookup. The locations are never written
+# into the code: every candidate is derived at run time from the environment
+# (explicit path, current directory, or the per-user directory of the OS).
+CONFIG_FILE_NAMES = ("config.yaml", "config.yml", "config.json")
+
+
+class ConfigFileError(RuntimeError):
+    """An explicitly requested configuration file cannot be used."""
 
 
 @dataclass(frozen=True)
@@ -55,10 +66,44 @@ class Config:
     upload_roots: Optional[List[str]] = None
     operation_dir: Optional[str] = None
     operation_ttl: int = 600
+    # Which config file was used ("explicit", "local", "user") and its path;
+    # "defaults" means no file was found. Reported by the log and ``doctor``.
+    config_file: Optional[str] = None
+    config_source: str = "defaults"
 
 
 def _default_path(*parts: str) -> str:
     return os.path.join(os.path.expanduser("~"), *parts)
+
+
+def _user_config_dir() -> Path:
+    """Per-user configuration directory reported by the operating system."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
+        if base:
+            return Path(base) / "workspace-operator"
+        return Path(_default_path(".config")) / "workspace-operator"
+    if sys.platform == "darwin":
+        return Path(
+            _default_path("Library", "Application Support", "workspace-operator")
+        )
+    base = os.environ.get("XDG_CONFIG_HOME") or _default_path(".config")
+    return Path(base) / "workspace-operator"
+
+
+def _discover_config() -> Optional[Tuple[Path, str]]:
+    """First existing config file and where it came from: current dir, then user dir."""
+    local = Path.cwd()
+    for name in CONFIG_FILE_NAMES:
+        candidate = local / name
+        if candidate.is_file():
+            return candidate, "local"
+    user_dir = _user_config_dir()
+    for name in CONFIG_FILE_NAMES:
+        candidate = user_dir / name
+        if candidate.is_file():
+            return candidate, "user"
+    return None
 
 
 def _env_list(name: str) -> Optional[List[str]]:
@@ -92,9 +137,32 @@ def _load_config_file(path: str) -> Dict[str, Any]:
     raise ValueError(f"Unsupported config format: {ext}")
 
 
-def load_config() -> Config:
-    config_path = os.environ.get("MCP_CONFIG_FILE")
-    file_config = _load_config_file(config_path) if config_path else {}
+def load_config(
+    config_path: Optional[str] = None, tool_profile: Optional[str] = None
+) -> Config:
+    """Resolve settings: explicit file, then lookup, then environment, then defaults.
+
+    ``config_path`` (``--config``) wins over ``MCP_CONFIG_FILE``; an explicitly
+    named file that does not exist is an error, not a silent fallback.
+    """
+    explicit = config_path or os.environ.get("MCP_CONFIG_FILE")
+    if explicit:
+        path = Path(explicit).expanduser()
+        if not path.is_file():
+            raise ConfigFileError(
+                f"Config file not found: {path}. Point --config or MCP_CONFIG_FILE "
+                "at an existing config.yaml/.yml/.json, or unset it to use the "
+                "lookup (./config.yaml, then <user config dir>/workspace-operator/"
+                "config.yaml) and the built-in defaults."
+            )
+        resolved: Optional[Path] = path
+        source = "explicit"
+    else:
+        found = _discover_config()
+        resolved = found[0] if found else None
+        source = found[1] if found else "defaults"
+    config_file = str(resolved) if resolved is not None else None
+    file_config = _load_config_file(config_file) if config_file else {}
 
     client_secrets_file = os.environ.get(
         "GOOGLE_CLIENT_SECRETS_FILE",
@@ -122,8 +190,10 @@ def load_config() -> Config:
     )
     log_level = getattr(_logging, log_level_str.upper(), _logging.INFO)
 
-    tool_profile = os.environ.get(
-        "MCP_TOOL_PROFILE", str(file_config.get("tool_profile", "core"))
+    tool_profile = (
+        tool_profile
+        or os.environ.get("MCP_TOOL_PROFILE")
+        or str(file_config.get("tool_profile", "core"))
     )
 
     allowed_tools = _env_list("MCP_ALLOWED_TOOLS") or file_config.get("allowed_tools")
@@ -235,4 +305,6 @@ def load_config() -> Config:
         upload_roots=upload_roots,
         operation_dir=operation_dir,
         operation_ttl=operation_ttl,
+        config_file=config_file,
+        config_source=source,
     )

@@ -177,6 +177,14 @@ backup_dir: "/home/you/.google/backups"
 tool_profile: "core"            # core | full | read-write | read-only
 ```
 
+Сервер сам ищет файл конфигурации: `./config.yaml` (или `.yml` / `.json`), затем
+`workspace-operator/config.yaml` в каталоге конфигурации ОС
+(`%APPDATA%\workspace-operator\config.yaml` в Windows,
+`~/.config/workspace-operator/config.yaml` в Linux, `Application Support` в macOS).
+`MCP_CONFIG_FILE` или `--config PATH` перекрывают поиск, и указанный там файл
+обязан существовать — иначе сервер завершается с понятной ошибкой, а не переходит
+на умолчания. `workspace-operator doctor` печатает, какой файл использован.
+
 В Windows используйте прямые слэши (`C:/Users/you/.google/oauth.keys.json`) или
 двойные обратные в YAML. Любой ключ можно переопределить переменной окружения —
 см. [docs/ru/SECURITY.md](docs/ru/SECURITY.md).

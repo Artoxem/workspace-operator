@@ -181,6 +181,14 @@ backup_dir: "/home/you/.google/backups"
 tool_profile: "core"            # core | full | read-write | read-only
 ```
 
+The server looks for a config file itself: `./config.yaml` (or `.yml` / `.json`),
+then `workspace-operator/config.yaml` in your OS config directory
+(`%APPDATA%\workspace-operator\config.yaml` on Windows,
+`~/.config/workspace-operator/config.yaml` on Linux, `Application Support` on
+macOS). `MCP_CONFIG_FILE` or `--config PATH` overrides the lookup, and a file
+named there must exist — the server exits with a clear error instead of falling
+back to defaults. `workspace-operator doctor` prints which file was used.
+
 On Windows use forward slashes (`C:/Users/you/.google/oauth.keys.json`) or double
 backslashes in YAML. Every key can be overridden by an environment variable; see
 [docs/SECURITY.md](docs/SECURITY.md).

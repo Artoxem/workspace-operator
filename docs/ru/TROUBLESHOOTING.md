@@ -19,7 +19,7 @@ workspace-operator doctor --offline  # то же, но без обновлени
 | `package requires Python >=3.10` | старый Python | обновить интерпретатор или указать новый в конфиге клиента |
 | `python: command not found` (Windows) | Python не в `PATH` | использовать `py -3.12` или полный путь к `python.exe` |
 | сервер сразу завершается, в консоли пусто | stdout занят протоколом, логи в файле | открыть `log_file` (по умолчанию `~/.google/mcp_operations.log`) |
-| `config file not found` | `MCP_CONFIG_FILE` указывает в никуда | дать абсолютный путь; можно работать только на переменных окружения |
+| `Config file not found` | `--config` или `MCP_CONFIG_FILE` указывает на несуществующий файл; сервер завершается, а не переходит молча на умолчания | исправить путь либо убрать его и дать поиску найти `./config.yaml` или файл пользователя; `workspace-operator doctor` показывает, какой файл использован |
 
 ## Google OAuth
 

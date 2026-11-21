@@ -2,7 +2,7 @@
 
 import sys
 from collections.abc import Iterable
-from typing import List
+from typing import List, Optional
 
 import mcp.types as types
 from mcp.server import Server
@@ -313,8 +313,8 @@ def create_server(config: Config, logger) -> Server:
     return server
 
 
-async def run() -> None:
-    config = load_config()
+async def run(config: Optional[Config] = None) -> None:
+    config = config or load_config()
     logger = setup_logging(config.log_file, level=config.log_level)
     server = create_server(config, logger)
 

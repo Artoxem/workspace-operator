@@ -11,13 +11,14 @@ Commands:
 import argparse
 import asyncio
 import json
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from . import __version__
-from .config import Config, load_config
+from .config import Config, ConfigFileError, load_config
 
 PROFILES = ("core", "full", "read-write", "read-only")
 
@@ -66,6 +67,20 @@ def render_catalog(catalog: Sequence[Dict[str, Any]]) -> str:
 def check_config(config: Config) -> List[Check]:
     checks: List[Check] = []
 
+    if config.config_file:
+        checks.append(
+            Check(
+                "config file",
+                True,
+                f"{config.config_file} (from {config.config_source})",
+                critical=False,
+            )
+        )
+    else:
+        checks.append(
+            Check("config file", True, "none (built-in defaults)", critical=False)
+        )
+
     secrets = Path(config.client_secrets_file).expanduser()
     checks.append(Check("client secrets", secrets.exists(), str(secrets), critical=True))
 
@@ -105,8 +120,6 @@ def check_config(config: Config) -> List[Check]:
 
 def check_security(config: Config) -> List[Check]:
     """Hygiene checks for secrets: where they live and who can read them."""
-    import os
-
     from .secure_files import audit_permissions, mask
 
     checks: List[Check] = []
@@ -347,15 +360,18 @@ def cmd_version(_: argparse.Namespace) -> int:
 def cmd_serve(args: argparse.Namespace) -> int:
     from .server import create_server, run
 
+    config = load_config(tool_profile=args.profile)
     if not args.http:
-        asyncio.run(run())
+        asyncio.run(run(config))
         return 0
 
     from .http_transport import HttpOptions, serve_http
     from .logging import setup_logging
 
-    config = load_config()
     logger = setup_logging(config.log_file, level=config.log_level)
+    logger.info(
+        "config file: %s (%s)", config.config_file or "none", config.config_source
+    )
     server = create_server(config, logger)
     options = HttpOptions(
         host=args.host,
@@ -371,6 +387,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="workspace-operator",
         description="Workspace Operator — Google Workspace automation over MCP",
+    )
+    parser.add_argument(
+        "--config",
+        metavar="PATH",
+        help=(
+            "config.yaml/.yml/.json to use; wins over MCP_CONFIG_FILE and the "
+            "lookup (./config.yaml, then <user config dir>/workspace-operator/)"
+        ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -413,6 +437,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     serve = subparsers.add_parser("serve", help="start the MCP server (stdio or HTTP)")
     serve.add_argument("--http", action="store_true", help="serve over Streamable HTTP")
+    serve.add_argument(
+        "--profile",
+        choices=PROFILES,
+        default=None,
+        help=(
+            "tool profile for this run; wins over tool_profile in the config file "
+            "and MCP_TOOL_PROFILE"
+        ),
+    )
     serve.add_argument("--host", default="127.0.0.1", help="bind address (default: 127.0.0.1)")
     serve.add_argument("--port", type=int, default=8765)
     serve.add_argument(
@@ -443,7 +476,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    if args.config:
+        os.environ["MCP_CONFIG_FILE"] = args.config
+    try:
+        return args.func(args)
+    except ConfigFileError as exc:
+        print(f"error: {exc}")
+        return 2
 
 
 if __name__ == "__main__":

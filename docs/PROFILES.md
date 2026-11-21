@@ -45,6 +45,9 @@ connection. All endpoints use the same bearer token and audit log.
 
 ## Configure
 
+Pick a profile for a single run with `workspace-operator serve --profile full`; it
+wins over `tool_profile` in the config file and over `MCP_TOOL_PROFILE`.
+
 ### stdio
 
 ```json

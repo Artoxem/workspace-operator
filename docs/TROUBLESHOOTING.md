@@ -19,7 +19,7 @@ install → OAuth → transport → Docker → tools.
 | `package requires Python >=3.10` | old interpreter | upgrade Python, or point the client at the newer one |
 | `python: command not found` (Windows) | Python not on `PATH` | use `py -3.12` or the full path to `python.exe` |
 | server exits immediately, nothing in the console | stdout is the MCP channel; logs go to a file | open `log_file` (default `~/.google/mcp_operations.log`) |
-| `config file not found` | `MCP_CONFIG_FILE` points nowhere | pass an absolute path; the server also works with env vars only |
+| `Config file not found` | `--config` or `MCP_CONFIG_FILE` names a file that does not exist; the server exits instead of silently using defaults | fix the path, or unset it and let the lookup find `./config.yaml` or the per-user file; `workspace-operator doctor` shows which file was used |
 
 ## Google OAuth
 

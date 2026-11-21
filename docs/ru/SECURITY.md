@@ -50,7 +50,7 @@ denied_tools: ["gmail_write", "drive_write"]
 
 | Переменная | Переопределяет | Примечание |
 |---|---|---|
-| `MCP_CONFIG_FILE` | — | путь к `config.yaml` / `config.json` |
+| `MCP_CONFIG_FILE` | — | путь к `config.yaml` / `config.json`; перекрывает поиск (`./config.yaml`, затем `<каталог конфигурации ОС>/workspace-operator/config.yaml`) и обязан существовать |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | обязателен до первого вызова инструмента |
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
 | `MCP_APPROVAL_DIR` | `approval_dir` | очередь одобрений человеком; по умолчанию `~/.google/approvals` (в Docker с правом записи) |

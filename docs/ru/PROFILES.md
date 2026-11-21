@@ -45,6 +45,9 @@ Workspace Operator 2.0 содержит 39 консолидированных и
 
 ## Настройка
 
+Выбрать профиль на один запуск: `workspace-operator serve --profile full`. Флаг
+перекрывает `tool_profile` в файле конфигурации и `MCP_TOOL_PROFILE`.
+
 ### stdio
 
 ```json
