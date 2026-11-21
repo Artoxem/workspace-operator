@@ -292,11 +292,22 @@ python -m workspace_operator serve      # stdio-сервер
 | **Doctor** | `python -m workspace_operator doctor` | Проверяет секреты, токен, скоупы и доступность API; код 1 при критичной ошибке |
 | **Scope routing** | `MCP_SCOPE_ROUTING=1` (по умолчанию) | Скрывает инструменты без нужного Google-скоупа; `0` отключает скрытие для отладки |
 | **Публичный шаринг** | `MCP_ALLOW_PUBLIC_SHARING=0` (по умолчанию) | Публичные ссылки заблокированы, пока не включены явно |
-| **Очередь подтверждений** | `workspace-operator approvals list` | Показывает ожидающие destructive-вызовы; `approve <id>` / `deny <id>` разрешает или блокирует конкретный вызов; `link <id>` печатает ссылку на страницу в браузере (в ней секрет, которого агент не видит) |
+| **Очередь подтверждений** | `workspace-operator approvals list` | Показывает ожидающие destructive-вызовы; `approve <id>` / `deny <id>` разрешает или блокирует конкретный вызов; `link <id>` печатает ссылку на страницу в браузере (в ней секрет, которого агент не видит); `watch` открывает новые запросы в браузере (см. ниже) |
 | **Защита загрузки** | `MCP_UPLOAD_ROOTS=/a,/b` | `drive_write(action="upload")` всегда отклоняет секреты OAuth, `.env*`, ключи и `~/.google`/`~/.ssh`; необязательный белый список ограничивает выбранными папками |
 
 В dry-run read-only инструменты продолжают работать, поэтому агент может изучать
 данные, пока каждая запись превращается в явное превью.
+
+### Подтверждение в браузере
+
+Задайте на сервере `MCP_APPROVAL_BROWSER_WAIT=45` и запустите
+`workspace-operator approvals watch` на машине, где должна открываться страница — вне
+контейнера, с доступом к той же очереди подтверждений. Тогда destructive-вызов ждёт
+решения, а каждый новый запрос открывается в браузере по умолчанию: **Approve**
+продолжает вызов, **Deny** останавливает его, а сам открытый экран согласием не является.
+Ссылку и её секрет агент не получает. При `MCP_APPROVAL_BROWSER_WAIT=0` (по умолчанию)
+вызов сразу возвращает `approval_id`, и решение принимается через `approvals approve` или
+страницу из `approvals link`.
 
 ### HTTP-транспорт (сначала localhost)
 
@@ -478,7 +489,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Защита | Инструменты |
 |---|---|
-| `confirm=true` + подтверждение человека | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — точный вызов подтверждает человек: в диалоге elicitation, если клиент его поддерживает, иначе в CLI или на странице в браузере. В результате агента нет ни команд, ни ссылки; он повторяет вызов с одноразовым `approval_id` |
+| `confirm=true` + подтверждение человека | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — точный вызов подтверждает человек: в диалоге elicitation, если клиент его поддерживает, иначе в CLI или на странице в браузере. В результате агента нет ни команд, ни ссылки; он повторяет вызов с одноразовым `approval_id`. С `MCP_APPROVAL_BROWSER_WAIT` вызов ждёт клика в браузере, а не отвечает сразу |
 | `dry_run` / предпросмотр | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Черновик по умолчанию | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Публичный шаринг | выключен, пока нет `allow_public_sharing=true` **и** `allow_public=true` |
@@ -562,7 +573,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 448 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 492 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

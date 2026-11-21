@@ -297,11 +297,22 @@ python -m workspace_operator serve      # stdio server
 | **Doctor** | `python -m workspace_operator doctor` | Checks secrets, token, granted vs configured scopes and API reachability; exits 1 when a critical check fails |
 | **Scope routing** | `MCP_SCOPE_ROUTING=1` (default) | Hides tools whose Google scope is missing; `0` disables hiding for debugging |
 | **Public sharing** | `MCP_ALLOW_PUBLIC_SHARING=0` (default) | Public links stay blocked unless explicitly enabled |
-| **Approval queue** | `workspace-operator approvals list` | Shows pending destructive calls; `approve <id>` / `deny <id>` releases or blocks the exact hashed call; `link <id>` prints the browser page link (it carries a secret the agent never sees) |
+| **Approval queue** | `workspace-operator approvals list` | Shows pending destructive calls; `approve <id>` / `deny <id>` releases or blocks the exact hashed call; `link <id>` prints the browser page link (it carries a secret the agent never sees); `watch` opens new requests in your browser (see below) |
 | **Upload guard** | `MCP_UPLOAD_ROOTS=/a,/b` | `drive_write(action="upload")` always refuses OAuth secrets, `.env*`, keys and `~/.google`/`~/.ssh`; the optional allow-list restricts it to chosen folders |
 
 In dry-run the read-only tools still work, so an agent can explore data while every
 write is turned into an explicit preview.
+
+### Approval in the browser
+
+Set `MCP_APPROVAL_BROWSER_WAIT=45` on the server and run
+`workspace-operator approvals watch` on the machine where the page should open — outside
+the container, with access to the same approval queue. A destructive call then waits for
+your decision, and each new request opens in your default browser: **Approve** lets the
+call continue, **Deny** stops it, and merely opening the page is not consent. The agent
+never receives the link or its secret. With `MCP_APPROVAL_BROWSER_WAIT=0` (the default)
+the call returns `approval_id` immediately and you decide with `approvals approve` or the
+page from `approvals link`.
 
 ### HTTP transport (localhost first)
 
@@ -482,7 +493,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Guard | Applies to |
 |---|---|
-| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — a human approves the exact call: in the client's elicitation dialog when it supports one, otherwise in the CLI or on the browser page. The agent's result carries no commands and no link; it retries with the one-time `approval_id` |
+| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — a human approves the exact call: in the client's elicitation dialog when it supports one, otherwise in the CLI or on the browser page. The agent's result carries no commands and no link; it retries with the one-time `approval_id`. With `MCP_APPROVAL_BROWSER_WAIT` the call waits for the browser click instead of returning immediately |
 | `dry_run` / preview | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Draft mode by default | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Public sharing | disabled unless `allow_public_sharing=true` **and** `allow_public=true` |
@@ -566,7 +577,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 448 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 492 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

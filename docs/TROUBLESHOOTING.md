@@ -49,6 +49,7 @@ Full setup: [AUTH_SETUP.md](AUTH_SETUP.md).
 | `address already in use` | another process holds the port | `--port 8790` |
 | refusal: *token 'default' is a placeholder value* / *shorter than 24 characters* | the HTTP bearer is guessable | generate one: `python -c "import secrets; print(secrets.token_urlsafe(32))"` and set `MCP_AUTH_TOKEN` |
 | approval page says *invalid or expired link* / `403` on Approve | the link has no secret, or the POST came from another origin | get the link with `workspace-operator approvals link <id>`; open it directly, not through a proxy that rewrites `Host`/`Origin` |
+| no approval tab opens on a destructive call | `approvals watch` is not running, `MCP_APPROVAL_BROWSER_WAIT` is `0`, or the helper uses another approval queue | start `workspace-operator approvals watch` on the desktop with access to the same queue and set `MCP_APPROVAL_BROWSER_WAIT`; until then the call returns `approval_id` and you decide with `approvals approve` or `approvals link` |
 | refusal: *non-loopback binding requires `--allow-network`* | network bind without acknowledgement | add **both** `--allow-network` and `--insecure`, and put a TLS proxy in front |
 | `Empty reply from server` | wrong path or method | `POST /mcp`, not `/`; `GET /healthz` is the only GET |
 | browser CORS error | origins are denied by design | use a native MCP client, not a web page |

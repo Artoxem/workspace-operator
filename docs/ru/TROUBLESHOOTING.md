@@ -49,6 +49,7 @@ workspace-operator doctor --offline  # то же, но без обновлени
 | `address already in use` | порт занят | `--port 8790` |
 | отказ: *token 'default' is a placeholder value* / *shorter than 24 characters* | bearer для HTTP слишком простой | сгенерировать: `python -c "import secrets; print(secrets.token_urlsafe(32))"` и задать `MCP_AUTH_TOKEN` |
 | страница одобрения пишет *invalid or expired link* / `403` на Approve | в ссылке нет секрета или POST пришёл с другого origin | получить ссылку командой `workspace-operator approvals link <id>`; открывать напрямую, не через прокси, меняющий `Host`/`Origin` |
+| при destructive-вызове не открывается вкладка браузера | не запущен `approvals watch`, `MCP_APPROVAL_BROWSER_WAIT` равен `0`, или помощник смотрит другую очередь | запустить `workspace-operator approvals watch` на машине с доступом к той же очереди и задать `MCP_APPROVAL_BROWSER_WAIT`; до этого вызов вернёт `approval_id`, и решение принимается через `approvals approve` или `approvals link` |
 | отказ: *non-loopback binding requires `--allow-network`* | сетевой bind без подтверждения | добавить **оба** флага `--allow-network` и `--insecure`, впереди поставить TLS-прокси |
 | `Empty reply from server` | неверный путь или метод | `POST /mcp`, а не `/`; `GET /healthz` — единственный GET |
 | CORS-ошибка в браузере | origin запрещены намеренно | использовать нативный MCP-клиент, а не веб-страницу |
