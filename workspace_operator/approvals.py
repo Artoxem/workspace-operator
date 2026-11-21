@@ -368,22 +368,15 @@ def challenge_text(record: Dict[str, Any], approve_url: str | None = None) -> st
         indent=2,
         sort_keys=True,
     )
-    browser = (
-        "The user can also open the approval page from the link printed by "
-        f"`workspace-operator approvals link {record['id']}`.\n\n"
-        if approve_url
-        else ""
-    )
+    # The agent is told that a human must decide, and nothing about how. No CLI
+    # commands, no links, no secret: the decision happens on the operator's side.
     return (
         "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n"
         f"{payload}\n\n"
-        + browser
-        + "Ask the user to approve exactly this call locally:\n\n"
-        f"    workspace-operator approvals approve {record['id']}\n\n"
-        "Then repeat the same tool call with this `approval_id`. "
-        "Do not fabricate an id: approval is one-time and bound to the arguments. "
-        "If the user denies it, use `workspace-operator approvals deny "
-        f"{record['id']}` and do not retry."
+        "A human operator must review and decide this request. Tell the user that "
+        "an approval is pending and what it is for. Do not attempt to approve it "
+        "yourself. When the user confirms it is approved, repeat the same tool call "
+        "with this `approval_id`; if it was denied or has expired, do not retry."
     )
 
 

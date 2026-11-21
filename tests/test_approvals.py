@@ -105,12 +105,13 @@ class ApprovalStoreTests(unittest.TestCase):
         record = self.store.request("drive_trash", None, {"file_id": "f1"})
         text = challenge_text(record, f"http://127.0.0.1:8765/approvals/{record['id']}")
         self.assertIn("APPROVAL REQUIRED", text)
-        # The agent gets the CLI hint, never a browser link (which carries a secret).
+        self.assertIn(record["id"], text)
+        # The agent must not learn how to decide: no links, no CLI commands.
         self.assertNotIn("/approvals/", text)
         self.assertNotIn("?k=", text)
-        self.assertIn("approvals link", text)
-        self.assertIn(record["id"], text)
-        self.assertIn("workspace-operator approvals approve", text)
+        self.assertNotIn("approvals link", text)
+        self.assertNotIn("approvals approve", text)
+        self.assertNotIn("approvals deny", text)
 
 
 if __name__ == "__main__":

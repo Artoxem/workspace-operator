@@ -70,9 +70,25 @@ class ToolRouter:
 
     # ------------------------------------------------------------------ steps
 
-    def _approval_link(self, record: Dict[str, Any]) -> Optional[str]:
-        base = (getattr(self.config, "approval_url", None) or "").rstrip("/")
-        return f"{base}/approvals/{record['id']}" if base else None
+    def _announce_to_operator(self, record: Dict[str, Any]) -> None:
+        """Show the operator how to decide, in the server log only.
+
+        The link carries the secret. It is written to the server's own log (the
+        operator's console), never into the tool result the agent reads.
+        """
+        try:
+            link = self.approvals.human_link(
+                record["id"], getattr(self.config, "approval_url", None)
+            )
+        except Exception:  # noqa: BLE001 - announcing must never break a call
+            link = None
+        target = link or f"workspace-operator approvals link {record['id']}"
+        self.logger.warning(
+            "APPROVAL PENDING %s: %s — decide in your browser: %s",
+            record["id"],
+            record.get("summary", ""),
+            target,
+        )
 
     async def _elicit_approval(
         self, ctx: Any, name: str, plan: CallPlan, argument_names: Tuple[str, ...]
@@ -195,7 +211,8 @@ class ToolRouter:
                     0,
                     argument_names + ("approval_id",),
                 )
-                return _message(challenge_text(record, self._approval_link(record)))
+                self._announce_to_operator(record)
+                return _message(challenge_text(record))
             ok, reason = approvals.consume(
                 str(approval_id), name, plan.action, plan.arguments
             )
@@ -209,9 +226,10 @@ class ToolRouter:
                     argument_names,
                     error=reason,
                 )
+                self._announce_to_operator(record)
                 return _message(
                     f"Approval could not be used: {reason}\n\n"
-                    + challenge_text(record, self._approval_link(record))
+                    + challenge_text(record)
                 )
             plan.arguments["confirm"] = True
             return None

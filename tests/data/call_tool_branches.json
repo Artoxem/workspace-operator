@@ -53,7 +53,7 @@
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"bulk_run (plan_id=bp_x)\",\n  \"tool\": \"bulk_run\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"bulk_run (plan_id=bp_x)\",\n  \"tool\": \"bulk_run\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
@@ -74,7 +74,7 @@
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"calendar_delete (event_id=e)\",\n  \"tool\": \"calendar_delete\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"calendar_delete (event_id=e)\",\n  \"tool\": \"calendar_delete\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
@@ -95,7 +95,7 @@
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
@@ -116,7 +116,7 @@
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
@@ -138,7 +138,7 @@
    }
   ],
   "content": [
-   "Approval could not be used: Unknown approval id 'apr_missing'.\n\n⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nThe user can also open the approval page from the link printed by `workspace-operator approvals link apr_ID`.\n\nAsk the user to approve exactly this call locally:\n\n    workspace-operator approvals approve apr_ID\n\nThen repeat the same tool call with this `approval_id`. Do not fabricate an id: approval is one-time and bound to the arguments. If the user denies it, use `workspace-operator approvals deny apr_ID` and do not retry."
+   "Approval could not be used: Unknown approval id 'apr_missing'.\n\n⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false

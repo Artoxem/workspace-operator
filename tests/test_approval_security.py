@@ -97,6 +97,43 @@ class AgentCannotSelfApproveTests(unittest.TestCase):
         self.assertNotIn("?k=", visible)
         self.assertNotIn("secret", visible.lower())
 
+    def test_agent_result_has_no_decision_path(self):
+        """The agent reads a pending result with no way to decide it itself."""
+        outcome = run(_call(TOOL, ARGS))
+        visible = " ".join(str(c) for c in outcome["content"])
+        for forbidden in ("approvals link", "approvals approve", "approvals deny", "/approvals/", "?k="):
+            self.assertNotIn(forbidden, visible)
+
+    def test_operator_log_gets_the_link_not_the_agent(self):
+        """The decision link is announced to the server log (operator), not returned."""
+        import logging
+
+        tmp = tempfile.mkdtemp()
+        store = ApprovalStore(_config(tmp, tool_profile="full"))
+        record = store.request(TOOL, None, ARGS)
+        captured = []
+
+        class Capture(logging.Handler):
+            def emit(self, rec):
+                captured.append(rec.getMessage())
+
+        logger = logging.getLogger("test.operator-announce")
+        logger.addHandler(Capture())
+        logger.setLevel(logging.WARNING)
+
+        from workspace_operator.tool_router import ToolRouter
+
+        router = ToolRouter.__new__(ToolRouter)
+        router.approvals = store
+        router.logger = logger
+        router.config = _config(tmp, approval_url="http://127.0.0.1:8765")
+        router._announce_to_operator(record)
+
+        joined = "\n".join(captured)
+        self.assertIn(record["id"], joined)
+        self.assertIn("/approvals/", joined)
+        self.assertIn("?k=", joined)
+
     def test_link_rotation_kills_previous_link(self):
         tmp = tempfile.mkdtemp()
         store = ApprovalStore(_config(tmp, tool_profile="full"))
