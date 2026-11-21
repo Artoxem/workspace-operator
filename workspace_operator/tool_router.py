@@ -393,7 +393,8 @@ class ToolRouter:
         spec, arguments, early = self._find_spec(name, arguments)
         if early is not None:
             return early
-        assert spec is not None
+        if spec is None:  # pragma: no cover - _find_spec returns an early result
+            return _error(f"Tool '{name}' is not available in this profile.")
 
         try:
             plan = resolve_call(

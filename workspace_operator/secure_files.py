@@ -13,7 +13,10 @@ from __future__ import annotations
 import contextlib
 import os
 import secrets
-import subprocess
+
+# Only the fixed ``icacls`` calls below use this: constant executable, no shell,
+# no untrusted input.
+import subprocess  # nosec B404
 import threading
 import time
 from pathlib import Path
@@ -49,7 +52,8 @@ def restrict_to_owner(path: Path) -> None:
             if not user:
                 return
             # Drop inherited ACEs, then grant only the current user.
-            subprocess.run(  # noqa: S603 - fixed argument list, no shell
+            # Fixed argument list, constant executable, no shell.
+            subprocess.run(  # noqa: S603  # nosec B603 B607
                 ["icacls", str(path), "/inheritance:r", "/grant:r", f"{user}:F"],  # noqa: S607
                 check=False,
                 capture_output=True,
@@ -176,7 +180,8 @@ def audit_permissions(paths: Iterable[Path]) -> List[str]:
             continue
         if os.name == "nt":
             try:
-                result = subprocess.run(  # noqa: S603
+                # Fixed argument list, constant executable, no shell.
+                result = subprocess.run(  # noqa: S603  # nosec B603 B607
                     ["icacls", str(path)],  # noqa: S607
                     capture_output=True,
                     text=True,

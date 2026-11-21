@@ -185,6 +185,16 @@ class PromptCatalogTests(unittest.TestCase):
                 self.assertEqual(missing, [], f"undocumented prompts in {rel}: {missing}")
 
 
+class CiWorkflowTests(unittest.TestCase):
+    def test_security_job_runs_the_scanner(self):
+        # An empty security job passes silently, as it did until 2.5.1.
+        text = read(".github/workflows/ci.yml")
+        start = text.index("  security:")
+        job = text[start:]
+        self.assertIn("bandit -c pyproject.toml", job)
+        self.assertIn("pip install", job)
+
+
 class AgentFacingApprovalDocsTests(unittest.TestCase):
     """Text the agent reads must never tell it how to release its own call."""
 

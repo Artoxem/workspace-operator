@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "workspace-operator-mcp"
-version = "2.5.0"
+version = "2.5.1"
 description = "Deep Google Workspace automation for AI agents — Apps Script execution, local file transfer, Slides, document templates, cross-product search, and tool profiles"
 readme = "README.md"
 license = { text = "MIT" }
@@ -94,8 +94,11 @@ ignore = [
 
 [tool.bandit]
 exclude_dirs = ["tests"]
-# urlopen targets a fixed https discovery URL (postmaster.py)
-skips = ["B310"]
+# Same accepted risks as the ruff ignores above:
+# - B310: urlopen targets a fixed https discovery URL (postmaster.py);
+# - B311: random is retry jitter, not security (bulk/engine.py);
+# - B110: best-effort try/except pass in a fallback path (google_clients.py).
+skips = ["B310", "B311", "B110"]
 
 [tool.mypy]
 python_version = "3.10"
