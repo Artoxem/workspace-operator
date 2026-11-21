@@ -38,7 +38,9 @@ class ApprovalPageTests(unittest.TestCase):
         self.addCleanup(self.client.__exit__, None, None, None)
 
     def _k(self):
-        return self.store.get(self.record["id"])["secret"]
+        # The human obtains the secret through the link; rotating mints a fresh one.
+        link = self.store.human_link(self.record["id"], "http://127.0.0.1:8765")
+        return link.split("?k=", 1)[1]
 
     def test_page_shows_summary_and_approves(self):
         rid, k = self.record["id"], self._k()
@@ -92,12 +94,30 @@ class ApprovalPageTests(unittest.TestCase):
     def test_secret_not_in_agent_challenge(self):
         from workspace_operator.approvals import challenge_text
 
+        k = self._k()
         text = challenge_text(self.store.get(self.record["id"]), "http://127.0.0.1:8765")
-        self.assertNotIn(self._k(), text)
+        self.assertNotIn(k, text)
 
-    def test_human_link_contains_secret(self):
-        link = self.store.human_link(self.record["id"], "http://127.0.0.1:8765")
-        self.assertIn("?k=" + self._k(), link)
+    def test_human_link_rotation_invalidates_old_link(self):
+        rid = self.record["id"]
+        old = self._k()
+        new = self._k()
+        self.assertNotEqual(old, new)
+        self.assertEqual(self.client.get(f"/approvals/{rid}?k={old}").status_code, 404)
+        self.assertEqual(self.client.get(f"/approvals/{rid}?k={new}").status_code, 200)
+
+    def test_forged_status_in_file_is_rejected(self):
+        import json
+        from pathlib import Path
+
+        rid = self.record["id"]
+        path = Path(self.tmp.name) / f"{rid}.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["status"] = "approved"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaises(Exception):
+            self.store.get(rid)
+        self.assertEqual(self.client.get(f"/approvals/{rid}?k=x").status_code, 404)
 
 
 if __name__ == "__main__":

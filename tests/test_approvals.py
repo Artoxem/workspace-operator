@@ -71,15 +71,35 @@ class ApprovalStoreTests(unittest.TestCase):
     def test_expired(self):
         record = self.store.request("drive_trash", None, {"file_id": "f1"})
         self.store.approve(record["id"])
-        path = Path(self.tmp.name) / f"{record['id']}.json"
-        data = json.loads(path.read_text(encoding="utf-8"))
+        # Expire through the store's own writer so the seal stays valid.
+        data = self.store.get(record["id"])
         data["expires_at"] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
-        path.write_text(json.dumps(data), encoding="utf-8")
+        self.store._write(data)
         ok, reason = self.store.consume(
             record["id"], "drive_trash", None, {"file_id": "f1"}
         )
         self.assertFalse(ok)
         self.assertIn("expired", reason)
+
+    def test_agent_cannot_forge_approval_in_file(self):
+        """Editing status to 'approved' on disk must not release the action."""
+        args = {"file_id": "f1"}
+        record = self.store.request("drive_trash", None, args)
+        path = Path(self.tmp.name) / f"{record['id']}.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["status"] = "approved"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        ok, reason = self.store.consume(record["id"], "drive_trash", None, args)
+        self.assertFalse(ok)
+        self.assertIn("integrity", reason)
+
+    def test_key_file_is_created_once_and_reused(self):
+        self.store.request("drive_trash", None, {"file_id": "f1"})
+        key_path = Path(self.tmp.name) / "approval.key"
+        first = key_path.read_text(encoding="utf-8")
+        again = ApprovalStore(make_config(self.tmp.name))
+        again.request("drive_trash", None, {"file_id": "f2"})
+        self.assertEqual(key_path.read_text(encoding="utf-8"), first)
 
     def test_challenge_is_machine_readable(self):
         record = self.store.request("drive_trash", None, {"file_id": "f1"})
@@ -87,7 +107,7 @@ class ApprovalStoreTests(unittest.TestCase):
         self.assertIn("APPROVAL REQUIRED", text)
         # The agent gets the CLI hint, never a browser link (which carries a secret).
         self.assertNotIn("/approvals/", text)
-        self.assertNotIn(record["secret"], text)
+        self.assertNotIn("?k=", text)
         self.assertIn("approvals link", text)
         self.assertIn(record["id"], text)
         self.assertIn("workspace-operator approvals approve", text)

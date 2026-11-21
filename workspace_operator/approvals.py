@@ -34,6 +34,42 @@ def approval_root(config: Config) -> Path:
     return root.resolve()
 
 
+KEY_FILE_NAME = "approval.key"
+_SIGNED_FIELDS = (
+    "id",
+    "tool",
+    "action",
+    "arguments_hash",
+    "created_at",
+    "expires_at",
+    "status",
+    "approved_at",
+    "denied_at",
+    "used_at",
+    "secret_hash",
+)
+
+
+def _load_or_create_key(root: Path) -> bytes:
+    """Per-install HMAC key used to seal approval records against tampering."""
+    path = root / KEY_FILE_NAME
+    if path.exists():
+        return bytes.fromhex(path.read_text(encoding="utf-8").strip())
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    key = secrets.token_bytes(32)
+    write_private(path, key.hex() + "\n")
+    return key
+
+
+def _seal(key: bytes, record: Dict[str, Any]) -> str:
+    message = json.dumps(
+        {field: record.get(field) for field in _SIGNED_FIELDS},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hmac.new(key, message, hashlib.sha256).hexdigest()
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -105,25 +141,31 @@ def _record_path(root: Path, approval_id: str) -> Path:
     return root / f"{approval_id}.json"
 
 
-def _write(root: Path, data: Dict[str, Any]) -> None:
+def _write(root: Path, data: Dict[str, Any], key: bytes) -> None:
     new_root = not root.exists()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     if new_root:
         restrict_to_owner(root)
+    data = dict(data)
+    data["seal"] = _seal(key, data)
     write_private(
         _record_path(root, data["id"]),
         json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
 
 
-def _read(root: Path, approval_id: str) -> Dict[str, Any]:
+def _read(root: Path, approval_id: str, key: bytes) -> Dict[str, Any]:
     path = _record_path(root, approval_id)
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        record = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         raise ApprovalError(f"Unknown approval id '{approval_id}'.") from None
     except (OSError, ValueError) as exc:
         raise ApprovalError(f"Cannot read approval '{approval_id}': {exc}") from None
+    # A record edited outside the server (status, expiry, arguments) fails here.
+    if not hmac.compare_digest(str(record.get("seal", "")), _seal(key, record)):
+        raise ApprovalError(f"Approval '{approval_id}' failed its integrity check.")
+    return record
 
 
 def _expired(record: Dict[str, Any]) -> bool:
@@ -142,6 +184,32 @@ class ApprovalStore:
             30, int(getattr(config, "approval_ttl", DEFAULT_TTL_SECONDS) or DEFAULT_TTL_SECONDS)
         )
         self._lock = threading.Lock()
+        self._key: Optional[bytes] = None
+
+    @property
+    def key(self) -> bytes:
+        if self._key is None:
+            self._key = _load_or_create_key(self.root)
+        return self._key
+
+    def _read(self, approval_id: str) -> Dict[str, Any]:
+        return _read(self.root, approval_id, self.key)
+
+    def _write(self, record: Dict[str, Any]) -> None:
+        _write(self.root, record, self.key)
+
+    def _iter_records(self) -> list[Dict[str, Any]]:
+        """Records with a valid seal only; tampered files are silently ignored."""
+        if not self.root.exists():
+            return []
+        records = []
+        for path in self.root.glob("apr_*.json"):
+            try:
+                record = _read(self.root, path.stem, self.key)
+            except ApprovalError:
+                continue
+            records.append(record)
+        return sorted(records, key=lambda item: item.get("created_at", ""))
 
     def request(
         self,
@@ -149,7 +217,11 @@ class ApprovalStore:
         action: Optional[str],
         arguments: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Return an existing pending request or create a new one."""
+        """Return an existing pending request or create a new one.
+
+        No human secret is created here: the link secret is issued only when a
+        human asks for the link (``human_link``), so the agent never holds it.
+        """
         digest = arguments_hash(tool, action, arguments)
         with self._lock:
             for record in self.list_pending():
@@ -163,9 +235,6 @@ class ApprovalStore:
             now = _now()
             record = {
                 "id": "apr_" + secrets.token_hex(8),
-                # Known only to the human channel (CLI / server log); never put in
-                # the tool result the agent sees.
-                "secret": secrets.token_urlsafe(24),
                 "tool": tool,
                 "action": action,
                 "arguments_hash": digest,
@@ -174,57 +243,57 @@ class ApprovalStore:
                 "expires_at": _iso(now + timedelta(seconds=self.ttl_seconds)),
                 "status": "pending",
             }
-            _write(self.root, record)
+            self._write(record)
             return record
 
     def get(self, approval_id: str) -> Dict[str, Any]:
-        return _read(self.root, approval_id)
+        return self._read(approval_id)
 
     def verify_secret(self, approval_id: str, candidate: Optional[str]) -> bool:
-        """Constant-time check of the human-only approval secret."""
+        """Constant-time check of the human-only secret (stored as a hash)."""
         try:
-            expected = self.get(approval_id).get("secret")
+            expected = self._read(approval_id).get("secret_hash")
         except ApprovalError:
             return False
         if not expected or not candidate:
             return False
-        return hmac.compare_digest(str(expected), str(candidate))
+        digest = hashlib.sha256(str(candidate).encode("utf-8")).hexdigest()
+        return hmac.compare_digest(str(expected), digest)
+
+    def rotate_secret(self, approval_id: str) -> str:
+        """Issue a fresh human secret for a pending approval (invalidates the old link)."""
+        with self._lock:
+            record = self._read(approval_id)
+            if record.get("status") != "pending":
+                raise ApprovalError(
+                    f"Approval '{approval_id}' is {record.get('status')}, not pending."
+                )
+            secret = secrets.token_urlsafe(24)
+            record["secret_hash"] = hashlib.sha256(secret.encode("utf-8")).hexdigest()
+            self._write(record)
+            return secret
 
     def human_link(self, approval_id: str, base_url: Optional[str]) -> Optional[str]:
-        """Browser link that carries the secret. For the human only."""
+        """Browser link for the human. Rotates the secret, so the old link dies."""
         base = (base_url or "").rstrip("/")
         if not base:
             return None
-        record = self.get(approval_id)
-        return f"{base}/approvals/{approval_id}?k={record.get('secret', '')}"
+        secret = self.rotate_secret(approval_id)
+        return f"{base}/approvals/{approval_id}?k={secret}"
 
     def list_pending(self) -> list[Dict[str, Any]]:
-        if not self.root.exists():
-            return []
-        records = []
-        for path in self.root.glob("apr_*.json"):
-            try:
-                record = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                continue
-            if record.get("status") == "pending" and not _expired(record):
-                records.append(record)
-        return sorted(records, key=lambda item: item.get("created_at", ""))
+        return [
+            record
+            for record in self._iter_records()
+            if record.get("status") == "pending" and not _expired(record)
+        ]
 
     def list_all(self) -> list[Dict[str, Any]]:
-        if not self.root.exists():
-            return []
-        records = []
-        for path in self.root.glob("apr_*.json"):
-            try:
-                records.append(json.loads(path.read_text(encoding="utf-8")))
-            except (OSError, ValueError):
-                continue
-        return sorted(records, key=lambda item: item.get("created_at", ""))
+        return self._iter_records()
 
     def approve(self, approval_id: str, actor: str = "cli") -> Dict[str, Any]:
         with self._lock:
-            record = self.get(approval_id)
+            record = self._read(approval_id)
             if record.get("status") != "pending":
                 raise ApprovalError(
                     f"Approval '{approval_id}' is {record.get('status')}, not pending."
@@ -234,12 +303,12 @@ class ApprovalStore:
             record["status"] = "approved"
             record["approved_at"] = _iso(_now())
             record["approved_by"] = actor
-            _write(self.root, record)
+            self._write(record)
             return record
 
     def deny(self, approval_id: str, actor: str = "cli") -> Dict[str, Any]:
         with self._lock:
-            record = self.get(approval_id)
+            record = self._read(approval_id)
             if record.get("status") != "pending":
                 raise ApprovalError(
                     f"Approval '{approval_id}' is {record.get('status')}, not pending."
@@ -247,7 +316,7 @@ class ApprovalStore:
             record["status"] = "denied"
             record["denied_at"] = _iso(_now())
             record["denied_by"] = actor
-            _write(self.root, record)
+            self._write(record)
             return record
 
     def consume(
@@ -261,7 +330,7 @@ class ApprovalStore:
         digest = arguments_hash(tool, action, arguments)
         with self._lock:
             try:
-                record = self.get(approval_id)
+                record = self._read(approval_id)
             except ApprovalError as exc:
                 return False, str(exc)
             if record.get("status") == "pending":
@@ -280,7 +349,7 @@ class ApprovalStore:
                 return False, "The arguments changed after approval. Request a new approval."
             record["status"] = "used"
             record["used_at"] = _iso(_now())
-            _write(self.root, record)
+            self._write(record)
             return True, ""
 
 
@@ -316,11 +385,6 @@ def challenge_text(record: Dict[str, Any], approve_url: str | None = None) -> st
         "If the user denies it, use `workspace-operator approvals deny "
         f"{record['id']}` and do not retry."
     )
-
-
-def public_view(record: Dict[str, Any]) -> Dict[str, Any]:
-    """A copy of the record without the human-only secret."""
-    return {key: value for key, value in record.items() if key != "secret"}
 
 
 def render_records(records: Iterable[Dict[str, Any]], *, show_status: bool = True) -> str:
