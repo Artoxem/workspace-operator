@@ -163,6 +163,11 @@ class DockerTests(unittest.TestCase):
         self.assertIn("HEALTHCHECK", text)
         self.assertIn("EXPOSE 8765", text)
 
+    def test_dockerfile_installs_the_command(self):
+        # Without the install step, `workspace-operator` is missing in the container
+        # and `docker exec ... workspace-operator` cannot run.
+        self.assertRegex(read("Dockerfile"), r"pip install[^\n]*--no-deps \.")
+
     def test_readme_documents_ghcr(self):
         for rel in ("README.md", "README.ru.md"):
             self.assertIn("ghcr.io/artoxem/workspace-operator", read(rel))

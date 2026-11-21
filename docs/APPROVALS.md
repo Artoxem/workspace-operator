@@ -77,12 +77,13 @@ workspace-operator approvals approve apr_… # allow exactly this call
 workspace-operator approvals deny apr_…    # block it
 ```
 
-The CLI reads the same configuration as the server. In Docker, the approval
-directory is mounted with the data directory:
+The approval store is `~/.google/approvals` by default: the same folder as the
+token. The CLI finds it from any working directory, and the container gets the
+same folder through the credentials mount, so the host CLI and the container
+see the same requests:
 
 ```bash
-# on the host, next to docker-compose.yml
-MCP_APPROVAL_DIR=./data/approvals workspace-operator approvals list
+workspace-operator approvals list
 ```
 
 Or run it inside the container:
@@ -94,12 +95,14 @@ docker compose exec workspace-operator workspace-operator approvals list
 ## Configuration
 
 ```yaml
-approval_dir: "data/approvals"  # container: /home/app/data/approvals
+# approval_dir: "~/.google/approvals"  # optional; this is the default
 approval_ttl: 900               # seconds
 approval_url: "http://127.0.0.1:8765"  # browser page base
 ```
 
-Environment: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`.
+Environment: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`. Set
+`approval_dir` only to move the queue, and use an absolute path: a relative one
+is resolved from the current folder.
 
 ## Browser page
 
@@ -139,7 +142,7 @@ executes the reviewed plan.
 
 Approval protects against an agent acting alone through MCP. It does not protect
 against an agent that can run arbitrary local commands or read the approval
-directory (`data/approvals/*.json` holds the secrets) outside MCP, nor against
+directory (`~/.google/approvals/*.json` holds the secrets) outside MCP, nor against
 a human who approves a call without reading its summary. Keep the approval
 directory local, run the CLI as the same user as the server, and do not expose
 the MCP endpoint to untrusted users.

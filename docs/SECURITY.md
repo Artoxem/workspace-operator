@@ -54,7 +54,7 @@ Every key has an environment override:
 | `MCP_CONFIG_FILE` | — | path to `config.yaml` / `config.json` |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | required before any tool call is served |
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
-| `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; mount it read-write |
+| `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; default `~/.google/approvals` (read-write in Docker) |
 | `MCP_APPROVAL_TTL` | `approval_ttl` | approval lifetime in seconds |
 | `MCP_APPROVAL_URL` | `approval_url` | base URL for the browser approval page |
 | `MCP_OPERATION_DIR` | `operation_dir` | staged Apps Script operations (default `data/operations`) |
@@ -161,7 +161,7 @@ Where to keep it:
 |---|---|---|
 | `token.json` | access to your Google account within the granted scopes | written atomically under a file lock, owner-only permissions (`0600`, an owner-only ACL on Windows) |
 | `oauth.keys.json` | the OAuth client identity (client secret) | keep outside the repository, owner-only |
-| `data/approvals/*.json` | one-time approval secrets | created owner-only; never returned to the agent |
+| `~/.google/approvals/*.json` | one-time approval secrets | created owner-only; never returned to the agent |
 | `data/operations/*.json` | staged Apps Script source | owner-only; expires after `operation_ttl`; consumed on execution |
 | `.env` | `MCP_AUTH_TOKEN` for Docker Compose | git-ignored; keep owner-only |
 

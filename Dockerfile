@@ -29,6 +29,11 @@ COPY pyproject.toml server.py README.md LICENSE ./
 COPY workspace_operator ./workspace_operator
 COPY skills ./skills
 
+# Install the package itself so the `workspace-operator` command exists in the
+# image (dependencies are already installed from requirements.txt above).
+RUN pip install --no-cache-dir --no-deps . \
+    && rm -rf build *.egg-info
+
 RUN useradd --create-home --uid 10001 app \
     && chown -R app:app /app
 

@@ -53,7 +53,7 @@ denied_tools: ["gmail_write", "drive_write"]
 | `MCP_CONFIG_FILE` | — | путь к `config.yaml` / `config.json` |
 | `MCP_AUTH_TOKEN` | `mcp_auth_token` | обязателен до первого вызова инструмента |
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
-| `MCP_APPROVAL_DIR` | `approval_dir` | очередь одобрений человеком; монтируйте с правом записи |
+| `MCP_APPROVAL_DIR` | `approval_dir` | очередь одобрений человеком; по умолчанию `~/.google/approvals` (в Docker с правом записи) |
 | `MCP_APPROVAL_TTL` | `approval_ttl` | время жизни одобрения в секундах |
 | `MCP_APPROVAL_URL` | `approval_url` | базовый URL браузерной страницы одобрений |
 | `MCP_OPERATION_DIR` | `operation_dir` | подготовленные операции Apps Script (по умолчанию `data/operations`) |
@@ -161,7 +161,7 @@ bearer-токен `Authorization: Bearer` для каждого запроса, 
 |---|---|---|
 | `token.json` | доступ к вашему Google-аккаунту в пределах выданных скоупов | пишется атомарно под файловой блокировкой, права только у владельца (`0600`, ACL только владельца в Windows) |
 | `oauth.keys.json` | личность OAuth-клиента (client secret) | храните вне репозитория, права только у владельца |
-| `data/approvals/*.json` | одноразовые секреты одобрений | создаются с правами владельца; агенту не возвращаются |
+| `~/.google/approvals/*.json` | одноразовые секреты одобрений | создаются с правами владельца; агенту не возвращаются |
 | `data/operations/*.json` | исходники Apps Script, подготовленные к записи | права владельца; истекают по `operation_ttl`; удаляются при выполнении |
 | `.env` | `MCP_AUTH_TOKEN` для Docker Compose | в `.gitignore`; права только у владельца |
 

@@ -12,7 +12,8 @@ log_file: "/home/app/data/mcp_operations.log"
 mcp_auth_token: "change_me"
 
 tool_profile: "core"   # core (20) | full (39) | read-write (30) | read-only (17); override with MCP_TOOL_PROFILE
-approval_dir: "/home/app/data/approvals"
+# approval_dir is intentionally not set: approvals live in /home/app/.google/approvals,
+# the credentials folder the host shares with the container (see the mount above).
 # Staged Apps Script operations (survive a restart; contain script source).
 operation_dir: "/home/app/data/operations"
 operation_ttl: 600

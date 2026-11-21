@@ -1,6 +1,8 @@
 """Tests for the human approval queue."""
 
 import json
+import os
+import re
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -9,6 +11,7 @@ from pathlib import Path
 from workspace_operator.approvals import (
     ApprovalError,
     ApprovalStore,
+    approval_root,
     arguments_hash,
     challenge_text,
 )
@@ -112,6 +115,58 @@ class ApprovalStoreTests(unittest.TestCase):
         self.assertNotIn("approvals link", text)
         self.assertNotIn("approvals approve", text)
         self.assertNotIn("approvals deny", text)
+
+
+def bare_config() -> Config:
+    """A config without approval_dir, so the default location applies."""
+    return Config(
+        client_secrets_file="x",
+        token_file="x",
+        backup_dir="x",
+        log_file=None,
+        mcp_auth_token="t",
+        scopes=[],
+    )
+
+
+class ApprovalLocationTests(unittest.TestCase):
+    """The queue resolves to one place, whatever folder the server starts from."""
+
+    def setUp(self):
+        self.cwd = os.getcwd()
+        self.saved_env = os.environ.pop("MCP_APPROVAL_DIR", None)
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        os.chdir(self.cwd)
+        if self.saved_env is not None:
+            os.environ["MCP_APPROVAL_DIR"] = self.saved_env
+
+    def test_default_is_the_credentials_folder_from_any_directory(self):
+        roots = set()
+        for _ in range(2):
+            with tempfile.TemporaryDirectory() as folder:
+                os.chdir(folder)
+                try:
+                    roots.add(approval_root(bare_config()))
+                finally:
+                    os.chdir(self.cwd)
+        expected = (Path(os.path.expanduser("~")) / ".google" / "approvals").resolve()
+        self.assertEqual(roots, {expected})
+
+    def test_explicit_directory_overrides_the_default(self):
+        with tempfile.TemporaryDirectory() as explicit:
+            self.assertEqual(approval_root(make_config(explicit)), Path(explicit).resolve())
+
+    def test_example_configs_do_not_pin_a_relative_approval_dir(self):
+        """A relative approval_dir would bring back the working-directory dependency."""
+        root = Path(__file__).resolve().parents[1]
+        for name in ("config.example.yaml", "config.docker.yaml"):
+            for line in (root / name).read_text(encoding="utf-8").splitlines():
+                match = re.match(r'approval_dir:\s*"?([^"\s#]+)', line)
+                if match:
+                    with self.subTest(file=name):
+                        self.assertTrue(match.group(1).startswith(("/", "~")), line)
 
 
 if __name__ == "__main__":

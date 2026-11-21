@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Sequence
 
-from .config import Config
+from .config import Config, _default_path
 from .secure_files import restrict_to_owner, write_private
 
 DEFAULT_TTL_SECONDS = 900
@@ -30,7 +30,13 @@ class ApprovalError(ValueError):
 
 def approval_root(config: Config) -> Path:
     configured = getattr(config, "approval_dir", None) or os.environ.get("MCP_APPROVAL_DIR")
-    root = Path(configured).expanduser() if configured else Path("data") / "approvals"
+    if configured:
+        root = Path(configured).expanduser()
+    else:
+        # The default is the per-user credentials folder that also holds the token:
+        # it does not depend on the working directory, and the container reaches it
+        # through the credentials mount.
+        root = Path(_default_path(".google", "approvals"))
     return root.resolve()
 
 

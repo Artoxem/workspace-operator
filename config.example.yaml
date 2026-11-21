@@ -23,7 +23,7 @@ log_level: "INFO"
 #   read-only  — only read tools (search, read, list, export)
 # Can also be set via MCP_TOOL_PROFILE.
 tool_profile: "core"
-approval_dir: "data/approvals"   # human approval queue
+# approval_dir: "~/.google/approvals"   # optional; this is the default (human approval queue)
 approval_ttl: 900
 approval_url: "http://127.0.0.1:8765"             # seconds
 scope_routing: true

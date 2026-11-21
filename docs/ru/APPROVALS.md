@@ -79,12 +79,13 @@ workspace-operator approvals approve apr_… # разрешить конкрет
 workspace-operator approvals deny apr_…    # заблокировать
 ```
 
-CLI читает ту же конфигурацию, что и сервер. В Docker каталог подтверждений
-смонтирован вместе с data:
+Хранилище подтверждений по умолчанию лежит в `~/.google/approvals`, то есть в той же
+папке, что и токен. CLI находит его из любой текущей папки, а контейнер получает
+эту папку через монтирование учётных данных, поэтому CLI на хосте и контейнер видят
+одни и те же запросы:
 
 ```bash
-# на хосте, рядом с docker-compose.yml
-MCP_APPROVAL_DIR=./data/approvals workspace-operator approvals list
+workspace-operator approvals list
 ```
 
 Или внутри контейнера:
@@ -96,12 +97,14 @@ docker compose exec workspace-operator workspace-operator approvals list
 ## Конфигурация
 
 ```yaml
-approval_dir: "data/approvals"  # в контейнере: /home/app/data/approvals
+# approval_dir: "~/.google/approvals"  # необязательно; это значение по умолчанию
 approval_ttl: 900               # секунды
 approval_url: "http://127.0.0.1:8765"  # база для браузерной страницы
 ```
 
-Переменные: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`.
+Переменные: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`. Задавайте
+`approval_dir` только чтобы перенести очередь, и указывайте абсолютный путь:
+относительный отсчитывается от текущей папки.
 
 ## Браузерная страница
 
@@ -140,7 +143,7 @@ POST дополнительно отклоняется, если заголов�
 
 Approval защищает от самостоятельных действий агента через MCP. Он не защищает
 от агента с произвольным локальным shell вне MCP, который может читать каталог
-одобрений (`data/approvals/*.json` содержит секреты), и от человека, который
+одобрений (`~/.google/approvals/*.json` содержит секреты), и от человека, который
 подтверждает запрос не читая summary. Держите каталог approvals локальным,
 запускайте CLI от того же пользователя, что и сервер, и не открывайте MCP
 эндпоинт недоверенным пользователям.
