@@ -185,6 +185,22 @@ class PromptCatalogTests(unittest.TestCase):
                 self.assertEqual(missing, [], f"undocumented prompts in {rel}: {missing}")
 
 
+class AgentFacingApprovalDocsTests(unittest.TestCase):
+    """Text the agent reads must never tell it how to release its own call."""
+
+    def test_skill_never_mentions_the_approval_commands(self):
+        text = read("skills/google-workspace/SKILL.md")
+        for forbidden in ("approvals approve", "approvals deny", "approvals link"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, text)
+
+    def test_server_instructions_never_mention_the_approval_commands(self):
+        text = read("workspace_operator/server.py")
+        for forbidden in ("approvals approve", "approvals link", "approvals deny"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, text)
+
+
 class ProfileCountTests(unittest.TestCase):
     def test_readme_profile_table(self):
         text = read("README.md")

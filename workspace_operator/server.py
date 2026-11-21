@@ -180,11 +180,11 @@ def create_server(config: Config, logger) -> Server:
             "action-based tool surface. Start with workspace_search for unknown "
             "ids; read before writing; use the bulk_plan/bulk_run flow for more "
             "than a handful of items. Destructive actions first return "
-            "APPROVAL_REQUIRED; a human operator decides the request outside the "
-            "chat. Do not try to approve it yourself. Tell the user it is pending, "
-            "and retry with approval_id only after they confirm it was approved. "
-            "Tools outside the active profile or without their OAuth scope are "
-            "hidden by design."
+            "APPROVAL_REQUIRED, or ask the human through the client's elicitation "
+            "dialog. The agent cannot approve its own request: tell the user it is "
+            "pending, and retry with approval_id only after they confirm it was "
+            "approved. Tools outside the active profile or "
+            "without their OAuth scope are hidden by design."
         ),
     )
     exposed_tools = surface.mcp_tools()

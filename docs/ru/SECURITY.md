@@ -3,8 +3,8 @@
 В сервере есть встроенные защиты, чтобы снизить риск случайных разрушительных действий.
 
 ## Подтверждения и approval человека
-- Destructive-вызовы сначала возвращают `APPROVAL_REQUIRED`; человек выполняет `workspace-operator approvals approve <id>` (или открывает страницу по ссылке из `workspace-operator approvals link <id>`), агент повторяет вызов с одноразовым `approval_id`.
-- Агент никогда не получает ссылку для браузера: в ней секрет конкретного одобрения, который читает только канал человека (CLI). См. [APPROVALS.md](APPROVALS.md).
+- Destructive-вызовы сначала возвращают `APPROVAL_REQUIRED`; решение принимает человек в CLI или на странице в браузере (`workspace-operator approvals …`), агент повторяет вызов с одноразовым `approval_id`.
+- Агенту никогда не сообщается, как подтвердить: в его результате нет ни команд, ни ссылки. Браузерная ссылка содержит секрет конкретного одобрения и попадает в лог сервера для оператора. См. [APPROVALS.md](APPROVALS.md).
 - Approval привязан к хешу tool/action/аргументов, истекает по `approval_ttl` и используется один раз.
 - `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` и `bulk_undo`

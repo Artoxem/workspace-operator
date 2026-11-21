@@ -3,8 +3,8 @@
 The server includes safeguards to reduce accidental destructive actions.
 
 ## Confirmations and human approval
-- Destructive calls first return `APPROVAL_REQUIRED`; a human must run `workspace-operator approvals approve <id>` (or open the page from `workspace-operator approvals link <id>`). The agent retries with the one-time `approval_id`.
-- The agent never receives the browser link: it contains a per-approval secret that only the human channel (CLI) can read. See [APPROVALS.md](APPROVALS.md).
+- Destructive calls first return `APPROVAL_REQUIRED`; a human decides the request in the CLI or on the browser page (`workspace-operator approvals …`), and the agent retries with the one-time `approval_id`.
+- The agent is never told how to approve: its tool result carries no commands and no link. The browser link holds a per-approval secret and is written to the server log for the operator. See [APPROVALS.md](APPROVALS.md).
 - Approval is bound to a hash of the tool/action/arguments, expires after `approval_ttl` and is single-use.
 - `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` and `bulk_undo`

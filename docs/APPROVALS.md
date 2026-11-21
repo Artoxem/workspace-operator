@@ -14,8 +14,8 @@ to delete something; it cannot approve its own request.
    {"name": "drive_trash", "arguments": {"file_id": "..."}}
    ```
 
-2. If the client supports MCP elicitation, the server asks the user directly in
-the chat: **Approve this action?** Accepting runs it once; declining cancels it.
+2. If the client supports MCP elicitation, the server asks the human in the
+client UI: **Approve this action?** Accepting runs it once; declining cancels it.
 
    If the client does not support elicitation, the server does **not** touch
    Drive and returns a normal tool result with an `approval_id`:
@@ -25,8 +25,9 @@ the chat: **Approve this action?** Accepting runs it once; declining cancels it.
    {"status": "approval_required", "approval_id": "apr_…", ...}
    ```
 
-3. In the fallback flow, the agent shows that id to the user. The user runs the
-   CLI (or opens the browser page, see below):
+3. The operator decides outside the chat, in the CLI or on the browser page (see
+   below). The tool result that reaches the agent carries no commands and no
+   link, so the agent cannot release the call by itself.
 
    ```bash
    workspace-operator approvals list
@@ -47,11 +48,10 @@ the chat: **Approve this action?** Accepting runs it once; declining cancels it.
 
 5. The server verifies and consumes the approval, then executes the action once.
 
-A successful result is returned as a normal tool result. The in-chat dialog is
-the preferred path; the CLI fallback is used only when the client does not
-advertise elicitation. Pending, denied, expired, reused or mismatched approval
-is also returned as a normal result with instructions — the MCP session does not
-crash.
+A successful result is returned as a normal tool result. Pending, denied,
+expired, reused or mismatched approval is also returned as a normal result with
+instructions — the MCP session does not crash. The decision link is written to the
+server log (the operator's console), never into a tool result.
 
 ## Binding and expiry
 
@@ -107,9 +107,9 @@ is resolved from the current folder.
 ## Browser page
 
 The browser page is optional and requires the HTTP transport. Each approval has
-a random **secret** stored only in the approval record. The agent never sees it:
-the tool result carries the `approval_id` and a CLI hint, not a link. The human
-obtains the link locally:
+a random **secret** stored only in the approval record, and only its hash is kept
+on disk. The agent never sees the secret: the tool result carries the
+`approval_id` and no link. The human obtains the link locally:
 
 ```bash
 workspace-operator approvals link apr_…

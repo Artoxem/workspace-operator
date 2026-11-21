@@ -482,7 +482,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Guard | Applies to |
 |---|---|
-| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — first call asks for approval in-chat when the client supports elicitation; otherwise use the browser link or `approval_id` CLI fallback |
+| `confirm=true` + human approval | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — a human approves the exact call: in the client's elicitation dialog when it supports one, otherwise in the CLI or on the browser page. The agent's result carries no commands and no link; it retries with the one-time `approval_id` |
 | `dry_run` / preview | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Draft mode by default | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Public sharing | disabled unless `allow_public_sharing=true` **and** `allow_public=true` |

@@ -478,7 +478,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 
 | Защита | Инструменты |
 |---|---|
-| `confirm=true` + подтверждение человека | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — первый вызов спрашивает подтверждение в чате, если клиент поддерживает elicitation; иначе — браузерная ссылка или fallback с `approval_id` |
+| `confirm=true` + подтверждение человека | `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo` — точный вызов подтверждает человек: в диалоге elicitation, если клиент его поддерживает, иначе в CLI или на странице в браузере. В результате агента нет ни команд, ни ссылки; он повторяет вызов с одноразовым `approval_id` |
 | `dry_run` / предпросмотр | `bulk_plan`, `sheets_write.find_replace`, `gmail_settings.label_apply` |
 | Черновик по умолчанию | `gmail_write.send`, `gmail_write.reply`, `gmail_write.send_with_attachments` |
 | Публичный шаринг | выключен, пока нет `allow_public_sharing=true` **и** `allow_public=true` |
