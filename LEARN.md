@@ -75,7 +75,8 @@ PyYAML>=6.0
 ## Part 2: Configuration Layer
 
 The server needs paths (OAuth secrets, token file) and an auth token. We load from:
-1. YAML/JSON file (via `MCP_CONFIG_FILE`)
+1. YAML/JSON file: `--config`, then `MCP_CONFIG_FILE`, then `./config.yaml`, then
+   `<user config dir>/workspace-operator/config.yaml`, then built-in defaults
 2. Environment variables (override file values)
 
 **Step 2.1:** Implement `config.py`:

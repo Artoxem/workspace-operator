@@ -41,6 +41,10 @@ placeholders and tokens shorter than 24 characters.
 }
 ```
 
+`MCP_CONFIG_FILE` is optional: without it the server finds `./config.yaml`, then
+`workspace-operator/config.yaml` in the OS config directory. Pin an absolute path
+when the client's working directory is not predictable.
+
 ## HTTP, any client that supports a URL
 
 ```json
