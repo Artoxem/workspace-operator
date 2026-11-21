@@ -55,6 +55,7 @@ denied_tools: ["gmail_write", "drive_write"]
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
 | `MCP_APPROVAL_DIR` | `approval_dir` | очередь одобрений человеком; по умолчанию `~/.google/approvals` (в Docker с правом записи) |
 | `MCP_APPROVAL_TTL` | `approval_ttl` | время жизни одобрения в секундах |
+| `MCP_APPROVAL_BROWSER_WAIT` | `approval_browser_wait` | сколько секунд destructive-вызов ждёт решения в браузере (`0` — выключено, максимум 45) |
 | `MCP_APPROVAL_URL` | `approval_url` | базовый URL браузерной страницы одобрений |
 | `MCP_OPERATION_DIR` | `operation_dir` | подготовленные операции Apps Script (по умолчанию `data/operations`) |
 | `MCP_OPERATION_TTL` | `operation_ttl` | сколько секунд подготовленная операция остаётся выполнимой (по умолчанию 600) |

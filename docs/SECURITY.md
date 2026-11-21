@@ -56,6 +56,7 @@ Every key has an environment override:
 | `MCP_TOOL_PROFILE` | `tool_profile` | `core` / `full` / `read-write` / `read-only` |
 | `MCP_APPROVAL_DIR` | `approval_dir` | human approval queue; default `~/.google/approvals` (read-write in Docker) |
 | `MCP_APPROVAL_TTL` | `approval_ttl` | approval lifetime in seconds |
+| `MCP_APPROVAL_BROWSER_WAIT` | `approval_browser_wait` | seconds a destructive call waits for a browser decision (`0` disables, capped at 45) |
 | `MCP_APPROVAL_URL` | `approval_url` | base URL for the browser approval page |
 | `MCP_OPERATION_DIR` | `operation_dir` | staged Apps Script operations (default `data/operations`) |
 | `MCP_OPERATION_TTL` | `operation_ttl` | seconds a prepared operation stays executable (default 600) |

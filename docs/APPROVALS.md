@@ -104,6 +104,16 @@ Environment: `MCP_APPROVAL_DIR`, `MCP_APPROVAL_TTL`, `MCP_APPROVAL_URL`. Set
 `approval_dir` only to move the queue, and use an absolute path: a relative one
 is resolved from the current folder.
 
+## Open new requests automatically
+
+For HTTP, set `MCP_APPROVAL_BROWSER_WAIT=45` on the server (in `.env` for Docker
+Compose). On the operator's desktop, **outside the container**, run
+`workspace-operator approvals watch` and leave it running. It must have access to
+the same queue; use `--url BASE_URL` for a custom approval page URL. The helper
+opens requests created after it starts. Approve resumes a waiting call and Deny
+stops it. If the wait has elapsed, tell the agent your decision after clicking.
+The automatic browser link is not sent to the MCP client or written to the server log.
+
 ## Browser page
 
 The browser page is optional and requires the HTTP transport. Each approval has

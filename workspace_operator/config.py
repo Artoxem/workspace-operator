@@ -55,6 +55,7 @@ class Config:
     bulk_dir: Optional[str] = None
     approval_dir: Optional[str] = None
     approval_ttl: int = 900
+    approval_browser_wait: int = 0
     approval_url: Optional[str] = "http://127.0.0.1:8765"
     bulk_max_items: int = 300
     bulk_hard_limit: int = 10000
@@ -240,6 +241,12 @@ def load_config(
         approval_ttl = int(os.environ.get("MCP_APPROVAL_TTL", file_config.get("approval_ttl", 900)))
     except (TypeError, ValueError):
         approval_ttl = 900
+    try:
+        approval_browser_wait = min(45, max(0, int(os.environ.get(
+            "MCP_APPROVAL_BROWSER_WAIT", file_config.get("approval_browser_wait", 0)
+        ))))
+    except (TypeError, ValueError):
+        approval_browser_wait = 0
     bulk_protected_ids = (
         _env_list("MCP_BULK_PROTECTED_IDS") or bulk_config.get("protected_ids") or []
     )
@@ -294,6 +301,7 @@ def load_config(
         bulk_dir=bulk_dir,
         approval_dir=approval_dir,
         approval_ttl=approval_ttl,
+        approval_browser_wait=approval_browser_wait,
         approval_url=approval_url,
         bulk_max_items=_bulk_int("MCP_BULK_MAX_ITEMS", "max_items", 300),
         bulk_hard_limit=_bulk_int("MCP_BULK_HARD_LIMIT", "hard_limit", 10000),

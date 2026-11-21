@@ -316,6 +316,14 @@ def cmd_approvals(args: argparse.Namespace) -> int:
     store = ApprovalStore(config)
     action = args.approval_action
     try:
+        if action == "watch":
+            from .approval_browser import watch
+
+            browser_url = args.url or config.approval_url
+            if not browser_url:
+                raise ApprovalError("Set approval_url or pass approvals watch --url.")
+            watch(store, browser_url)
+            return 0
         if action == "list":
             records = store.list_pending()
             print(render_records(records))
@@ -418,6 +426,11 @@ def build_parser() -> argparse.ArgumentParser:
     approval_sub.add_parser("list", help="list pending approvals").set_defaults(
         func=cmd_approvals
     )
+    approval_watch = approval_sub.add_parser(
+        "watch", help="open new approvals in the operator's local browser"
+    )
+    approval_watch.add_argument("--url", metavar="BASE_URL", help="public approval page base URL")
+    approval_watch.set_defaults(func=cmd_approvals)
     approval_show = approval_sub.add_parser("show", help="show one approval")
     approval_show.add_argument("approval_id")
     approval_show.set_defaults(func=cmd_approvals)

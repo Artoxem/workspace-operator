@@ -266,7 +266,7 @@ def build_asgi_app(
               <p><strong>Expires:</strong> {expires}</p>
               <p><code>{html.escape(approval_id)}</code></p>
               {action_forms}
-              <p style="color:#9a9aa8;margin-top:18px">After approving, return to the chat and tell the agent to retry the exact call with this <code>approval_id</code>. Nothing runs until then.</p>
+              <p style="color:#9a9aa8;margin-top:18px">Only Approve allows the exact call shown here. If the chat is still waiting, it will resume automatically. Otherwise tell the agent about your decision.</p>
             </div>""",
             headers=_PAGE_HEADERS,
         )

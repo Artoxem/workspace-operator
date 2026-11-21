@@ -76,6 +76,9 @@ class ToolRouter:
         The link carries the secret. It is written to the server's own log (the
         operator's console), never into the tool result the agent reads.
         """
+        if self.config.approval_browser_wait:
+            self.logger.info("APPROVAL PENDING %s (browser mode)", record["id"])
+            return
         try:
             link = self.approvals.human_link(
                 record["id"], getattr(self.config, "approval_url", None)
@@ -189,7 +192,10 @@ class ToolRouter:
     ) -> Optional[types.CallToolResult]:
         """Human approval for a destructive call; ``None`` means "approved, go on"."""
         audit, profile_name, approvals = self.audit, self.profile_name, self.approvals
-        elicitation = await self._elicit_approval(ctx, name, plan, argument_names)
+        browser_wait = self.config.approval_browser_wait
+        elicitation = None if browser_wait else await self._elicit_approval(
+            ctx, name, plan, argument_names
+        )
         if elicitation == "approved":
             plan.arguments["confirm"] = True
             audit.record(name, profile_name, "approved-in-chat", 0, argument_names)
@@ -212,12 +218,30 @@ class ToolRouter:
                     argument_names + ("approval_id",),
                 )
                 self._announce_to_operator(record)
-                return _message(challenge_text(record))
+                if browser_wait:
+                    deadline = time.monotonic() + browser_wait
+                    while True:
+                        status = approvals.get(record["id"])["status"]
+                        if status == "approved":
+                            approval_id = record["id"]
+                            break
+                        if status != "pending":
+                            return _message(
+                                f"Approval is {status}. This call did not run. Do not retry."
+                            )
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            break
+                        await asyncio.sleep(min(0.25, remaining))
+                if not approval_id:
+                    message = challenge_text(record)
+                    if browser_wait:
+                        message += " If no browser tab opened, the operator's browser helper may not be running."
+                    return _message(message)
             ok, reason = approvals.consume(
                 str(approval_id), name, plan.action, plan.arguments
             )
             if not ok:
-                record = approvals.request(name, plan.action, plan.arguments)
                 audit.record(
                     name,
                     profile_name,
@@ -226,6 +250,9 @@ class ToolRouter:
                     argument_names,
                     error=reason,
                 )
+                if browser_wait:
+                    return _message(f"Approval could not be used: {reason} The action did not run.")
+                record = approvals.request(name, plan.action, plan.arguments)
                 self._announce_to_operator(record)
                 return _message(
                     f"Approval could not be used: {reason}\n\n"

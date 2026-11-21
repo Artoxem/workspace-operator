@@ -258,13 +258,27 @@ class ApprovalStore:
     def verify_secret(self, approval_id: str, candidate: Optional[str]) -> bool:
         """Constant-time check of the human-only secret (stored as a hash)."""
         try:
-            expected = self._read(approval_id).get("secret_hash")
+            record = self._read(approval_id)
         except ApprovalError:
             return False
-        if not expected or not candidate:
+        if not candidate or _expired(record):
             return False
-        digest = hashlib.sha256(str(candidate).encode("utf-8")).hexdigest()
-        return hmac.compare_digest(str(expected), digest)
+        digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
+        expected = record.get("secret_hash")
+        return (
+            bool(expected and hmac.compare_digest(str(expected), digest))
+            or hmac.compare_digest(candidate.encode("utf-8"), self._browser_secret(record))
+        )
+
+    def _browser_secret(self, record: Dict[str, Any]) -> bytes:
+        # A separate purpose from the record seal; the helper needs read-only
+        # access to the queue and doesn't rotate a link while a page is open.
+        payload = f"browser-v1:{record['id']}:{record['arguments_hash']}:{record['expires_at']}"
+        return hmac.new(self.key, payload.encode("utf-8"), hashlib.sha256).hexdigest().encode("ascii")
+
+    def browser_link(self, record: Dict[str, Any], base_url: str) -> str:
+        secret = self._browser_secret(record).decode("ascii")
+        return f"{base_url.rstrip('/')}/approvals/{record['id']}?k={secret}"
 
     def rotate_secret(self, approval_id: str) -> str:
         """Issue a fresh human secret for a pending approval (invalidates the old link)."""
