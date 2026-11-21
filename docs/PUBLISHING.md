@@ -1,7 +1,7 @@
 # Publishing Workspace Operator
 
 The package name is **`workspace-operator-mcp`** (checked free on PyPI on
-2026-11-06). The version lives in two places and they must match:
+2026-11-06). The version lives in these places and they must match:
 
 - `pyproject.toml` → `[project] version`
 - `workspace_operator/__init__.py` → `__version__`
@@ -11,7 +11,7 @@ The package name is **`workspace-operator-mcp`** (checked free on PyPI on
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                            # 448 tests, no network
+python -m pytest                            # 486 tests, no network
 python -m ruff check workspace_operator tests
 python -m mypy
 python -m workspace_operator tools --profile core
