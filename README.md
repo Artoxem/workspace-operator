@@ -38,9 +38,13 @@ with `readOnlyHint` / `destructiveHint`.
 Nothing here is tied to a specific account, spreadsheet or document: every tool
 takes identifiers and ranges, and all examples use synthetic data.
 
-![Demo: read the last Gmail message and move it to Trash](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif)
+![Bulk email deletion: the agent reads the last messages and plans one bulk trash request](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-email-denied.png)
 
-*Find the last message, read it, then move it to Trash through a reviewed bulk plan. It stays recoverable for 30 days.*
+*Read the last messages, then treat them as one reviewed bulk request instead of three separate calls.*
+
+![The operator denies the plan: every message stays in the inbox](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-move-approved.png)
+
+*Deny the plan and nothing changes: the agent reports the verified state — all messages still in the inbox with the same ids — and moves on to the next task.*
 
 **Jump to:** [Quick start](#quick-start) · [Tool profiles](#tool-profiles) · [Operations](#operations) · [Approval in the browser](#approval-in-the-browser) · [Tool catalog](#tool-catalog) · [Safety](#safety-by-default) · [Limitations](#limitations)
 
