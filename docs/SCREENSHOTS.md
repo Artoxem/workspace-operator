@@ -11,7 +11,8 @@ acceptable for Google Cloud screens.
 
 ### 1. Hero: plan, confirm, undo
 
-**Status: captured** as `docs/images/bulk-email-denied.png` and `docs/images/bulk-move-approved.png`. The pair shows reading the last messages,
+**Status: captured** as `docs/images/flow.gif` (deleting email, plan denied) and
+`docs/images/flow2.gif` (moving files, plan approved). The pair shows reading the last messages,
 and reading the last message, then moving it to Trash (recoverable). A bulk
 plan → undo recording is still desirable for the bulk section.
 
@@ -143,8 +144,8 @@ Two real captures are in the repository and already used in the docs:
 
 | File | What it shows |
 |---|---|
-| `docs/images/bulk-email-denied.png` | chat demo: read the last messages, one bulk trash plan |
-| `docs/images/bulk-move-approved.png` | the operator denies the plan; nothing changes |
+| `docs/images/flow.gif` | deleting email: one bulk plan for three messages, the operator presses Deny |
+| `docs/images/flow2.gif` | moving files: the review lists every file and the destination, the operator approves |
 | `docs/images/doctor.png` | `workspace-operator doctor`: token, scopes, API probes, `configuration looks good` |
 | `docs/images/docker-health.png` | `docker compose ps` healthy and `/healthz` returning `1.22.2` |
 

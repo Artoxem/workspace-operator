@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.7**.
+Current release: **2.9.8**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|---|
+| **2.9.8** | README demo corrected: the two original screen recordings are used as-is (`docs/images/flow.gif`, `docs/images/flow2.gif`, 189 and 160 frames), the static images are removed. The first shows deleting email and pressing Deny; the second shows moving files and approving the plan. |
 | **2.9.7** | New README demo. The old single GIF is replaced by two screenshots from a live session: reading the last messages and planning one bulk trash request, then the operator denying it with every message still in the inbox. Launch package, screenshot plan and VERSIONS updated; the obsolete GIF is removed. |
 | **2.9.6** | The server tells agents where to go before they call the wrong tool. The initialize instructions now state that files and messages are never moved or deleted by a direct tool, that `bulk_plan` → `bulk_run` is the only path, and that one item is a list of one id. The descriptions of `bulk_plan`, `bulk_run`, `drive_write` and `gmail_delete` say the same, and the skill repeats it. Three tests pin the wording so it cannot drift. 535 tests. |
 | **2.9.5** | Documentation audit, no code change. README (EN/RU) opens with a jump menu, states the real surface (38 tools, 19 in core) and describes the reviewed bulk path for moves, uploads and deletions, the review page (groups, show all, CSV, plan fingerprint) and shared-drive opt-in. Two broken in-page anchors and the Russian tools badge are fixed, stale counts (39 tools, 529 tests) corrected across README, DISTRIBUTION, LAUNCH_PACKAGE and PUBLISHING, `drive_trash` removed from the profile tables, and both migration guides carry a 2.6/2.9 caveat. All 28 Markdown files pass an anchor check. |

@@ -38,13 +38,13 @@ with `readOnlyHint` / `destructiveHint`.
 Nothing here is tied to a specific account, spreadsheet or document: every tool
 takes identifiers and ranges, and all examples use synthetic data.
 
-![Bulk email deletion: the agent reads the last messages and plans one bulk trash request](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-email-denied.png)
+![Bulk email deletion: the plan lists the three messages and the operator presses Deny](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/flow.gif)
 
-*Read the last messages, then treat them as one reviewed bulk request instead of three separate calls.*
+*Deleting email: the agent plans one bulk request for the three messages, the operator denies it, and nothing changes — the messages stay in the inbox.*
 
-![The operator denies the plan: every message stays in the inbox](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-move-approved.png)
+![Bulk file move: the review lists every file and the destination, the operator approves](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/flow2.gif)
 
-*Deny the plan and nothing changes: the agent reports the verified state — all messages still in the inbox with the same ids — and moves on to the next task.*
+*Moving files: the review shows what goes where, the operator approves, and the job runs in the background.*
 
 **Jump to:** [Quick start](#quick-start) · [Tool profiles](#tool-profiles) · [Operations](#operations) · [Approval in the browser](#approval-in-the-browser) · [Tool catalog](#tool-catalog) · [Safety](#safety-by-default) · [Limitations](#limitations)
 

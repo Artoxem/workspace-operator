@@ -51,8 +51,8 @@ Use absolute URLs so the same asset works on GitHub, PyPI and directory pages.
 | Asset | URL | Use |
 |---|---|---|
 | Banner | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/workspace-operator-banner.jpg | README hero, social preview, directory cards |
-| Email demo | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-email-denied.png | Show HN/Reddit/X, Glama |
-| Move demo | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-move-approved.png | Show HN/Reddit/X, Glama |
+| Email demo | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/flow.gif | Show HN/Reddit/X, Glama |
+| Move demo | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/flow2.gif | Show HN/Reddit/X, Glama |
 | Doctor screenshot | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/doctor.png | AUTH_SETUP, PulseMCP |
 | Docker health | https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/docker-health.png | Docker section, mcp.so |
 
@@ -177,7 +177,7 @@ Body:
 > Install: `pip install workspace-operator-mcp`
 > Repo: https://github.com/Artoxem/workspace-operator
 >
-> Demo images: https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-email-denied.png (bulk email deletion, denied) and https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/bulk-move-approved.png (the denial outcome)
+> Demo images: https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/flow.gif (bulk email deletion, denied) and https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/flow2.gif (the denial outcome)
 >
 > Feedback welcome, especially on the bulk safety model.
 
@@ -200,7 +200,7 @@ what runs where. Link the same repository, mention 533 tests and MIT.
    MIT.
 4. `pip install workspace-operator-mcp` · https://github.com/Artoxem/workspace-operator
 
-Attach the two demo screenshots (`docs/images/bulk-email-denied.png`, `docs/images/bulk-move-approved.png`) and the banner. A bulk
+Attach the two demo screenshots (`docs/images/flow.gif`, `docs/images/flow2.gif`) and the banner. A bulk
 plan/undo recording is still desirable for the bulk section, but not required
 for the first launch.
 
