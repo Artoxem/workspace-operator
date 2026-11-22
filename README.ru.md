@@ -5,12 +5,12 @@
 **Глубокая автоматизация Google Workspace через Model Context Protocol**
 
 Drive · Docs · Sheets · Gmail · Calendar · Tasks · Forms · Apps Script — один
-локальный MCP-сервер с **39 консолидированными инструментами** (20 в профиле `core` по
+локальный MCP-сервер с **38 консолидированными инструментами** (19 в профиле `core` по
 умолчанию), многошаговыми записями и профилями на стороне сервера.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-39-informational)](#-каталог-инструментов)
+[![Tools](https://img.shields.io/badge/tools-38-informational)](#каталог-инструментов)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -37,7 +37,9 @@ Workspace Operator работает на вашей машине,
 
 ![Демо: прочитать последнее письмо и переместить его в корзину](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif)
 
-*Находит последнее письмо, читает его и перемещает в корзину. Письмо можно восстановить в течение 30 дней.*
+*Находит последнее письмо, читает его и перемещает в корзину через проверенный план bulk. Письмо можно восстановить в течение 30 дней.*
+
+**Перейти к:** [Быстрый старт](#быстрый-старт) · [Профили](#профили-инструментов) · [Эксплуатация](#эксплуатация) · [Подтверждение в браузере](#подтверждение-в-браузере) · [Каталог](#каталог-инструментов) · [Безопасность](#безопасность-по-умолчанию) · [Ограничения](#ограничения)
 
 ## Сравнение
 
@@ -71,7 +73,7 @@ Workspace Operator — для «измени рабочее пространст
 | 📮 Postmaster | 1 | домены и статистика доставляемости |
 | ⚙️ Apps Script | 3 | чтение, стейджинг, запуск (admin) |
 
-Плюс 3 ресурса, 3 шаблона ресурсов и 7 промптов — см. [каталог](#-каталог-инструментов).
+Плюс 3 ресурса, 3 шаблона ресурсов и 7 промптов — см. [каталог](#каталог-инструментов).
 
 ## Кому подходит
 
@@ -268,6 +270,8 @@ denied_tools: ["gmail_write", "drive_write"]
 ```
 
 Переменные окружения: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
+`workspace-operator serve --profile full` задаёт профиль на один запуск и перекрывает
+и файл конфигурации, и `MCP_TOOL_PROFILE`.
 Заблокированный вызов возвращает понятное объяснение, а не молчит.
 
 Профиль — второй фильтр. На старте сервер также скрывает инструменты без
@@ -309,9 +313,13 @@ python -m workspace_operator serve      # stdio-сервер
 вызов сразу возвращает `approval_id`, и решение принимается через `approvals approve` или
 страницу из `approvals link`.
 
-Перенос в Drive, даже одного файла, идёт через `bulk_plan` → `bulk_run`.
-В предпросмотре видны все файлы, исходные папки и папка назначения. Загрузка
-локальных файлов тоже требует подтверждения. См. [настройку и общие диски](docs/ru/APPROVALS.md#что-показывается-при-переносе-и-загрузке-в-drive).
+Перенос в Drive, загрузка и удаление файлов или писем идут через
+`bulk_plan` → `bulk_run`: одно подтверждение покрывает весь список, а один файл —
+это список из одного. Страница предпросмотра группирует объекты по исходным папкам,
+даёт ссылки **show all** и **CSV** и печатает короткий отпечаток плана (fingerprint), поэтому
+выполняется ровно тот список, который вы проверили. При удалении папки видно,
+сколько объектов уйдёт в Корзину вместе с ней. Общие диски включаются
+`MCP_BULK_ALLOW_SHARED_DRIVES=1`. См. [перенос, загрузку и удаление](docs/ru/APPROVALS.md).
 
 ### HTTP-транспорт (сначала localhost)
 
@@ -576,7 +584,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 529 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 533 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

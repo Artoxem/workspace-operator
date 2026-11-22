@@ -105,7 +105,7 @@ Google-скоупа не показываются и не вызываются. 
 |---|---|
 | нет (кросс-доменные) | `workspace_search`, `digest`, `compare_tables`, `bulk_*` |
 | `drive` или `drive.readonly` | `drive_search`, `drive_read` |
-| `drive` | плюс `drive_write`, `drive_trash`, `drive_permissions` |
+| `drive` | плюс `drive_write`, `drive_permissions` (удаление — через bulk) |
 | `documents` или `documents.readonly` | `read_doc` |
 | `documents` | плюс `docs_write`, `docs_edit` |
 | `spreadsheets` или `spreadsheets.readonly` | `sheets_read` |

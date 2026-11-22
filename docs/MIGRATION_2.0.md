@@ -1,5 +1,10 @@
 # Migrating from 1.x to 2.0
 
+> Later releases changed two entries below: since 2.6.0 Drive moves go through
+> `bulk_plan` → `bulk_run`, and since 2.9.0 file and message deletions do too
+> (`drive_trash` and `gmail_delete.email` no longer exist). The table is the 2.0
+> mapping; see [VERSIONS.md](VERSIONS.md) for the current surface.
+
 2.0 replaces 132 single-purpose tools with 39 consolidated tools. Most tools now
 take an `action`. The default profile is `core` (20 tools), not `full`.
 
@@ -57,7 +62,8 @@ take an `action`. The default profile is `core` (20 tools), not `full`.
 Retained 1.x names are accepted as **hidden aliases** during 2.0.x: they are not
 listed in `tools/list` but resolve to the new tool/action. Calls to removed
 capabilities return a migration error. There is no permanent file
-deletion; use `drive_trash` / Gmail Trash and recover within 30 days.
+deletion: since 2.9.0 files and messages go to Trash through `bulk_plan` and stay
+recoverable for 30 days.
 
 ## Configuration
 

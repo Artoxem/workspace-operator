@@ -8,11 +8,11 @@ posting a newer release.
 
 **Short (≤ 100 chars)**
 
-> Google Workspace automation for AI agents: 39 tools, safe bulk operations, undo.
+> Google Workspace automation for AI agents: 38 tools, safe bulk operations, undo.
 
 **Medium**
 
-> Workspace Operator is a local MCP server for Google Workspace. 39 tools across
+> Workspace Operator is a local MCP server for Google Workspace. 38 tools across
 > Drive, Docs, Sheets, Gmail, Calendar, Tasks, Forms, Apps Script and
 > Postmaster, with bulk operations that plan, confirm and undo. MIT, stdio or
 > Docker.
@@ -20,7 +20,7 @@ posting a newer release.
 **Long**
 
 > Workspace Operator is an open-source MCP server that gives AI agents the whole
-> Google Workspace instead of a single API. It exposes 39 tools across Drive,
+> Google Workspace instead of a single API. It exposes 38 tools across Drive,
 > Docs, Sheets, Gmail, Calendar, Tasks, Forms, Apps Script and Postmaster.
 > Bulk changes use a plan → confirm → run → undo flow: resolve the selector once,
 > review counts and a five-item sample, then run in the background with progress,
@@ -88,7 +88,7 @@ Use absolute URLs so the same asset works on GitHub, PyPI and directory pages.
 - Description: **medium** copy.
 - GitHub: repository link.
 - Install: `pip install workspace-operator-mcp` or the Docker image.
-- Mention Python 3.10+, MIT, and the 39-tool count.
+- Mention Python 3.10+, MIT, and the 38-tool count.
 
 ### Smithery
 
@@ -116,7 +116,7 @@ flow no longer applies.
 - Add this line (alphabetical placement, near the other `A` entries):
 
 ```markdown
-- [Artoxem/workspace-operator](https://github.com/Artoxem/workspace-operator) 🐍 ☁️ 🍎 🪟 🐧 - 39 Google Workspace tools with bulk plan/confirm/undo for Drive, Gmail, Docs, Sheets, Calendar, Tasks, Forms and Apps Script.
+- [Artoxem/workspace-operator](https://github.com/Artoxem/workspace-operator) 🐍 ☁️ 🍎 🪟 🐧 - 38 Google Workspace tools with bulk plan/confirm/undo for Drive, Gmail, Docs, Sheets, Calendar, Tasks, Forms and Apps Script.
 ```
 
 PR title: `Add Workspace Operator to Workplace & Productivity`.
@@ -129,7 +129,7 @@ PR body: one paragraph with the long description, install command and the
 
 Title:
 
-> Show HN: Workspace Operator – 39 Google Workspace tools for AI agents
+> Show HN: Workspace Operator – 38 Google Workspace tools for AI agents
 
 Body:
 
@@ -144,10 +144,10 @@ Body:
 >
 > It runs locally with your own OAuth client, over stdio or a loopback-only
 > Docker container. There are read-only / read-write / full profiles, a JSONL
-> audit log, and 39 tools across Drive, Docs, Sheets, Gmail, Calendar,
+> audit log, and 38 tools across Drive, Docs, Sheets, Gmail, Calendar,
 > Tasks, Forms, Apps Script and Postmaster.
 >
-> MIT, Python, 529 tests. Source: https://github.com/Artoxem/workspace-operator
+> MIT, Python, 533 tests. Source: https://github.com/Artoxem/workspace-operator
 
 Post Tuesday–Thursday, 08:00–10:00 US Eastern. Reply to every comment for the
 first three hours.
@@ -156,7 +156,7 @@ first three hours.
 
 Title:
 
-> I built a Google Workspace MCP server with bulk plan/confirm/undo (39 tools, MIT)
+> I built a Google Workspace MCP server with bulk plan/confirm/undo (38 tools, MIT)
 
 Body:
 
@@ -165,7 +165,7 @@ Body:
 > Operator.
 >
 > What is different:
-> - 39 tools across nine Google APIs, in one server.
+> - 38 tools across nine Google APIs, in one server.
 > - Bulk operations: `bulk_plan` resolves a selector and shows counts + a sample;
 >   `bulk_run` executes in the background; `bulk_status` reports progress;
 >   `bulk_undo` reverses renames and trashes. Reverse a move with a new reviewed plan.
@@ -184,10 +184,10 @@ Body:
 
 Title:
 
-> Local Google Workspace MCP server: 39 tools, bulk file operations with undo
+> Local Google Workspace MCP server: 38 tools, bulk file operations with undo
 
 Angle: local OAuth, no hosted middleman, Docker on loopback, read-only profile,
-what runs where. Link the same repository, mention 529 tests and MIT.
+what runs where. Link the same repository, mention 533 tests and MIT.
 
 ### X / LinkedIn thread
 
@@ -195,7 +195,7 @@ what runs where. Link the same repository, mention 529 tests and MIT.
    an MCP server for that.
 2. One plan, one confirmation, one background job: move, rename, trash and undo
    across Google Drive — plus batch Gmail actions.
-3. 39 tools, nine Google APIs, read-only profile, audit log, local OAuth, Docker.
+3. 38 tools, nine Google APIs, read-only profile, audit log, local OAuth, Docker.
    MIT.
 4. `pip install workspace-operator-mcp` · https://github.com/Artoxem/workspace-operator
 
@@ -207,7 +207,7 @@ for the first launch.
 
 Title:
 
-> 39 инструментов Google Workspace в одном MCP-сервере: как безопасно делать
+> 38 инструментов Google Workspace в одном MCP-сервере: как безопасно делать
 > массовые операции
 
 Structure:
@@ -216,7 +216,7 @@ Structure:
 2. Почему 10 000 отдельных tool calls — плохо: время, токены, отсутствие отката.
 3. Решение: план → подтверждение → фоновая задача → откат.
 4. Архитектура: локальный OAuth, stdio/Docker, профили, аудит, лимиты.
-5. Цифры: 100 файлов за ~9 секунд, 39 инструментов, 308 тестовааов.
+5. Цифры: 100 файлов за ~9 секунд, 38 инструментов, 533 теста.
 6. Ограничения: один Google-аккаунт на инстанс, не multi-tenant.
 7. Ссылки на GitHub, PyPI и SECURITY.md.
 

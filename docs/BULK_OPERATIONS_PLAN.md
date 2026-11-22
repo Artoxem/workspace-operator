@@ -41,7 +41,7 @@ Inventory: 115 tools.
 Concrete gaps found in the code:
 
 1. **No selection-to-action path.** `find_files` / `drive_search_advanced` return a
-   list, and the client must loop `move_file` / `drive_delete_file` per item. That is
+   list, and the client must loop a per-item tool for each object. That is
    N model turns, N tool calls and N API round trips.
 2. **Sequential execution.** There is no worker pool and no use of the Drive batch
    endpoint outside Gmail. 10,000 files means 10,000 sequential HTTPS calls.

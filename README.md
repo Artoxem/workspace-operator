@@ -5,12 +5,12 @@
 **Deep automation for Google Workspace through the Model Context Protocol**
 
 Drive · Docs · Sheets · Gmail · Calendar · Tasks · Forms · Apps Script — one local
-MCP server with **39 consolidated tools** (20 in the default `core` profile),
+MCP server with **38 consolidated tools** (19 in the default `core` profile),
 staged writes and server-side tool profiles.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-2026--07--28-blueviolet?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-38-informational)](#-tool-catalog)
+[![Tools](https://img.shields.io/badge/tools-38-informational)](#tool-catalog)
 [![PyPI](https://img.shields.io/badge/PyPI-workspace--operator--mcp-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/workspace-operator-mcp/)
 [![Antigravity](https://img.shields.io/badge/Antigravity-ready-4285F4?logo=google&logoColor=white)](antigravity/README.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -40,7 +40,9 @@ takes identifiers and ranges, and all examples use synthetic data.
 
 ![Demo: read the last Gmail message and move it to Trash](https://raw.githubusercontent.com/Artoxem/workspace-operator/master/docs/images/gmail-demo.gif)
 
-*Find the last message, read it, then move it to Trash. The message stays recoverable for 30 days.*
+*Find the last message, read it, then move it to Trash through a reviewed bulk plan. It stays recoverable for 30 days.*
+
+**Jump to:** [Quick start](#quick-start) · [Tool profiles](#tool-profiles) · [Operations](#operations) · [Approval in the browser](#approval-in-the-browser) · [Tool catalog](#tool-catalog) · [Safety](#safety-by-default) · [Limitations](#limitations)
 
 ## How it compares
 
@@ -75,7 +77,7 @@ Operator is for "change the workspace and be able to roll it back".
 | ⚙️ Apps Script | 3 | read, staged writes, run (admin) |
 
 Plus 3 resources, 3 resource templates and 7 prompts — see the
-[tool catalog](#-tool-catalog).
+[tool catalog](#tool-catalog).
 
 ## Who it is for
 
@@ -273,7 +275,9 @@ denied_tools: ["gmail_write", "drive_write"]
 ```
 
 Environment overrides: `MCP_TOOL_PROFILE`, `MCP_ALLOWED_TOOLS`, `MCP_DENIED_TOOLS`.
-A blocked call returns a clear explanation instead of failing silently.
+`workspace-operator serve --profile full` picks a profile for one run and wins over
+both the config file and `MCP_TOOL_PROFILE`. A blocked call returns a clear
+explanation instead of failing silently.
 
 Profiles are the second filter. At startup the server also hides tools whose
 Google OAuth scope is missing; see [Scopes and tools](docs/PROFILES.md#scopes-and-tools).
@@ -314,9 +318,13 @@ never receives the link or its secret. With `MCP_APPROVAL_BROWSER_WAIT=0` (the d
 the call returns `approval_id` immediately and you decide with `approvals approve` or the
 page from `approvals link`.
 
-Drive moves, including single-file moves, use `bulk_plan` → `bulk_run`. The review
-shows every file, its source folder and the destination. Local uploads also need
-approval. See [Drive review setup and Shared drives](docs/APPROVALS.md#reviewing-drive-moves-and-uploads).
+Drive moves, uploads, file and message deletions all use `bulk_plan` → `bulk_run`,
+so one approval covers the whole list — a single file is just a list of one. The
+review page groups items by source folder, offers **show all** and a **CSV**
+manifest, and prints a short fingerprint of the plan, so the list you checked is
+the one that runs. Deleting a folder shows how many items go to Trash with it.
+Shared drives are opt-in with `MCP_BULK_ALLOW_SHARED_DRIVES=1`.
+See [Reviewing Drive moves, uploads and deletions](docs/APPROVALS.md#reviewing-drive-moves-and-uploads).
 
 ### HTTP transport (localhost first)
 
@@ -580,7 +588,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 529 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 533 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

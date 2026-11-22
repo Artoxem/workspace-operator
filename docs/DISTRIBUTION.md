@@ -4,14 +4,14 @@ How to get Workspace Operator in front of people who run AI agents.
 
 Ready-to-post copy and submission fields: [LAUNCH_PACKAGE.md](LAUNCH_PACKAGE.md).
 
-Current baseline: 39 tools, 13 OAuth scopes, 529 tests, PyPI and GHCR
+Current baseline: 38 tools, 13 OAuth scopes, 533 tests, PyPI and GHCR
 releases, MIT. Discovery is the bottleneck, not the feature set.
 
 ## 1. Positioning
 
 Use one sentence everywhere:
 
-> **Google Workspace automation for AI agents: 39 tools, local OAuth, and bulk
+> **Google Workspace automation for AI agents: 38 tools, local OAuth, and bulk
 > operations that plan, confirm and undo.**
 
 Three differentiators worth repeating:
@@ -62,7 +62,7 @@ Sequence matters: listings first, then one launch spike, then steady content.
 
 **Show HN** (Tuesday–Thursday, 08:00–10:00 US Eastern):
 
-> Show HN: Workspace Operator – 39 Google Workspace tools for AI agents
+> Show HN: Workspace Operator – 38 Google Workspace tools for AI agents
 >
 > I built an MCP server that gives agents the whole Google Workspace, not just
 > Gmail. The part I care about is bulk: moving 1,000 files is one plan, one
@@ -81,7 +81,7 @@ answer questions; never post the same text in several subreddits on one day.
 3. the architecture: local OAuth, profiles, audit, Docker;
 4. the link and one command to install.
 
-**Habr (RU)** — a technical article: "39 инструментов Google Workspace в одном
+**Habr (RU)** — a technical article: "38 инструментов Google Workspace в одном
 MCP-сервере: как безопасно делать массовые операции". Habr rewards depth and
 honest benchmarks, not a link drop.
 

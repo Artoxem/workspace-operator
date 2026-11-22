@@ -4,12 +4,16 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.4**.
+Current release: **2.9.5**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|---|
+| **2.9.5** | Documentation audit, no code change. README (EN/RU) opens with a jump menu, states the real surface (38 tools, 19 in core) and describes the reviewed bulk path for moves, uploads and deletions, the review page (groups, show all, CSV, plan fingerprint) and shared-drive opt-in. Two broken in-page anchors and the Russian tools badge are fixed, stale counts (39 tools, 529 tests) corrected across README, DISTRIBUTION, LAUNCH_PACKAGE and PUBLISHING, `drive_trash` removed from the profile tables, and both migration guides carry a 2.6/2.9 caveat. All 28 Markdown files pass an anchor check. |
+| **2.9.4** | Gmail pads snippets with a combining grapheme joiner (U+034F) besides zero-width marks, and it survived the cleaner. The invisible set now covers it and the other common padding characters, so the page and the CSV keep only readable text. 533 tests. |
+| **2.9.3** | Gmail snippets arrive HTML-escaped (`NVIDIA&#39;s`); the review now decodes entities before display, so the page and the CSV show normal text. 532 tests. |
+| **2.9.2** | Gmail snippets in the review are cleaned: Gmail pads them with zero-width and variation marks, which leaked into the page and the CSV. The visible words are kept, whitespace is collapsed and the text is capped at 200 characters. 531 tests. |
 | **2.9.1** | The Gmail approval page showed zero items. `bulk_plan` built a subject/sender sample but never stored it, so the page had only ids: "Delete 0 item(s)", an empty table, and no sender or subject. The sample is now part of the plan (saved and loaded with it), the page lists sender, subject and the first words of each message, the total comes from the plan rather than the sample, and the CSV gained a snippet column. 530 tests. |
 | **2.9.0** | Deleting and other mailbox changes go through bulk. **Breaking:** `drive_trash` is removed and `gmail_delete` keeps only `draft`; the `gmail_write.archive` action is gone, and the retired calls answer with the exact `bulk_plan` recipe instead of acting. One review now covers the whole list for Drive trash, Gmail trash, archive, restore, mark read/unread and label changes: the page shows the destination, the total count and the first messages with their senders, and states that every match is affected. A plan is loaded once and the approved snapshot is what executes. 529 tests; 38 tools. |
 | **2.8.0** | Deletion approvals show what will be deleted. `drive_trash` now prepares a review before asking: the item name, type, size and the folder it sits in, and for a folder the number of items inside with a few names — everything in it goes to Trash with it. `gmail_delete` shows the subject and sender. A target already in Trash, or one that cannot be read, is refused before an approval exists. The review renders on the same compact page as moves and uploads, with the same signed record. 529 tests. |
@@ -50,7 +54,6 @@ Key 2.0 properties:
 
 | Version | What changed |
 |---|---|---|
-| **2.9.2** | Gmail snippets in the review are cleaned: Gmail pads them with zero-width and variation marks, which leaked into the page and the CSV. The visible words are kept, whitespace is collapsed and the text is capped at 200 characters. 531 tests. |
 | **1.22.0–1.22.5** | Tasks, Forms and Postmaster; 132 tools; Gmail delete fixed to Trash; onboarding rewrite; demo GIF and banner; documentation and cleanup releases. |
 | **1.21.0** | `bulk_undo` for move, rename and trash; text replacement across Docs, Slides and Sheets. |
 | **1.20.0** | Bulk Gmail actions and Drive sharing. |
@@ -60,7 +63,6 @@ Key 2.0 properties:
 
 | Version | What changed |
 |---|---|---|
-| **2.9.3** | Gmail snippets arrive HTML-escaped (`NVIDIA&#39;s`); the review now decodes entities before display, so the page and the CSV show normal text. 532 tests. |
 | **1.18.x** | Validation, filter views, shapes; doctor scope checks; HTTP session fix. |
 | **1.17.0** | Pivot tables, styling and more integrations. |
 | **1.16.0** | Column operations, media, integrations. |
@@ -71,7 +73,6 @@ Key 2.0 properties:
 
 | Version | What changed |
 |---|---|---|
-| **2.9.4** | Gmail pads snippets with a combining grapheme joiner (U+034F) besides zero-width marks, and it survived the cleaner. The invisible set now covers it and the other common padding characters, so the page and the CSV keep only readable text. 533 tests. |
 | **1.13.x** | Docker image on GHCR; container port fix. |
 | **1.12.x** | Scenario prompts; metadata fix. |
 | **1.10–1.11** | Native tables in Docs; table-to-presentation; universality guard. |

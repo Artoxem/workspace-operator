@@ -105,7 +105,7 @@ warning: the server cannot know the granted scopes yet.
 |---|---|
 | none (cross-domain) | `workspace_search`, `digest`, `compare_tables`, `bulk_*` |
 | `drive` or `drive.readonly` | `drive_search`, `drive_read` |
-| `drive` | plus `drive_write`, `drive_trash`, `drive_permissions` |
+| `drive` | plus `drive_write`, `drive_permissions` (deletion via bulk) |
 | `documents` or `documents.readonly` | `read_doc` |
 | `documents` | plus `docs_write`, `docs_edit` |
 | `spreadsheets` or `spreadsheets.readonly` | `sheets_read` |
