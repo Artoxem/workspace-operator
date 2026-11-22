@@ -9,7 +9,7 @@ from unittest import mock
 
 from googleapiclient.errors import HttpError
 
-from workspace_operator.bulk import selector, service, store
+from workspace_operator.bulk import move, selector, service, store
 from workspace_operator.bulk.models import BulkError, Job
 from workspace_operator.config import Config
 
@@ -50,6 +50,7 @@ class FakeDriveFiles:
         self.pages = list(pages or [])
         self.by_id = by_id or {}
         self.list_calls = []
+        self.get_calls = []
 
     def list(self, **kwargs):
         self.list_calls.append(kwargs)
@@ -58,6 +59,7 @@ class FakeDriveFiles:
         return Req(page)
 
     def get(self, fileId, **kwargs):  # noqa: N803
+        self.get_calls.append((fileId, kwargs))
         if fileId in self.by_id:
             return Req(self.by_id[fileId])
         return Req(error=http_error(404))
@@ -245,6 +247,147 @@ def make_config(directory, **kw):
                   mcp_auth_token="x", scopes=[], bulk_dir=directory, bulk_max_items=5,
                   bulk_hard_limit=20)
     return replace(base, **kw)
+
+
+class MovePlanTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.config = make_config(self.tmp.name)
+
+    @staticmethod
+    def folder(folder_id, name, **extra):
+        return {"id": folder_id, "name": name, "mimeType": move.FOLDER_MIME,
+                "capabilities": {"canAddChildren": True}, **extra}
+
+    def _plan(self, files, *, ids=None, target="dest", query_selector=None):
+        with mock.patch.object(service, "get_creds", return_value=object()), mock.patch.object(
+            service, "build", return_value=FakeDrive(files)
+        ), mock.patch.object(selector, "build", return_value=FakeDrive(files)):
+            return json.loads(service.plan_bulk(
+                self.config, LOGGER, "drive", "move", {"ids": ids} if ids is not None else query_selector,
+                {"target_folder_id": target}, sample=1,
+            ))
+
+    def test_full_review_includes_every_file_and_source_beyond_sample(self):
+        files = FakeDriveFiles(by_id={
+            "dest": self.folder("dest", "Project destination {} 東京"),
+            "p1": self.folder("p1", "Spring"), "p2": self.folder("p2", "Summer"),
+            "id1": meta(1, parents=["p1", "p2"]), "id2": meta(2, parents=["p2"]),
+        })
+        result = self._plan(files, ids=["id1", "id2"])
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(len(result["sample"]), 1)
+        snapshot = store.load_plan(self.config, result["plan_id"])
+        self.assertEqual(service.move_review(snapshot), {
+            "operation": "move",
+            "destination": {"id": "dest", "name": "Project destination {} 東京"},
+            "items": [
+                {"id": "id1", "name": "file1.txt", "sources": [
+                    {"id": "p1", "name": "Spring"}, {"id": "p2", "name": "Summer"},
+                ]},
+                {"id": "id2", "name": "file2.txt", "sources": [{"id": "p2", "name": "Summer"}]},
+            ],
+        })
+        self.assertEqual([file_id for file_id, _ in files.get_calls].count("p2"), 1)
+        before = store.plan_digest(snapshot)
+        snapshot.options = dict(reversed(list(snapshot.options.items())))
+        self.assertEqual(store.plan_digest(snapshot), before)
+        snapshot.items[1]["sources"][0]["name"] = "Changed"
+        self.assertNotEqual(store.plan_digest(snapshot), before)
+
+    def test_move_rejects_implicit_unreviewed_changes_and_uses_only_supplied_snapshot(self):
+        files = FakeDriveFiles(by_id={
+            "root": self.folder("actual-root", "My Drive"),
+            "p1": self.folder("p1", "Source"), "id1": meta(1, parents=["p1"]),
+        })
+        result = self._plan(files, ids=["id1"], target="root")
+        self.assertEqual(result["destination"], {"id": "actual-root", "name": "My Drive"})
+        plan_id = result["plan_id"]
+        plan = store.load_plan(self.config, plan_id)
+        with mock.patch.object(service.engine, "start_job") as start:
+            denied = json.loads(service.run_bulk(self.config, LOGGER, plan_id, confirm=True))
+            self.assertFalse(denied["ok"], denied)
+            self.assertIn("approved move snapshot", denied["error"])
+            start.assert_not_called()
+        changed = store.load_plan(self.config, plan_id)
+        changed.items[0]["name"] = "replacement"
+        store.save_plan(self.config, changed)
+        job = Job(id="bj_job", plan_id=plan_id, domain="drive", action="move", total=1)
+        with mock.patch.object(service.engine, "start_job", return_value=job) as start, mock.patch.object(
+            store, "load_plan", side_effect=AssertionError("must not reread the persisted plan")
+        ):
+            started = json.loads(service.run_bulk(self.config, LOGGER, plan_id, confirm=True, plan_snapshot=plan))
+        self.assertTrue(started["ok"], started)
+        self.assertIs(start.call_args.args[1], plan)
+        self.assertEqual(start.call_args.args[1].items[0]["name"], "file1.txt")
+
+    def test_legacy_move_plan_without_complete_review_is_refused(self):
+        files = FakeDriveFiles(by_id={
+            "dest": self.folder("dest", "Destination"),
+            "p1": self.folder("p1", "Source"), "id1": meta(1, parents=["p1"]),
+        })
+        result = self._plan(files, ids=["id1"])
+        plan = store.load_plan(self.config, result["plan_id"])
+        del plan.items[0]["sources"]
+        with self.assertRaisesRegex(BulkError, "no valid complete review"):
+            service.move_review(plan)
+
+    def test_inaccessible_file_or_source_and_folder_items_fail_closed(self):
+        files = FakeDriveFiles(by_id={
+            "dest": self.folder("dest", "Destination"),
+            "id1": meta(1, parents=["missing-source"]),
+            "folder": self.folder("folder", "Folder"),
+        })
+        for ids, text in ((["id1"], "source folder"), (["id1", "unreadable"], "cannot be read"),
+                          (["folder"], "not folders"), ([], "at least one eligible file")):
+            with self.subTest(ids=ids):
+                result = self._plan(files, ids=ids)
+                self.assertFalse(result["ok"], result)
+                self.assertIn(text, result["error"])
+        self.assertEqual(files.list_calls, [], "explicit empty IDs must not select every file")
+
+    def test_shared_drive_requires_opt_in_verified_context_and_capabilities(self):
+        files = FakeDriveFiles(by_id={
+            "dest": self.folder("dest", "Destination", driveId="shared"),
+            "p1": self.folder("p1", "Source", driveId="shared"),
+            "id1": meta(1, parents=["p1"], driveId="shared", capabilities={"canMoveItemWithinDrive": True}),
+        })
+        result = self._plan(files, ids=["id1"])
+        self.assertFalse(result["ok"], result)
+        self.assertIn("bulk_allow_shared_drives", result["error"])
+        self.config = replace(self.config, bulk_allow_shared_drives=True)
+        files.get_calls.clear()
+        result = self._plan(files, ids=["id1"])
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(all(kwargs["supportsAllDrives"] for _, kwargs in files.get_calls))
+        files.by_id["p1"]["driveId"] = "other"
+        result = self._plan(files, ids=["id1"])
+        self.assertIn("source folder is not in the same drive", result["error"])
+        files.by_id["p1"]["driveId"] = "shared"
+        files.by_id["id1"].pop("capabilities")
+        result = self._plan(files, ids=["id1"])
+        self.assertIn("does not allow moving", result["error"])
+        for other_drive in (None, "other"):
+            files.by_id["id1"]["driveId"] = other_drive
+            result = self._plan(files, ids=["id1"])
+            self.assertIn("different Drive locations", result["error"])
+        files.by_id["id1"]["driveId"] = "shared"
+        files.by_id["dest"].pop("capabilities")
+        result = self._plan(files, ids=["id1"])
+        self.assertIn("does not allow adding", result["error"])
+
+    def test_shared_folder_scoped_query_targets_drive_and_excludes_folders(self):
+        self.config = replace(self.config, bulk_allow_shared_drives=True)
+        files = FakeDriveFiles(
+            by_id={"dest": self.folder("dest", "Dest", driveId="d"), "src": self.folder("src", "Source", driveId="d")},
+            pages=[{"files": [meta(1, parents=["src"], driveId="d", capabilities={"canMoveItemWithinDrive": True})]}],
+        )
+        result = self._plan(files, query_selector={"folder_id": "src"})
+        self.assertTrue(result["ok"], result)
+        scope = files.list_calls[0]
+        self.assertEqual((scope["corpora"], scope["driveId"]), ("drive", "d"))
+        self.assertIn("mimeType !=", scope["q"])
 
 
 class FacadeTests(unittest.TestCase):

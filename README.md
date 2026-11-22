@@ -314,6 +314,10 @@ never receives the link or its secret. With `MCP_APPROVAL_BROWSER_WAIT=0` (the d
 the call returns `approval_id` immediately and you decide with `approvals approve` or the
 page from `approvals link`.
 
+Drive moves, including single-file moves, use `bulk_plan` → `bulk_run`. The review
+shows every file, its source folder and the destination. Local uploads also need
+approval. See [Drive review setup and Shared drives](docs/APPROVALS.md#reviewing-drive-moves-and-uploads).
+
 ### HTTP transport (localhost first)
 
 ```bash
@@ -430,7 +434,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 | `digest` | read | - | Summarise Gmail, Calendar and Drive for the last N hours. |
 | `compare_tables` | read | - | Diff two sheet ranges by a key column. |
 | `drive_read` | read | metadata, export, list_permissions | Read Drive metadata, permissions and exported files. |
-| `drive_write` | write | create_folder, copy, move, rename, upload, share, restore | Create, copy, move, rename, upload, share and restore Drive files. |
+| `drive_write` | write | create_folder, copy, rename, upload, share, restore | Create, copy, rename, upload, share and restore Drive files; upload needs approval. Use `bulk_plan` and `bulk_run` for moves. |
 | `drive_trash` | destructive | - | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
 | `drive_permissions` | destructive | remove, revoke_public | Remove access from a Drive file. |
 | `read_doc` | read | - | Read the contents of a Google Doc. |
@@ -463,7 +467,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 | `bulk_result` | read | - | Read one page of bulk job results. |
 | `bulk_list` | read | - | List recent bulk jobs. |
 | `bulk_cancel` | write | - | Request cancellation of a running bulk job. |
-| `bulk_undo` | destructive | - | Undo a completed bulk job (move, rename, trash). |
+| `bulk_undo` | destructive | - | Undo a completed bulk rename or trash job. |
 
 ### Resources
 
@@ -577,7 +581,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 492 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 518 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

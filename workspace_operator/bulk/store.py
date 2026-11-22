@@ -7,8 +7,10 @@ Results are JSON Lines so a 10,000-item job can be read page by page.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import tempfile
 import threading
 import time
@@ -84,6 +86,8 @@ def read_json(path: Path) -> Optional[Dict[str, Any]]:
 
 
 def plan_path(config: Config, plan_id: str) -> Path:
+    if not isinstance(plan_id, str) or not re.fullmatch(r"bp_[A-Za-z0-9_-]{1,64}", plan_id):
+        raise BulkError("invalid bulk plan ID; run bulk_plan to build a fresh plan")
     return _plans_dir(config) / f"{plan_id}.json"
 
 
@@ -92,13 +96,27 @@ def save_plan(config: Config, plan: Plan) -> None:
     write_json_atomic(plan_path(config, plan.id), plan.to_dict())
 
 
+def plan_digest(plan: Plan) -> str:
+    """Hash the complete loaded snapshot, independent of JSON key ordering."""
+    canonical = json.dumps(
+        plan.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def load_plan(config: Config, plan_id: str) -> Plan:
     data = read_json(plan_path(config, plan_id))
     if data is None:
         raise BulkError(
             f"Unknown or expired plan '{plan_id}'. Run bulk_plan again to build a fresh plan."
         )
-    return Plan.from_dict(data)
+    try:
+        plan = Plan.from_dict(data)
+    except (KeyError, TypeError) as exc:
+        raise BulkError("invalid bulk plan snapshot; run bulk_plan to build a fresh plan") from exc
+    if plan.id != plan_id:
+        raise BulkError("bulk plan snapshot ID does not match the requested plan")
+    return plan
 
 
 def job_path(config: Config, job_id: str) -> Path:

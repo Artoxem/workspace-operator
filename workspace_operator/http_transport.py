@@ -19,7 +19,7 @@ import html
 import logging
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote, urlsplit
 
 import uvicorn
@@ -198,6 +198,36 @@ def _manager_for(server, options: HttpOptions) -> StreamableHTTPSessionManager:
     )
 
 
+def _review_html(review: Dict[str, Any]) -> str:
+    """The complete, server-built review; never interpret names as HTML or URLs."""
+    def escaped(value: Any) -> str:
+        return html.escape(str(value or ""))
+
+    def identity(item: Dict[str, Any]) -> str:
+        return f"<bdi>{escaped(item.get('name'))}</bdi> <code><bdi>{escaped(item.get('id'))}</bdi></code>"
+
+    destination = review["destination"]
+    drive_id = destination.get("driveId") or destination.get("drive_id")
+    drive = f"<p>Shared drive ID: <code>{escaped(drive_id)}</code></p>" if drive_id else ""
+    rows = []
+    for item in review["items"]:
+        sources = "<br>".join(identity(source) for source in item.get("sources", [])) or "(no parent)"
+        details = ""
+        if review["operation"] == "upload":
+            mime = item.get("conversion_mime_type") or item.get("mime_type")
+            details = f"<br>{escaped(item.get('size_bytes', 0)) or '0'} bytes; output type: {escaped(mime)}"
+        item_label = identity(item) if review["operation"] != "upload" else f"<bdi>{escaped(item.get('name'))}</bdi>"
+        rows.append(f"<tr><td>{item_label}{details}</td><td>{sources}</td></tr>")
+    warnings = "".join(f"<li>{escaped(warning)}</li>" for warning in review.get("warnings", []))
+    notices = f"<ul>{warnings}</ul>" if warnings else ""
+    return (
+        f"<section><h2>Review {len(rows)} file(s)</h2>"
+        f"<p><strong>Destination for all files:</strong> {identity(destination)}</p>{drive}{notices}"
+        "<div class='review-table'><table><thead><tr><th>File</th><th>From</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div></section>"
+    )
+
+
 def build_asgi_app(
     servers,
     options: HttpOptions,
@@ -242,6 +272,7 @@ def build_asgi_app(
         status = record.get("status", "?")
         summary = html.escape(str(record.get("summary", "")))
         expires = html.escape(str(record.get("expires_at", "")))
+        review = _review_html(record["review"]) if "review" in record else ""
         action_forms = ""
         if status == "pending":
             action_forms = f"""
@@ -258,14 +289,16 @@ def build_asgi_app(
             <style>body{{background:#101014;color:#e8e8ee;font:15px/1.5 system-ui;max-width:640px;margin:48px auto;padding:0 20px}}
             code{{background:#17171d;border:1px solid #26262f;border-radius:6px;padding:2px 6px}}
             .card{{background:#17171d;border:1px solid #26262f;border-radius:12px;padding:20px;margin-top:18px}}
-            .status{{color:#f0c674}}</style>
+            .status{{color:#f0c674}} .review-table{{overflow:auto;max-height:55vh;margin:12px 0}}
+            table{{width:100%;border-collapse:collapse}} th,td{{text-align:left;padding:8px;border-bottom:1px solid #404048;overflow-wrap:anywhere}}</style>
             <h1>Workspace Operator approval</h1>
             <div class="card">
               <p><strong>Action:</strong> {summary}</p>
               <p><strong>Status:</strong> {html.escape(status)}</p>
               <p><strong>Expires:</strong> {expires}</p>
               <p><code>{html.escape(approval_id)}</code></p>
-              {action_forms}
+              {review}
+               {action_forms}
               <p style="color:#9a9aa8;margin-top:18px">Only Approve allows the exact call shown here. If the chat is still waiting, it will resume automatically. Otherwise tell the agent about your decision.</p>
             </div>""",
             headers=_PAGE_HEADERS,

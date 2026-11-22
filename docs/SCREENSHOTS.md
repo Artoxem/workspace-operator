@@ -106,7 +106,7 @@ A 15–25 second GIF converts better than three screenshots:
 2. plan appears with counts and sample;
 3. confirm;
 4. progress reaches 100%;
-5. `bulk_undo` returns the files.
+5. use the previous folders in `bulk_result` for a new reviewed move back.
 
 Tools: **ScreenToGif** (Windows, free) or **LICEcap**. Record at 1200×720,
 10–15 fps, then trim idle frames. Keep it under 5 MB; GitHub renders GIFs inline.

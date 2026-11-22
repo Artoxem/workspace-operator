@@ -21,8 +21,12 @@ from typing import Any, Dict, Mapping, Optional, Tuple
 import mcp.types as types
 
 from .approvals import ApprovalError, ApprovalStore, challenge_text, summarize
+from .bulk import service as bulk_service
+from .bulk import store as bulk_store
+from .bulk.models import BulkError, Plan
 from .config import Config
 from .dispatch import build_handlers
+from .handlers import files as drive_files
 from .operations import BinaryResult
 from .results import ToolError, ToolResult, is_error_text
 from .runtime import AuditLog, call_with_retry
@@ -189,11 +193,13 @@ class ToolRouter:
         name: str,
         plan: CallPlan,
         argument_names: Tuple[str, ...],
+        *, review: Optional[Dict[str, Any]] = None, snapshot_digest: Optional[str] = None,
     ) -> Optional[types.CallToolResult]:
         """Human approval for a destructive call; ``None`` means "approved, go on"."""
         audit, profile_name, approvals = self.audit, self.profile_name, self.approvals
         browser_wait = self.config.approval_browser_wait
-        elicitation = None if browser_wait else await self._elicit_approval(
+        # Compact elicitation has no full preview; reviewed operations use the queue.
+        elicitation = None if browser_wait or review is not None or snapshot_digest is not None else await self._elicit_approval(
             ctx, name, plan, argument_names
         )
         if elicitation == "approved":
@@ -209,7 +215,9 @@ class ToolRouter:
         try:
             approval_id = plan.arguments.get("approval_id")
             if not approval_id:
-                record = approvals.request(name, plan.action, plan.arguments)
+                record = approvals.request(
+                    name, plan.action, plan.arguments, review=review, snapshot_digest=snapshot_digest
+                )
                 audit.record(
                     name,
                     profile_name,
@@ -239,7 +247,8 @@ class ToolRouter:
                         message += " If no browser tab opened, the operator's browser helper may not be running."
                     return _message(message)
             ok, reason = approvals.consume(
-                str(approval_id), name, plan.action, plan.arguments
+                str(approval_id), name, plan.action, plan.arguments,
+                review=review, snapshot_digest=snapshot_digest,
             )
             if not ok:
                 audit.record(
@@ -252,7 +261,9 @@ class ToolRouter:
                 )
                 if browser_wait:
                     return _message(f"Approval could not be used: {reason} The action did not run.")
-                record = approvals.request(name, plan.action, plan.arguments)
+                record = approvals.request(
+                    name, plan.action, plan.arguments, review=review, snapshot_digest=snapshot_digest
+                )
                 self._announce_to_operator(record)
                 return _message(
                     f"Approval could not be used: {reason}\n\n"
@@ -297,6 +308,7 @@ class ToolRouter:
         plan: CallPlan,
         argument_names: Tuple[str, ...],
         started: float,
+        *, upload_review: Optional[Dict[str, Any]] = None, bulk_snapshot: Optional[Plan] = None,
     ) -> types.CallToolResult:
         config, logger = self.config, self.logger
         try:
@@ -312,15 +324,26 @@ class ToolRouter:
                 },
             )
 
-            if plan.legacy_name not in handlers:
-                raise ValueError(f"Unknown tool: {plan.legacy_name}")
-
-            result = await asyncio.to_thread(
-                call_with_retry,
-                lambda: handlers[plan.legacy_name](plan.arguments),
-                config.retry_attempts,
-                logger=logger,
-            )
+            if upload_review is not None:
+                # A Drive create is not idempotent; do not retry the whole approval.
+                result = await asyncio.to_thread(
+                    drive_files.execute_prepared_drive_upload, config, logger, upload_review
+                )
+            elif bulk_snapshot is not None:
+                result = await asyncio.to_thread(
+                    self.handler_module.bulk_run_handler, config, logger, bulk_snapshot.id,
+                    True, lambda job: self._record_bulk_finish("bulk_run", job),
+                    plan.arguments.get("job_id"), plan_snapshot=bulk_snapshot,
+                )
+            else:
+                if plan.legacy_name not in handlers or plan.legacy_name == "bulk_run":
+                    raise ValueError(f"Unknown or unprepared tool: {plan.legacy_name}")
+                result = await asyncio.to_thread(
+                    call_with_retry,
+                    lambda: handlers[plan.legacy_name](plan.arguments),
+                    config.retry_attempts,
+                    logger=logger,
+                )
 
             if isinstance(result, BinaryResult):
                 return types.CallToolResult(
@@ -389,6 +412,12 @@ class ToolRouter:
     ) -> types.CallToolResult:
         if not arguments:
             arguments = {}
+        if name == "move_file" or (name == "drive_write" and arguments.get("action") == "move"):
+            return _error(
+                "Direct Drive move was removed. Use bulk_plan(domain='drive', action='move', "
+                "selector={'ids': [...]}, options={'target_folder_id': '…'}), then bulk_run. "
+                "No files were moved."
+            )
 
         spec, arguments, early = self._find_spec(name, arguments)
         if early is not None:
@@ -423,9 +452,38 @@ class ToolRouter:
         if self.config.dry_run and not is_read_only:
             return self._dry_run(name, argument_names)
 
-        if spec.safety is Safety.DESTRUCTIVE:
-            denied = await self._authorise(ctx, name, plan, argument_names)
+        review: Optional[Dict[str, Any]] = None
+        snapshot: Optional[Plan] = None
+        digest: Optional[str] = None
+        reviewed_upload = plan.legacy_name == "drive_upload"
+        try:
+            if reviewed_upload or plan.legacy_name == "bulk_run":
+                require_token_configured(self.config.mcp_auth_token)
+            if reviewed_upload:
+                review = await asyncio.to_thread(
+                    drive_files.prepare_drive_upload,
+                    self.config, plan.arguments["local_path"],
+                    **{key: plan.arguments.get(key) for key in ("name", "parent_id", "mime_type", "convert_to")},
+                )
+            elif plan.legacy_name == "bulk_run":
+                plan_id = plan.arguments.get("plan_id")
+                if not isinstance(plan_id, str) or not plan_id:
+                    raise BulkError("bulk_run needs a valid plan_id. Run bulk_plan first.")
+                snapshot = await asyncio.to_thread(bulk_store.load_plan, self.config, plan_id)
+                digest = bulk_store.plan_digest(snapshot)
+                if snapshot.domain == "drive" and snapshot.action == "move":
+                    review = bulk_service.move_review(snapshot)
+        except Exception as exc:  # metadata reads and local validation precede all approval/execution
+            reason = humanize_http_error(exc)
+            self.audit.record(name, self.profile_name, "preview-error", 0, argument_names, error=reason)
+            return _error(f"Could not prepare the operation: {reason}")
+
+        if spec.safety is Safety.DESTRUCTIVE or review is not None or snapshot is not None:
+            denied = await self._authorise(ctx, name, plan, argument_names, review=review, snapshot_digest=digest)
             if denied is not None:
                 return denied
 
-        return await self._execute(name, plan, argument_names, started)
+        return await self._execute(
+            name, plan, argument_names, started, upload_review=review if reviewed_upload else None,
+            bulk_snapshot=snapshot,
+        )

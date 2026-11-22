@@ -20,7 +20,7 @@ Workspace Operator 2.0 содержит 39 консолидированных и
 | `digest` | read | — | Summarise Gmail, Calendar and Drive for the last N hours. |
 | `compare_tables` | read | — | Diff two sheet ranges by a key column. |
 | `drive_read` | read | `metadata`, `export`, `list_permissions` | Read Drive metadata, permissions and exported files. |
-| `drive_write` | write | `create_folder`, `copy`, `move`, `rename`, `upload`, `share`, `restore` | Create, copy, move, rename, upload, share and restore Drive files. |
+| `drive_write` | write | `create_folder`, `copy`, `rename`, `upload`, `share`, `restore` | Загрузка требует подтверждения. Для переноса используйте `bulk_plan` и `bulk_run`. |
 | `drive_trash` | destructive | — | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
 | `drive_permissions` | destructive | `remove`, `revoke_public` | Remove access from a Drive file. |
 | `read_doc` | read | — | Read the contents of a Google Doc. |
@@ -53,7 +53,7 @@ Workspace Operator 2.0 содержит 39 консолидированных и
 | `bulk_result` | read | — | Read one page of bulk job results. |
 | `bulk_list` | read | — | List recent bulk jobs. |
 | `bulk_cancel` | write | — | Request cancellation of a running bulk job. |
-| `bulk_undo` | destructive | — | Undo a completed bulk job (move, rename, trash). |
+| `bulk_undo` | destructive | — | Отменяет массовое переименование или перемещение в корзину. |
 
 ## Prompts
 

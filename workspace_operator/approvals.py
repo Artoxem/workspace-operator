@@ -11,14 +11,15 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
-import threading
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Sequence
+from typing import Any, Dict, Iterable, Iterator, Optional, Sequence
 
 from .config import Config, _default_path
-from .secure_files import restrict_to_owner, write_private
+from .secure_files import file_lock, restrict_to_owner, write_private
 
 DEFAULT_TTL_SECONDS = 900
 _STATUSES = ("pending", "approved", "denied", "used")
@@ -68,8 +69,12 @@ def _load_or_create_key(root: Path) -> bytes:
 
 
 def _seal(key: bytes, record: Dict[str, Any]) -> str:
+    signed = {field: record.get(field) for field in _SIGNED_FIELDS}
+    if "review" in record:
+        signed["review"] = record["review"]
+        signed["summary"] = record.get("summary")
     message = json.dumps(
-        {field: record.get(field) for field in _SIGNED_FIELDS},
+        signed,
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
@@ -88,15 +93,23 @@ def _parse(value: str) -> datetime:
     return datetime.fromisoformat(value)
 
 
-def arguments_hash(tool: str, action: Optional[str], arguments: Dict[str, Any]) -> str:
+def arguments_hash(
+    tool: str, action: Optional[str], arguments: Dict[str, Any], *,
+    review: Optional[Dict[str, Any]] = None, snapshot_digest: Optional[str] = None,
+) -> str:
     """Bind an approval to the exact call, excluding approval/confirm fields."""
     clean = {
         key: value
         for key, value in arguments.items()
         if key not in ("approval_id", "confirm")
     }
+    data = {"tool": tool, "action": action, "arguments": clean}
+    if review is not None:
+        data["review"] = review
+    if snapshot_digest is not None:
+        data["snapshot_digest"] = snapshot_digest
     payload = json.dumps(
-        {"tool": tool, "action": action, "arguments": clean},
+        data,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
@@ -144,6 +157,8 @@ def summarize(tool: str, action: Optional[str], arguments: Dict[str, Any]) -> st
 
 
 def _record_path(root: Path, approval_id: str) -> Path:
+    if not re.fullmatch(r"apr_[A-Za-z0-9_-]{1,64}", approval_id):
+        raise ApprovalError(f"Unknown approval id '{approval_id}'.")
     return root / f"{approval_id}.json"
 
 
@@ -169,7 +184,10 @@ def _read(root: Path, approval_id: str, key: bytes) -> Dict[str, Any]:
     except (OSError, ValueError) as exc:
         raise ApprovalError(f"Cannot read approval '{approval_id}': {exc}") from None
     # A record edited outside the server (status, expiry, arguments) fails here.
-    if not hmac.compare_digest(str(record.get("seal", "")), _seal(key, record)):
+    if (
+        not isinstance(record, dict) or record.get("id") != approval_id
+        or not hmac.compare_digest(str(record.get("seal", "")).encode("utf-8"), _seal(key, record).encode("ascii"))
+    ):
         raise ApprovalError(f"Approval '{approval_id}' failed its integrity check.")
     return record
 
@@ -189,8 +207,22 @@ class ApprovalStore:
         self.ttl_seconds = max(
             30, int(getattr(config, "approval_ttl", DEFAULT_TTL_SECONDS) or DEFAULT_TTL_SECONDS)
         )
-        self._lock = threading.Lock()
         self._key: Optional[bytes] = None
+
+    @contextmanager
+    def _locked(self) -> Iterator[None]:
+        # The browser, MCP profiles and operator CLI may have separate stores.
+        try:
+            try:
+                self.root.mkdir(mode=0o700, parents=True)
+            except FileExistsError:
+                pass
+            else:
+                restrict_to_owner(self.root)
+            with file_lock(self.root / "queue"):
+                yield
+        except OSError as exc:
+            raise ApprovalError("The approval store is unavailable.") from exc
 
     @property
     def key(self) -> bytes:
@@ -222,14 +254,15 @@ class ApprovalStore:
         tool: str,
         action: Optional[str],
         arguments: Dict[str, Any],
+        *, review: Optional[Dict[str, Any]] = None, snapshot_digest: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Return an existing pending request or create a new one.
 
         No human secret is created here: the link secret is issued only when a
         human asks for the link (``human_link``), so the agent never holds it.
         """
-        digest = arguments_hash(tool, action, arguments)
-        with self._lock:
+        digest = arguments_hash(tool, action, arguments, review=review, snapshot_digest=snapshot_digest)
+        with self._locked():
             for record in self.list_pending():
                 if (
                     record.get("tool") == tool
@@ -249,6 +282,11 @@ class ApprovalStore:
                 "expires_at": _iso(now + timedelta(seconds=self.ttl_seconds)),
                 "status": "pending",
             }
+            if review is not None:
+                record["review"] = review
+                # Agent-facing status stays compact; the full list is operator-only.
+                verb = {"move": "Move", "upload": "Upload"}.get(str(review.get("operation")), "Review")
+                record["summary"] = f"{verb} {len(review['items'])} file(s)"
             self._write(record)
             return record
 
@@ -282,7 +320,7 @@ class ApprovalStore:
 
     def rotate_secret(self, approval_id: str) -> str:
         """Issue a fresh human secret for a pending approval (invalidates the old link)."""
-        with self._lock:
+        with self._locked():
             record = self._read(approval_id)
             if record.get("status") != "pending":
                 raise ApprovalError(
@@ -312,7 +350,7 @@ class ApprovalStore:
         return self._iter_records()
 
     def approve(self, approval_id: str, actor: str = "cli") -> Dict[str, Any]:
-        with self._lock:
+        with self._locked():
             record = self._read(approval_id)
             if record.get("status") != "pending":
                 raise ApprovalError(
@@ -327,7 +365,7 @@ class ApprovalStore:
             return record
 
     def deny(self, approval_id: str, actor: str = "cli") -> Dict[str, Any]:
-        with self._lock:
+        with self._locked():
             record = self._read(approval_id)
             if record.get("status") != "pending":
                 raise ApprovalError(
@@ -345,10 +383,11 @@ class ApprovalStore:
         tool: str,
         action: Optional[str],
         arguments: Dict[str, Any],
+        *, review: Optional[Dict[str, Any]] = None, snapshot_digest: Optional[str] = None,
     ) -> tuple[bool, str]:
         """Validate and mark one approval as used. Returns (ok, reason)."""
-        digest = arguments_hash(tool, action, arguments)
-        with self._lock:
+        digest = arguments_hash(tool, action, arguments, review=review, snapshot_digest=snapshot_digest)
+        with self._locked():
             try:
                 record = self._read(approval_id)
             except ApprovalError as exc:

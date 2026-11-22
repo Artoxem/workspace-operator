@@ -11,7 +11,7 @@ from unittest import mock
 
 from googleapiclient.errors import HttpError
 
-from workspace_operator.bulk import engine, store
+from workspace_operator.bulk import engine, move, store
 from workspace_operator.bulk.models import BulkError, Job, Plan
 from workspace_operator.config import Config
 
@@ -29,11 +29,12 @@ class FakeRequest:
 class FakeFiles:
     """Records Drive file updates; optionally fails for chosen ids."""
 
-    def __init__(self, fail_ids=(), delay=0.0, parents=None):
+    def __init__(self, fail_ids=(), delay=0.0, by_id=None):
         self.updates = []
+        self.gets = []
         self.fail_ids = set(fail_ids)
         self.delay = delay
-        self.parents = parents or {}
+        self.by_id = by_id or {}
         self._lock = threading.Lock()
 
     def update(self, fileId, **kwargs):  # noqa: N803 - Google API naming
@@ -49,7 +50,8 @@ class FakeFiles:
         return FakeRequest(run)
 
     def get(self, fileId, **kwargs):  # noqa: N803
-        return FakeRequest(lambda: {"parents": self.parents.get(fileId, ["root"]), "name": "n"})
+        self.gets.append((fileId, kwargs))
+        return FakeRequest(lambda: self.by_id[fileId])
 
 
 class FakeDrive:
@@ -133,26 +135,83 @@ class ApplyItemTests(unittest.TestCase):
             "ok",
         )
 
-    def test_move_records_previous_parents_for_undo(self):
-        files = FakeFiles()
-        record = self._apply(
-            files,
-            {"id": "a", "name": "x", "parents": ["p1", "p2"]},
-            "move",
-            {"target_folder_id": "dest"},
-        )
+    def _move_context(self, parents, drive_id=None):
+        destination = {"id": "dest", "name": "Target", "driveId": drive_id}
+        item = {"id": "a", "name": "x", "parents": parents, "mimeType": "text/plain",
+                "driveId": drive_id, "capabilities": {"canMoveItemWithinDrive": True}}
+        options = {"target_folder_id": "dest", "move_destination": destination}
+        files = FakeFiles(by_id={
+            "a": dict(item),
+            "dest": {**destination, "mimeType": move.FOLDER_MIME,
+                     "capabilities": {"canAddChildren": True}},
+        })
+        return files, item, options
+
+    def test_move_records_previous_parents_and_compares_without_order(self):
+        files, item, options = self._move_context(["p1", "p2"])
+        files.by_id["a"]["parents"] = ["p2", "p1"]
+        record = self._apply(files, item, "move", options)
         self.assertEqual(record["previous_parents"], ["p1", "p2"])
         kwargs = files.updates[0][1]
         self.assertEqual(kwargs["addParents"], "dest")
         self.assertEqual(kwargs["removeParents"], "p1,p2")
+        self.assertFalse(kwargs["supportsAllDrives"])
 
-    def test_move_into_current_parent_is_skipped(self):
-        files = FakeFiles()
-        record = self._apply(
-            files, {"id": "a", "name": "x", "parents": ["dest"]}, "move",
-            {"target_folder_id": "dest"},
-        )
-        self.assertEqual(record["status"], "skipped")
+    def test_move_into_current_parent_is_skipped_only_after_live_checks(self):
+        files, item, options = self._move_context(["dest"])
+        self.assertEqual(self._apply(files, item, "move", options)["status"], "skipped")
+        files.by_id["a"]["parents"] = ["unreviewed"]
+        with self.assertRaisesRegex(BulkError, "source parent folders changed"):
+            self._apply(files, item, "move", options)
+        self.assertEqual(files.updates, [])
+
+    def test_move_rejects_new_source_or_renamed_destination(self):
+        files, item, options = self._move_context(["p1"])
+        files.by_id["a"]["parents"] = ["p1", "p2"]
+        with self.assertRaisesRegex(BulkError, "source parent folders changed"):
+            self._apply(files, item, "move", options)
+        files.by_id["dest"]["name"] = "Renamed target"
+        with self.assertRaisesRegex(BulkError, "destination folder changed"):
+            self._apply(files, item, "move", options)
+        self.assertEqual(files.updates, [])
+
+    def test_same_shared_drive_update_requires_opt_in(self):
+        files, item, options = self._move_context(["p1"], "shared")
+        with self.assertRaisesRegex(BulkError, "require bulk_allow_shared_drives"):
+            self._apply(files, item, "move", options)
+        self.assertEqual(files.updates, [])
+        self.config = replace(self.config, bulk_allow_shared_drives=True)
+        self.assertEqual(self._apply(files, item, "move", options)["status"], "ok")
+        self.assertTrue(all(kwargs["supportsAllDrives"] for _, kwargs in files.gets + files.updates))
+        files.by_id["a"]["driveId"] = "other"
+        with self.assertRaisesRegex(BulkError, "different Drive locations"):
+            self._apply(files, item, "move", options)
+        self.assertEqual(len(files.updates), 1)
+
+    def test_move_retry_revalidates_source_before_retrying_mutation(self):
+        files, item, options = self._move_context(["p1"])
+
+        def fail_after_source_has_changed(**kwargs):
+            files.by_id["a"]["parents"] = ["unreviewed"]
+            raise TimeoutError("ambiguous update outcome")
+
+        with mock.patch.object(files, "update", side_effect=fail_after_source_has_changed) as update:
+            with mock.patch.object(engine.time, "sleep"), self.assertRaisesRegex(BulkError, "source parent folders changed"):
+                self._apply(files, item, "move", options)
+        update.assert_called_once()
+
+    def test_move_sends_if_match_when_drive_returns_an_etag(self):
+        files, item, options = self._move_context(["p1"])
+        get = files.get
+        current = FakeRequest(lambda: files.by_id["a"])
+        current.add_response_callback = lambda callback: callback({"etag": '"file-version"'})
+        update = FakeRequest(lambda: {"id": "a"})
+        update.headers = {}
+        with mock.patch.object(files, "get", side_effect=lambda fileId, **kw: (
+            current if fileId == "a" else get(fileId, **kw)
+        )), mock.patch.object(files, "update", return_value=update):
+            self.assertEqual(self._apply(files, item, "move", options)["status"], "ok")
+        self.assertEqual(update.headers["If-Match"], '"file-version"')
 
     def test_move_requires_target(self):
         with self.assertRaises(BulkError):
@@ -174,16 +233,11 @@ class ApplyItemTests(unittest.TestCase):
         with self.assertRaises(BulkError):
             self._apply(FakeFiles(), {"id": "a", "name": "x"}, "explode")
 
-    def test_move_back_skips_when_already_restored(self):
-        files = FakeFiles(parents={"a": ["p1"]})
-        record = self._apply(
-            files, {"id": "a", "name": "x", "previous_parents": ["p1"]}, "move_back"
-        )
-        self.assertEqual(record["status"], "skipped")
-
-    def test_move_back_requires_saved_parents(self):
-        with self.assertRaises(BulkError):
-            self._apply(FakeFiles(), {"id": "a", "name": "x"}, "move_back")
+    def test_legacy_move_back_cannot_update_files(self):
+        files = FakeFiles()
+        with self.assertRaisesRegex(BulkError, "unsupported action"):
+            self._apply(files, {"id": "a", "name": "x", "previous_parents": ["p1"]}, "move_back")
+        self.assertEqual(files.updates, [])
 
     def test_rename_back_restores_previous_name(self):
         files = FakeFiles()
@@ -307,6 +361,15 @@ class RunJobTests(unittest.TestCase):
         self.assertEqual(touched, ["id1", "id2"])
         self.assertEqual(done.state, "completed")
         self.assertEqual(done.total, 3)
+
+    def test_resume_rejects_changed_move_snapshot_even_if_plan_id_matches(self):
+        plan = make_plan(action="move", count=1)
+        job = Job(id="bj_move_resume", plan_id=plan.id, domain="drive", action="move", total=1,
+                  state="interrupted", plan_digest=store.plan_digest(plan))
+        store.save_job(self.config, job)
+        plan.items[0]["parents"] = ["different-parent"]
+        with self.assertRaisesRegex(BulkError, "exact move snapshot"):
+            engine.start_job(self.config, plan, LOGGER, resume_job_id=job.id)
 
     def test_resume_rejects_finished_or_foreign_jobs(self):
         plan = make_plan()

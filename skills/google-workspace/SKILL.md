@@ -4,7 +4,7 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmai
 license: MIT
 metadata:
   server: workspace-operator
-  version: "2.5.2"
+  version: "2.6.0"
 ---
 
 # Google Workspace automation
@@ -67,7 +67,9 @@ Never guess an ID, sheet name or range.
 |---|---|
 | Search | `drive_search` |
 | Metadata / export / permissions | `drive_read` → `metadata`, `export`, `list_permissions` |
-| Create folder, copy, move, rename, upload, share, restore | `drive_write` → matching action |
+| Create folder, copy, rename, share, restore | `drive_write` → matching action |
+| Upload a local file | `drive_write` → `upload`; wait for human review |
+| Move files, including a single file | `bulk_plan` → `bulk_run`; provide explicit file IDs when known |
 | Move to Trash | `drive_trash` |
 | Remove or revoke access | `drive_permissions` → `remove`, `revoke_public` |
 
@@ -94,7 +96,7 @@ For more than a handful of items, never loop single-item tools:
 2. `bulk_run` — first returns `APPROVAL_REQUIRED`; the user approves locally,
    then retry with `approval_id`; runs in the background.
 3. `bulk_status`, `bulk_result` — follow progress and per-item results.
-4. `bulk_undo` — reverses move, rename and trash where possible.
+4. `bulk_undo` — reverses rename and trash where possible. For a move, use `previous_parents` from `bulk_result` to build new reviewed move plans.
 
 `bulk_plan` and `bulk_run` are the preferred path for Drive and Gmail batches.
 

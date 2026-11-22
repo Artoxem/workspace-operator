@@ -309,6 +309,10 @@ python -m workspace_operator serve      # stdio-сервер
 вызов сразу возвращает `approval_id`, и решение принимается через `approvals approve` или
 страницу из `approvals link`.
 
+Перенос в Drive, даже одного файла, идёт через `bulk_plan` → `bulk_run`.
+В предпросмотре видны все файлы, исходные папки и папка назначения. Загрузка
+локальных файлов тоже требует подтверждения. См. [настройку и общие диски](docs/ru/APPROVALS.md#что-показывается-при-переносе-и-загрузке-в-drive).
+
 ### HTTP-транспорт (сначала localhost)
 
 ```bash
@@ -426,7 +430,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 | `digest` | read | - | Summarise Gmail, Calendar and Drive for the last N hours. |
 | `compare_tables` | read | - | Diff two sheet ranges by a key column. |
 | `drive_read` | read | metadata, export, list_permissions | Read Drive metadata, permissions and exported files. |
-| `drive_write` | write | create_folder, copy, move, rename, upload, share, restore | Create, copy, move, rename, upload, share and restore Drive files. |
+| `drive_write` | write | create_folder, copy, rename, upload, share, restore | Создание, копирование, переименование, загрузка, доступ и восстановление. Загрузка требует подтверждения; перенос — через `bulk_plan` и `bulk_run`. |
 | `drive_trash` | destructive | - | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
 | `drive_permissions` | destructive | remove, revoke_public | Remove access from a Drive file. |
 | `read_doc` | read | - | Read the contents of a Google Doc. |
@@ -459,7 +463,7 @@ Call a consolidated tool with an `action`, for example `drive_read(action="metad
 | `bulk_result` | read | - | Read one page of bulk job results. |
 | `bulk_list` | read | - | List recent bulk jobs. |
 | `bulk_cancel` | write | - | Request cancellation of a running bulk job. |
-| `bulk_undo` | destructive | - | Undo a completed bulk job (move, rename, trash). |
+| `bulk_undo` | destructive | - | Отменяет массовое переименование или перемещение в корзину. |
 
 ### Ресурсы
 
@@ -573,7 +577,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 492 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 518 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

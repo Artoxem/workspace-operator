@@ -10,7 +10,7 @@ import logging
 from typing import Any, Callable, Dict, Optional
 
 from ..bulk import service
-from ..bulk.models import Job
+from ..bulk.models import Job, Plan
 from ..config import Config
 
 
@@ -43,6 +43,7 @@ def bulk_run_handler(
     confirm: bool = False,
     on_finish: Optional[Callable[[Job], None]] = None,
     job_id: Optional[str] = None,
+    *, plan_snapshot: Optional[Plan] = None,
 ) -> str:
     return service.run_bulk(
         config,
@@ -51,6 +52,7 @@ def bulk_run_handler(
         confirm=confirm,
         on_finish=on_finish,
         job_id=job_id,
+        plan_snapshot=plan_snapshot,
     )
 
 

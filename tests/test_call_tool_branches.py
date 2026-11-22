@@ -23,7 +23,9 @@ from mcp import ClientSession, types
 from mcp.shared.memory import create_client_server_memory_streams
 
 import workspace_operator.server as server_module
-from workspace_operator.bulk.models import Job
+from workspace_operator.approvals import ApprovalStore
+from workspace_operator.bulk import store
+from workspace_operator.bulk.models import Job, Plan
 from workspace_operator.config import Config
 from workspace_operator.operations import BinaryResult
 from workspace_operator.results import ToolError, ToolResult
@@ -69,10 +71,17 @@ class _Transient(Exception):
     status_code = 503
 
 
+def _save_bulk_plan(config, plan_id):
+    store.save_plan(config, Plan(plan_id, "drive", "trash", {}, {},
+                                "2026-01-01T00:00:00+00:00", "2099-01-01T00:00:00+00:00"))
+
+
 async def _call(tool, arguments, *, profile="full", config_overrides=None, handler=None,
                 elicitation=None, binary=False, raises=None, flaky=0, approve_first=False):
     tmp = tempfile.mkdtemp()
     cfg = _config(tmp, tool_profile=profile, **(config_overrides or {}))
+    if tool == "bulk_run":
+        _save_bulk_plan(cfg, arguments["plan_id"])
     calls = []
     attempts = {"n": 0}
 
@@ -105,8 +114,6 @@ async def _call(tool, arguments, *, profile="full", config_overrides=None, handl
                     await session.initialize()
                     result = await session.call_tool(tool, arguments)
                     if approve_first:
-                        from workspace_operator.approvals import ApprovalStore
-
                         record_id = re.search(r"apr_[0-9a-f]+", result.content[0].text).group(0)
                         ApprovalStore(cfg).approve(record_id)
                         result = await session.call_tool(tool, dict(arguments, approval_id=record_id))
@@ -220,7 +227,9 @@ class BulkAuditCallbackTests(unittest.TestCase):
     def _callbacks(self, tmp):
         captured = {}
 
-        def fake_bulk_run(config, logger, plan_id, confirm, on_finish, job_id):
+        def fake_bulk_run(config, logger, plan_id, confirm, on_finish, job_id, *, plan_snapshot):
+            if plan_snapshot.id != plan_id or not confirm:
+                raise ValueError("Missing approved snapshot")
             captured["run"] = on_finish
             return "{}"
 
@@ -230,6 +239,7 @@ class BulkAuditCallbackTests(unittest.TestCase):
 
         async def go():
             cfg = _config(tmp)
+            _save_bulk_plan(cfg, "bp_x")
             with mock.patch.object(server_module, "bulk_run_handler", fake_bulk_run), mock.patch.object(
                 server_module, "bulk_undo_handler", fake_bulk_undo
             ):
@@ -241,7 +251,11 @@ class BulkAuditCallbackTests(unittest.TestCase):
                     try:
                         async with ClientSession(client[0], client[1], elicitation_callback=_accept) as session:
                             await session.initialize()
-                            await session.call_tool("bulk_run", {"plan_id": "bp", "confirm": True})
+                            args = {"plan_id": "bp_x", "confirm": True}
+                            challenge = await session.call_tool("bulk_run", args)
+                            record_id = re.search(r"apr_[0-9a-f]+", challenge.content[0].text).group(0)
+                            ApprovalStore(cfg).approve(record_id)
+                            await session.call_tool("bulk_run", dict(args, approval_id=record_id))
                             await session.call_tool("bulk_undo", {"job_id": "bj", "confirm": True})
                     finally:
                         task.cancel()

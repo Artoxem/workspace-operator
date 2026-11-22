@@ -137,37 +137,6 @@
    "meta": null
   },
   {
-   "name": "move_file",
-   "title": null,
-   "description": "Move a file to a different folder",
-   "input_schema": {
-    "type": "object",
-    "properties": {
-     "file_id": {
-      "type": "string"
-     },
-     "folder_id": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "file_id",
-     "folder_id"
-    ]
-   },
-   "execution": null,
-   "output_schema": null,
-   "icons": null,
-   "annotations": {
-    "title": null,
-    "read_only_hint": false,
-    "destructive_hint": false,
-    "idempotent_hint": null,
-    "open_world_hint": null
-   },
-   "meta": null
-  },
-  {
    "name": "drive_copy_file",
    "title": null,
    "description": "Copy a Drive file to a new file",

@@ -114,6 +114,25 @@ opens requests created after it starts. Approve resumes a waiting call and Deny
 stops it. If the wait has elapsed, tell the agent your decision after clicking.
 The automatic browser link is not sent to the MCP client or written to the server log.
 
+## Reviewing Drive moves and uploads
+
+- **Move**: call `bulk_plan` with `domain=drive`, `action=move`, `selector.ids`
+  (one or more file IDs), and `options.target_folder_id`. Review the plan and call
+  `bulk_run` with its ID. The browser shows the destination and **every file**
+  with its original folder(s). There is no direct single-file move action.
+- **Upload**: use `drive_write` with `action=upload` and `local_path`. The review
+  shows the local source, upload name, output type, size and destination (My Drive
+  root unless a parent is specified). The server checks the approved bytes again
+  before sending them. The limit is 100 MiB per file.
+- Use the browser page or `workspace-operator approvals show <id>` to see the
+  full review: the agent sees only a compact summary. Review these operations
+  outside the MCP elicitation dialog. If the server stopped waiting, retry only
+  after the operator decides. Changed data may require a fresh approval.
+- Shared drive access is opt-in with `MCP_BULK_ALLOW_SHARED_DRIVES=1`. Moves stay
+  within My Drive or within a single shared drive and require the applicable
+  permissions. Cross-drive and folder-tree moves are not supported. To reverse a
+  move, use `previous_parents` from `bulk_result` to create fresh reviewed plans.
+
 ## Browser page
 
 The browser page is optional and requires the HTTP transport. Each approval has
@@ -143,6 +162,7 @@ untrusted network without a TLS proxy: the secret travels in the URL.
 
 `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
 `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
+`drive_write` → `upload` also requires human approval; `confirm=true` is not necessary.
 
 Reads, ordinary writes, drafts and `dry_run` previews do not require approval.
 `bulk_plan` is always a dry run; the approval is requested when `bulk_run`

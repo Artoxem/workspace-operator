@@ -336,6 +336,8 @@ def cmd_approvals(args: argparse.Namespace) -> int:
             ):
                 if record.get(key):
                     print(f"{key}: {record[key]}")
+            if "review" in record:
+                print("Review:", json.dumps(record["review"], ensure_ascii=False, indent=2))
             return 0
         if action == "link":
             link = store.human_link(args.approval_id, config.approval_url)

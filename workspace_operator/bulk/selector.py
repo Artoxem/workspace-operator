@@ -14,10 +14,10 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from .models import BulkError
+from .move import FILE_FIELDS, FOLDER_MIME, read_folder
 
-FOLDER_MIME = "application/vnd.google-apps.folder"
 ITEM_FIELDS = "id,name,parents,size,mimeType,trashed"
-LIST_FIELDS = f"nextPageToken, files({ITEM_FIELDS})"
+MOVE_ITEM_FIELDS = f"{FILE_FIELDS},size"
 MAX_FOLDERS = 500
 
 
@@ -59,20 +59,23 @@ def build_query(selector: Dict[str, Any]) -> str:
     return " and ".join(parts)
 
 
-def _item_from(meta: Dict[str, Any]) -> Dict[str, Any]:
+def _item_from(meta: Dict[str, Any], for_move: bool = False) -> Dict[str, Any]:
     size = meta.get("size")
     try:
         size_int = int(size) if size is not None else 0
     except (TypeError, ValueError):
         size_int = 0
-    return {
+    item = {
         "id": meta.get("id", ""),
         "name": meta.get("name", ""),
-        "parents": list(meta.get("parents") or []),
+        "parents": meta.get("parents") if for_move else list(meta.get("parents") or []),
         "size": size_int,
         "mimeType": meta.get("mimeType", ""),
         "trashed": bool(meta.get("trashed", False)),
     }
+    if for_move:
+        item.update(driveId=meta.get("driveId"), capabilities=meta.get("capabilities"))
+    return item
 
 
 def _is_protected(item: Dict[str, Any], protected_ids: Set[str], patterns: Sequence[str]) -> bool:
@@ -82,7 +85,7 @@ def _is_protected(item: Dict[str, Any], protected_ids: Set[str], patterns: Seque
     return any(fnmatch.fnmatchcase(name, pattern.casefold()) for pattern in patterns)
 
 
-def _folder_tree(service, root_id: str, logger: logging.Logger) -> List[str]:
+def _folder_tree(service, root_id: str, logger: logging.Logger, *, strict=False, **drive_scope) -> List[str]:
     """Breadth-first list of a folder and its descendants, capped."""
     seen = {root_id}
     queue = [root_id]
@@ -97,12 +100,15 @@ def _folder_tree(service, root_id: str, logger: logging.Logger) -> List[str]:
                         f"'{escape_query(current)}' in parents and "
                         f"mimeType = '{FOLDER_MIME}' and trashed = false"
                     ),
-                    fields="nextPageToken, files(id)",
+                    fields="nextPageToken,incompleteSearch,files(id)",
                     pageSize=1000,
                     pageToken=token,
+                    **drive_scope,
                 )
                 .execute()
             )
+            if strict and response.get("incompleteSearch"):
+                raise BulkError("Drive returned incomplete folder results; narrow the move selector")
             for entry in response.get("files", []):
                 folder_id = entry.get("id")
                 if folder_id and folder_id not in seen:
@@ -112,6 +118,8 @@ def _folder_tree(service, root_id: str, logger: logging.Logger) -> List[str]:
             if not token:
                 break
     if len(seen) >= MAX_FOLDERS:
+        if strict:
+            raise BulkError("recursive move selector reached the folder cap; narrow the move selector")
         logger.warning("bulk selector: folder tree capped at %s folders", MAX_FOLDERS)
     return list(seen)
 
@@ -124,6 +132,7 @@ def resolve_drive(
     protected_ids: Optional[Iterable[str]] = None,
     protected_patterns: Optional[Sequence[str]] = None,
     logger: Optional[logging.Logger] = None,
+    for_move: bool = False,
 ) -> Dict[str, Any]:
     """Resolve a Drive selector into a capped item snapshot."""
     logger = logger or logging.getLogger(__name__)
@@ -151,36 +160,56 @@ def resolve_drive(
         seen.add(item["id"])
         items.append(item)
 
+    item_fields = MOVE_ITEM_FIELDS if for_move else ITEM_FIELDS
     explicit = [str(value) for value in selector.get("ids") or [] if str(value).strip()]
     if explicit:
+        if for_move:
+            explicit = [file_id for file_id in dict.fromkeys(explicit) if file_id not in exclude_ids]
         for file_id in explicit[: max_items + 1]:
             try:
                 meta = (
                     service.files()
                     .get(
                         fileId=file_id,
-                        fields=ITEM_FIELDS,
+                        fields=item_fields,
                         supportsAllDrives=allow_shared_drives,
                     )
                     .execute()
                 )
             except HttpError as exc:
+                if for_move:
+                    raise BulkError(f"file '{file_id}' cannot be read for the move: {exc}") from exc
                 missing += 1
                 logger.info("bulk selector: cannot read %s: %s", file_id, exc)
                 continue
-            keep(_item_from(meta))
+            if for_move and meta.get("id") != file_id:
+                raise BulkError(f"Drive did not return the requested file '{file_id}'")
+            keep(_item_from(meta, for_move))
             if len(items) > max_items:
                 break
-        if len(items) > max_items:
+        if len(items) > max_items or (for_move and len(explicit) > max_items + 1):
             truncated = True
     else:
         base_query = build_query(selector)
         folder_id = selector.get("folder_id")
+        drive_scope: dict[str, Any] = {
+            "supportsAllDrives": allow_shared_drives,
+            "includeItemsFromAllDrives": allow_shared_drives,
+        }
+        if for_move:
+            file_filter = f"mimeType != '{FOLDER_MIME}'"
+            base_query = f"({base_query}) and {file_filter}" if base_query else file_filter
         if isinstance(folder_id, str) and folder_id.strip():
+            folder_id = folder_id.strip()
+            if for_move:
+                folder = read_folder(service.files(), folder_id, allow_shared_drives)
+                folder_id = folder["id"]
+                if folder["driveId"] is not None:
+                    drive_scope.update(corpora="drive", driveId=folder["driveId"])
             folders = (
-                _folder_tree(service, folder_id.strip(), logger)
+                _folder_tree(service, folder_id, logger, strict=for_move, **drive_scope)
                 if selector.get("recursive")
-                else [folder_id.strip()]
+                else [folder_id]
             )
         else:
             folders = []
@@ -201,17 +230,18 @@ def resolve_drive(
             token = None
             while True:
                 list_kwargs = {
-                    "fields": LIST_FIELDS,
+                    "fields": f"nextPageToken,incompleteSearch,files({item_fields})",
                     "pageSize": 1000,
                     "pageToken": token,
-                    "supportsAllDrives": allow_shared_drives,
-                    "includeItemsFromAllDrives": allow_shared_drives,
+                    **drive_scope,
                 }
                 if query:
                     list_kwargs["q"] = query
                 response = service.files().list(**list_kwargs).execute()
+                if for_move and response.get("incompleteSearch"):
+                    raise BulkError("Drive returned incomplete results; narrow the move selector")
                 for meta in response.get("files", []):
-                    keep(_item_from(meta))
+                    keep(_item_from(meta, for_move))
                     if len(items) > max_items:
                         truncated = True
                         break

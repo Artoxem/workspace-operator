@@ -15,6 +15,8 @@ services:
       MCP_TOOL_PROFILE: "${MCP_TOOL_PROFILE:-core}"
       # Set to 45 when running `workspace-operator approvals watch` on the host.
       MCP_APPROVAL_BROWSER_WAIT: "${MCP_APPROVAL_BROWSER_WAIT:-0}"
+      # Empty keeps bulk.allow_shared_drives from the mounted YAML.
+      MCP_BULK_ALLOW_SHARED_DRIVES: "${MCP_BULK_ALLOW_SHARED_DRIVES:-}"
     volumes:
       - ./config.docker.yaml:/app/config.yaml:ro
       # OAuth client secrets and token. Read-write: the server refreshes the token

@@ -51,7 +51,7 @@ class DefinitionsSnapshotTests(unittest.TestCase):
         self.assertEqual([_dump(p) for p in load_prompts()], self.golden["prompts"], HINT)
 
     def test_counts(self):
-        self.assertEqual(len(load_tools()), 104, HINT)
+        self.assertEqual(len(load_tools()), 103, HINT)
         self.assertEqual(len(load_prompts()), 7, HINT)
 
 

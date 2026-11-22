@@ -256,10 +256,8 @@ def load_config(
         or []
     )
     bulk_allow_shared_drives = parse_bool(
-        os.environ.get(
-            "MCP_BULK_ALLOW_SHARED_DRIVES",
-            bulk_config.get("allow_shared_drives", False),
-        )
+        os.environ.get("MCP_BULK_ALLOW_SHARED_DRIVES", "").strip()
+        or bulk_config.get("allow_shared_drives", False)
     )
 
     upload_roots = _env_list("MCP_UPLOAD_ROOTS") or file_config.get("upload_roots")

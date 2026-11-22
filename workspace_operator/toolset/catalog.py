@@ -100,7 +100,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
     legacy = _legacy_index(tools)
 
     def action(
-        name: str, legacy_name: str, summary: str, confirm: bool = False
+        name: str, legacy_name: str, summary: str, confirm: bool = False, *, approval: bool = False
     ) -> ActionSpec:
         source = legacy[legacy_name]
         required = tuple((source.input_schema or {}).get("required") or ())
@@ -110,6 +110,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             summary=summary,
             required=required,
             confirm=confirm,
+            approval=approval,
         )
 
     def group(
@@ -123,7 +124,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
         scopes, mode = scope_rule
         rendered = ", ".join(action.name for action in actions)
         schema = _schema_for_actions(actions, legacy)
-        if safety is Safety.DESTRUCTIVE:
+        if safety is Safety.DESTRUCTIVE or any(action.approval for action in actions):
             schema = _with_approval(schema)
         return ToolSpec(
             name=name,
@@ -223,13 +224,12 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "drive_write",
             "drive",
             Safety.WRITE,
-            "Create, copy, move, rename, upload, share and restore Drive files.",
+            "Create, copy, rename, upload, share and restore Drive files. Upload requires human approval. Use bulk_plan then bulk_run to move files.",
             (
                 action("create_folder", "create_folder", "Create a folder."),
                 action("copy", "drive_copy_file", "Copy a file."),
-                action("move", "move_file", "Move a file to another folder."),
                 action("rename", "drive_rename_file", "Rename a file."),
-                action("upload", "drive_upload", "Upload a local file."),
+                action("upload", "drive_upload", "Upload a local file after human review.", approval=True),
                 action("share", "share_file", "Share a file with a user."),
                 action("restore", "drive_restore_file", "Restore a file from Trash."),
             ),
@@ -636,7 +636,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "bulk_undo",
             "bulk",
             Safety.DESTRUCTIVE,
-            "Undo a completed bulk job (move, rename, trash).",
+            "Undo a completed bulk rename or trash job. Reverse a move with a new reviewed move plan.",
             confirm=True,
         ),
     )

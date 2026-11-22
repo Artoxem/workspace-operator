@@ -11,7 +11,7 @@ from unittest import mock
 
 from workspace_operator.bulk import service, store
 from workspace_operator.bulk.engine import _gmail_label_changes, _rename
-from workspace_operator.bulk.models import Job, Plan
+from workspace_operator.bulk.models import BulkError, Job, Plan
 from workspace_operator.bulk.selector import build_query, escape_query
 from workspace_operator.bulk.service import _undo_spec
 from workspace_operator.config import Config
@@ -199,6 +199,19 @@ class StoreTests(unittest.TestCase):
             self.assertEqual(loaded.id, "bp_test")
             self.assertEqual(loaded.items[0]["id"], "a")
 
+    def test_load_plan_rejects_unsafe_and_mismatched_ids(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = make_config(directory)
+            for plan_id in ("bp_../escape", "bp_..\\escape", "bp_x:stream", "/bp_x"):
+                with self.subTest(plan_id=plan_id), self.assertRaisesRegex(BulkError, "invalid bulk plan ID"):
+                    store.load_plan(config, plan_id)
+            store.write_json_atomic(store.plan_path(config, "bp_expected"), {
+                "id": "bp_different", "domain": "drive", "action": "move",
+                "created_at": "2026-01-01T00:00:00+00:00", "expires_at": "2999-01-01T00:00:00+00:00",
+            })
+            with self.assertRaisesRegex(BulkError, "does not match"):
+                store.load_plan(config, "bp_expected")
+
     def test_expired_plans_are_removed(self):
         with tempfile.TemporaryDirectory() as directory:
             config = make_config(directory)
@@ -356,20 +369,6 @@ class RunServiceTests(unittest.TestCase):
 
 
 class UndoTests(unittest.TestCase):
-    def test_move_undo_spec(self):
-        job = Job(id="bj_1", plan_id="bp_1", domain="drive", action="move", total=1)
-        records = [
-            {
-                "id": "a",
-                "name": "a.txt",
-                "status": "ok",
-                "previous_parents": ["old"],
-            }
-        ]
-        action, items = _undo_spec(job, records)
-        self.assertEqual(action, "move_back")
-        self.assertEqual(items[0]["previous_parents"], ["old"])
-
     def test_rename_undo_spec(self):
         job = Job(id="bj_2", plan_id="bp_2", domain="drive", action="rename", total=1)
         records = [{"id": "a", "name": "new.txt", "status": "ok", "previous_name": "old.txt"}]
@@ -389,7 +388,7 @@ class UndoTests(unittest.TestCase):
         with self.assertRaises(Exception):
             _undo_spec(job, [{"id": "m1", "status": "ok"}])
 
-    def test_undo_requires_confirm_and_saved_state(self):
+    def test_move_undo_requires_new_reviewed_plan(self):
         with tempfile.TemporaryDirectory() as directory:
             config = make_config(directory)
             job = Job(
@@ -417,19 +416,12 @@ class UndoTests(unittest.TestCase):
             )
             refused = json.loads(service.undo_bulk(config, LOGGER, "bj_undo", confirm=False))
             self.assertFalse(refused["ok"])
-            fake_job = Job(
-                id="bj_new",
-                plan_id="bp_undo",
-                domain="drive",
-                action="move_back",
-                total=1,
-            )
-            with mock.patch.object(service.engine, "start_job", return_value=fake_job):
-                started = json.loads(
-                    service.undo_bulk(config, LOGGER, "bj_undo", confirm=True)
-                )
-            self.assertTrue(started["ok"])
-            self.assertEqual(started["action"], "move_back")
+            with mock.patch.object(service.engine, "start_job") as start:
+                refused = json.loads(service.undo_bulk(config, LOGGER, "bj_undo", confirm=True))
+            start.assert_not_called()
+            self.assertFalse(refused["ok"])
+            self.assertIn("new review", refused["error"])
+            self.assertIn("previous_parents", refused["error"])
 
 
 

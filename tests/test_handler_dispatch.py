@@ -1,6 +1,6 @@
 """Golden test: how every tool/action reaches its handler.
 
-Each of the 104 handlers is replaced by a recorder and called through the real
+Each ordinary dispatch handler is replaced by a recorder and called through the real
 MCP dispatcher. The recorded positional arguments are compared to a snapshot
 (tests/data/handler_dispatch.json), so the dispatch table can be refactored
 without changing what any handler receives.
@@ -75,7 +75,9 @@ def _snapshot(approve: bool = True, minimal: bool = False):
         mcp_auth_token="x", scopes=[], tool_profile="full", scope_routing=False,
         approval_dir=tmp, bulk_dir=tmp, retry_attempts=1,
     )
-    calls = list(_calls())
+    table = _handler_functions()
+    # Reviewed upload and bulk_run use the separate snapshot execution path.
+    calls = [call for call in _calls() if call[2] in table]
     required = _required()
     recorded = {}
 
@@ -90,8 +92,6 @@ def _snapshot(approve: bool = True, minimal: bool = False):
         return recorder
 
     handler_names = {legacy for _, _, legacy in calls}
-    # legacy name -> function name in server.py (taken from the dispatch table source)
-    table = _handler_functions()
     patches = [mock.patch.object(server_module, table[name], make_recorder(name)) for name in handler_names]
 
     async def run():
@@ -169,15 +169,15 @@ class HandlerDispatchTests(unittest.TestCase):
         catalog = {spec.name: spec for spec in build_catalog(server_module._tools())}
         destructive = {
             legacy for tool, action, legacy in _calls()
-            if catalog[tool].safety.value == "destructive"
+            if legacy in _handler_functions() and catalog[tool].safety.value == "destructive"
         }
-        self.assertEqual(len(destructive), 14)
+        self.assertEqual(len(destructive), 13)
         self.assertEqual(destructive & set(declined), set(), "a destructive handler ran unapproved")
         self.assertEqual(set(declined), set(expected) - destructive, "non-destructive handlers must still run")
 
     def test_snapshot_covers_every_catalog_handler(self):
         expected = json.loads(GOLDEN.read_text(encoding="utf-8"))
-        self.assertEqual(len(expected), 104)
+        self.assertEqual(set(expected), {legacy for _, _, legacy in _calls()} - {"bulk_run", "drive_upload"})
 
 
 if __name__ == "__main__":

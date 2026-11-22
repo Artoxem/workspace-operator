@@ -21,7 +21,7 @@ from googleapiclient.errors import HttpError
 
 from ..auth import get_creds
 from ..config import Config
-from . import store
+from . import move, store
 from .models import BulkError, Job, Plan
 
 CONTROLS: Dict[str, threading.Event] = {}
@@ -102,34 +102,12 @@ def _apply_item(
     logger: logging.Logger,
     domain: str = "drive",
 ) -> Dict[str, Any]:
-    service = _service(config, allow_shared=False)
+    allow_shared = action == "move" and bool(getattr(config, "bulk_allow_shared_drives", False))
+    service = _service(config, allow_shared=allow_shared)
     file_id = item["id"]
 
     if action == "move":
-        target = options.get("target_folder_id")
-        if not isinstance(target, str) or not target.strip():
-            raise BulkError("move needs options.target_folder_id")
-        target = target.strip()
-        if target in (item.get("parents") or []):
-            return {"id": file_id, "name": item.get("name", ""), "status": "skipped"}
-        parents = ",".join(item.get("parents") or [])
-        _with_retry(
-            lambda: service.files()
-            .update(
-                fileId=file_id,
-                addParents=target,
-                removeParents=parents or None,
-                fields="id,parents",
-            )
-            .execute(),
-            logger,
-        )
-        return {
-            "id": file_id,
-            "name": item.get("name", ""),
-            "previous_parents": list(item.get("parents") or []),
-            "status": "ok",
-        }
+        return _with_retry(lambda: move.apply(service.files(), item, options, allow_shared), logger)
 
     if action == "trash":
         if item.get("trashed"):
@@ -170,31 +148,6 @@ def _apply_item(
             "previous_name": item.get("name", ""),
             "status": "ok",
         }
-
-    if action == "move_back":
-        previous = list(item.get("previous_parents") or [])
-        if not previous:
-            raise BulkError("move_back needs previous_parents")
-        current = (
-            service.files()
-            .get(fileId=file_id, fields="parents")
-            .execute()
-            .get("parents", [])
-        )
-        if set(current) == set(previous):
-            return {"id": file_id, "name": item.get("name", ""), "status": "skipped"}
-        _with_retry(
-            lambda: service.files()
-            .update(
-                fileId=file_id,
-                addParents=",".join(previous),
-                removeParents=",".join(current) or None,
-                fields="id,parents",
-            )
-            .execute(),
-            logger,
-        )
-        return {"id": file_id, "name": item.get("name", ""), "status": "ok"}
 
     if action == "rename_back":
         previous_name = item.get("previous_name")
@@ -574,12 +527,15 @@ def start_job(
     on_finish: Optional[Callable[[Job], None]] = None,
     resume_job_id: Optional[str] = None,
 ) -> Job:
+    move_digest = store.plan_digest(plan) if (plan.domain, plan.action) == ("drive", "move") else None
     if resume_job_id:
         job = store.load_job(config, resume_job_id)
         if job.state not in ("interrupted", "failed", "cancelled"):
             raise BulkError(f"Job '{job.id}' is '{job.state}', nothing to resume.")
-        if job.plan_id != plan.id:
+        if (job.plan_id, job.domain, job.action) != (plan.id, plan.domain, plan.action):
             raise BulkError("The resume job does not belong to this plan.")
+        if move_digest is not None and job.plan_digest != move_digest:
+            raise BulkError("The resume job does not belong to this exact move snapshot.")
         job.state = "running"
         job.finished_at = None
         job.error = None
@@ -592,6 +548,7 @@ def start_job(
             action=plan.action,
             total=len(plan.items),
             started_at=now_iso(),
+            plan_digest=move_digest,
         )
         job.result_file = str(store.result_path(config, job.id))
         store.save_job(config, job)

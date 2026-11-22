@@ -4,7 +4,7 @@ How to get Workspace Operator in front of people who run AI agents.
 
 Ready-to-post copy and submission fields: [LAUNCH_PACKAGE.md](LAUNCH_PACKAGE.md).
 
-Current baseline: 39 tools, 13 OAuth scopes, 492 tests, PyPI and GHCR
+Current baseline: 39 tools, 13 OAuth scopes, 518 tests, PyPI and GHCR
 releases, MIT. Discovery is the bottleneck, not the feature set.
 
 ## 1. Positioning
@@ -34,7 +34,7 @@ remote MCP preview and single-service servers.
       `google-docs`, `google-calendar`, `ai-agents`, `claude`, `cursor`,
       `automation`, `python`, `docker`.
 - [x] Homepage points at PyPI.
-- [ ] 30–60 second demo GIF at the top of the README: "move 500 files, then undo".
+- [ ] 30–60 second demo GIF at the top of the README: preview and confirm a batch move in the browser.
 - [ ] 2-minute video for YouTube/X/LinkedIn.
 - [ ] Two screenshots: a plan with counts, a finished job with undo.
 - [ ] "Works with" line: Claude Desktop, Cursor, Continue, Cline, DeepSeek

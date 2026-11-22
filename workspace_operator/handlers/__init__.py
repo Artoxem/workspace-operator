@@ -50,7 +50,6 @@ from .drive import (
     drive_list_permissions_handler,
     drive_revoke_public_handler,
     drive_search_advanced_handler,
-    move_file_handler,
     share_file_handler,
 )
 from .drive_extra import (
@@ -60,7 +59,7 @@ from .drive_extra import (
     rename_file_handler,
     restore_file_handler,
 )
-from .files import drive_export_handler, drive_upload_handler
+from .files import drive_export_handler
 from .formatting import format_sheet_handler
 from .forms import (
     forms_add_questions_handler,
@@ -176,7 +175,6 @@ __all__ = [
     "list_events_handler",
     "calendar_create_meeting_handler",
     "create_folder_handler",
-    "move_file_handler",
     "share_file_handler",
     "drive_search_advanced_handler",
     "drive_list_permissions_handler",
@@ -184,7 +182,6 @@ __all__ = [
     "drive_copy_file_handler",
     "workspace_search_handler",
     "document_to_text",
-    "drive_upload_handler",
     "drive_export_handler",
     "script_run_function_handler",
     "format_sheet_handler",

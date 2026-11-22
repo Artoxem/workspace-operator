@@ -26,26 +26,6 @@ def create_folder_handler(
         return f"Error creating folder: {str(e)}"
 
 
-def move_file_handler(config: Config, logger: logging.Logger, file_id: str, folder_id: str) -> str:
-    try:
-        service = api_client(config, 'drive', 'v3')
-
-        # Retrieve the existing parents to remove
-        file = service.files().get(fileId=file_id, fields="parents").execute()
-        previous_parents = ",".join(file.get("parents"))
-
-        # Move the file to the new folder
-        service.files().update(
-            fileId=file_id,
-            addParents=folder_id,
-            removeParents=previous_parents,
-            fields="id, parents",
-        ).execute()
-        return f"File moved to folder ID {folder_id}."
-    except Exception as e:
-        return f"Error moving file: {str(e)}"
-
-
 def share_file_handler(
     config: Config,
     logger: logging.Logger,

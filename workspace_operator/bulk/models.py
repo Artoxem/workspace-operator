@@ -101,6 +101,7 @@ class Job:
     finished_at: Optional[str] = None
     result_file: Optional[str] = None
     error: Optional[str] = None
+    plan_digest: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -119,6 +120,7 @@ class Job:
             "finished_at": self.finished_at,
             "result_file": self.result_file,
             "error": self.error,
+            **({"plan_digest": self.plan_digest} if self.plan_digest is not None else {}),
         }
 
     @classmethod
@@ -139,6 +141,7 @@ class Job:
             finished_at=data.get("finished_at"),
             result_file=data.get("result_file"),
             error=data.get("error"),
+            plan_digest=data.get("plan_digest"),
         )
 
     def summary(self) -> Dict[str, Any]:

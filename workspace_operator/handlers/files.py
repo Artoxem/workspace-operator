@@ -12,20 +12,26 @@ Paths are always expanded and reported as absolute; nothing is overwritten
 unless the caller explicitly asks for it.
 """
 
+import hashlib
 import logging
 import mimetypes
 import os
 import re
+import stat
+import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseUpload
 
 from ..config import Config
 from ..google_clients import api_client
 from ..secure_files import is_protected
 
 MAX_TRANSFER_BYTES = 100 * 1024 * 1024
+_UPLOAD_CHUNK_BYTES = 1024 * 1024
+_RESUMABLE_UPLOAD_ABOVE_BYTES = 5 * 1024 * 1024
+_DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder"
 
 CONVERT_TARGETS = {
     "google-docs": "application/vnd.google-apps.document",
@@ -169,63 +175,189 @@ def _human_size(size: int) -> str:
     return f"{size / (1024 * 1024):.1f} MB"
 
 
-def drive_upload_handler(
+def _resolve_upload_source(source: Path) -> Path:
+    try:
+        return source.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError(f"local file not found or inaccessible: {source}") from exc
+
+
+def _upload_fingerprint(
+    source: Path,
     config: Config,
-    logger: logging.Logger,
+    *,
+    write_snapshot: Optional[Callable[[bytes], int]] = None,
+    expected_size: Optional[int] = None,
+) -> tuple[int, str]:
+    """Hash a permitted regular file; optionally copy the very same bytes."""
+    changed = f"local file changed: {source}. Request a new upload approval."
+    if not source.is_absolute() or _resolve_upload_source(source) != source:
+        raise ValueError(changed)
+    denied = check_upload_allowed(source, config)
+    if denied:
+        raise ValueError(denied.removeprefix("Error: "))
+
+    def check_size(size: int) -> None:
+        if expected_size is not None and size != expected_size:
+            raise ValueError(changed)
+        if size > MAX_TRANSFER_BYTES:
+            raise ValueError(
+                f"{source.name} is {_human_size(size)}; "
+                f"the limit for this tool is {_human_size(MAX_TRANSFER_BYTES)}."
+            )
+
+    before = source.stat()
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError(f"not a regular local file: {source}")
+    check_size(before.st_size)
+    # NOFOLLOW protects the leaf where available. NONBLOCK avoids hanging if
+    # a regular file is replaced by a FIFO between stat and open on POSIX.
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    flags |= getattr(os, "O_BINARY", 0)
+    with open(source, "rb", opener=lambda path, _: os.open(path, flags)) as handle:
+        opened = os.fstat(handle.fileno())
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or not os.path.samestat(before, opened)
+            or _resolve_upload_source(source) != source
+        ):
+            raise ValueError(changed)
+        check_size(opened.st_size)
+
+        digest = hashlib.sha256()
+        size = 0
+        limit = min(MAX_TRANSFER_BYTES, expected_size) if expected_size is not None else MAX_TRANSFER_BYTES
+        while chunk := handle.read(min(_UPLOAD_CHUNK_BYTES, limit - size + 1)):
+            size += len(chunk)
+            if size > limit:
+                check_size(size)
+            digest.update(chunk)
+            if write_snapshot is not None:
+                write_snapshot(chunk)
+
+        after = os.fstat(handle.fileno())
+        if (
+            size != opened.st_size
+            or after.st_size != opened.st_size
+            or after.st_mtime_ns != opened.st_mtime_ns
+            or after.st_ctime_ns != opened.st_ctime_ns
+            or _resolve_upload_source(source) != source
+            or not os.path.samestat(after, source.stat())
+        ):
+            raise ValueError(changed)
+        check_size(size)
+        return size, digest.hexdigest()
+
+
+def _upload_destination(files, folder_id: str, *, allow_shared: bool) -> dict:
+    folder = files.get(
+        fileId=folder_id,
+        fields="id,name,mimeType,trashed,driveId,capabilities(canAddChildren)",
+        supportsAllDrives=allow_shared,
+    ).execute()
+    if folder.get("mimeType") != _DRIVE_FOLDER_MIME or folder.get("trashed"):
+        raise ValueError(f"Drive destination must be a non-trashed folder: {folder_id}")
+    shared_drive_id = folder.get("driveId")
+    if shared_drive_id and not allow_shared:
+        raise ValueError("Shared drive uploads require bulk_allow_shared_drives to be enabled")
+    can_add = (folder.get("capabilities") or {}).get("canAddChildren")
+    if can_add is False or (shared_drive_id and can_add is not True):
+        raise ValueError(f"you do not have permission to upload to Drive folder: {folder_id}")
+    if not folder.get("id") or not folder.get("name"):
+        raise ValueError(f"could not identify Drive destination folder: {folder_id}")
+    destination = {"id": folder["id"], "name": folder["name"]}
+    if shared_drive_id:
+        destination["drive_id"] = shared_drive_id
+    return destination
+
+
+def prepare_drive_upload(
+    config: Config,
     local_path: str,
     name: Optional[str] = None,
     parent_id: Optional[str] = None,
     mime_type: Optional[str] = None,
     convert_to: Optional[str] = None,
-) -> str:
+) -> dict:
+    """Resolve and fingerprint a local upload without starting a Drive write."""
+    if not local_path or not str(local_path).strip():
+        raise ValueError("upload requires local_path")
+    requested = expand_path(local_path)
+    source = _resolve_upload_source(requested)
+    conversion_mime = None
+    if convert_to:
+        conversion_mime = CONVERT_TARGETS.get(convert_to.strip().lower())
+        if conversion_mime is None and convert_to.startswith("application/vnd.google-apps."):
+            conversion_mime = convert_to
+        if conversion_mime is None:
+            raise ValueError(
+                f"unsupported convert_to '{convert_to}'. "
+                f"Valid values: {', '.join(sorted(CONVERT_TARGETS))}."
+            )
+    media_mime = mime_type or mimetypes.guess_type(str(requested))[0] or "application/octet-stream"
     try:
-        source = expand_path(local_path)
-        if not source.exists() or not source.is_file():
-            return f"Error: local file not found: {source}"
+        size, digest = _upload_fingerprint(source, config)
+    except OSError as exc:
+        raise ValueError(f"could not read local file: {source}: {exc}") from exc
+    files = api_client(config, "drive", "v3").files()
+    destination = _upload_destination(
+        files, (parent_id or "").strip() or "root", allow_shared=bool(getattr(config, "bulk_allow_shared_drives", False)),
+    )
+    return {
+        "operation": "upload",
+        "destination": destination,
+        "items": [{
+            "id": str(source),
+            "name": name or requested.name,
+            "sources": [{"id": str(source), "name": source.name}],
+            "size_bytes": size,
+            "sha256": digest,
+            "mime_type": media_mime,
+            "conversion_mime_type": conversion_mime,
+        }],
+    }
 
-        denied = check_upload_allowed(source, config)
-        if denied:
-            return denied
 
-        size = source.stat().st_size
-        if size > MAX_TRANSFER_BYTES:
-            return (
-                f"Error: {source.name} is {_human_size(size)}; "
-                f"the limit for this tool is {_human_size(MAX_TRANSFER_BYTES)}."
+def execute_prepared_drive_upload(config: Config, logger: logging.Logger, prepared: dict) -> str:
+    """Upload only the bytes, metadata and canonical folder approved by the user."""
+    try:
+        if prepared["operation"] != "upload" or len(prepared["items"]) != 1:
+            raise ValueError("invalid prepared upload")
+        item = prepared["items"][0]
+        source = Path(item["id"])
+        destination = prepared["destination"]
+        expected_size = item["size_bytes"]
+        if type(expected_size) is not int or not 0 <= expected_size <= MAX_TRANSFER_BYTES:
+            raise ValueError("invalid prepared upload size")
+        allow_shared = bool(getattr(config, "bulk_allow_shared_drives", False))
+        if destination.get("drive_id") and not allow_shared:
+            raise ValueError("Shared drive uploads require bulk_allow_shared_drives to be enabled")
+
+        # The source path is never passed to Drive's upload client. A temporary
+        # snapshot avoids a second-open race even if the file changes after hashing.
+        with tempfile.SpooledTemporaryFile(max_size=_RESUMABLE_UPLOAD_ABOVE_BYTES) as snapshot:
+            size, digest = _upload_fingerprint(
+                source, config, write_snapshot=snapshot.write, expected_size=expected_size,
             )
+            if digest != item["sha256"]:
+                raise ValueError(f"local file changed: {source}. Request a new upload approval.")
 
-        metadata: dict = {"name": name or source.name}
-        if parent_id:
-            metadata["parents"] = [parent_id]
-
-        if convert_to:
-            key = str(convert_to).strip().lower()
-            target = CONVERT_TARGETS.get(key)
-            if target is None and str(convert_to).startswith("application/vnd.google-apps"):
-                target = str(convert_to)
-            if target is None:
-                return (
-                    f"Error: unsupported convert_to '{convert_to}'. "
-                    f"Valid values: {', '.join(sorted(CONVERT_TARGETS))}."
-                )
-            metadata["mimeType"] = target
-
-        media_mime = (
-            mime_type
-            or mimetypes.guess_type(str(source))[0]
-            or "application/octet-stream"
-        )
-
-        service = api_client(config, 'drive', 'v3')
-        created = (
-            service.files()
-            .create(
+            files = api_client(config, "drive", "v3").files()
+            if _upload_destination(files, destination["id"], allow_shared=allow_shared) != destination:
+                raise ValueError("Drive destination changed. Request a new upload approval.")
+            metadata = {"name": item["name"], "parents": [destination["id"]]}
+            if item["conversion_mime_type"]:
+                metadata["mimeType"] = item["conversion_mime_type"]
+            media = MediaIoBaseUpload(
+                snapshot, item["mime_type"], chunksize=_RESUMABLE_UPLOAD_ABOVE_BYTES,
+                resumable=size > _RESUMABLE_UPLOAD_ABOVE_BYTES,
+            )
+            created = files.create(
                 body=metadata,
-                media_body=MediaFileUpload(str(source), mimetype=media_mime, resumable=False),
+                media_body=media,
                 fields="id,name,mimeType,size,webViewLink",
-            )
-            .execute()
-        )
+                supportsAllDrives=allow_shared,
+            ).execute()
 
         logger.info("Uploaded %s → %s", source, created.get("id"))
         return (
@@ -233,10 +365,8 @@ def drive_upload_handler(
             f"[{created.get('mimeType')}]\n"
             f"Size: {_human_size(size)} · {created.get('webViewLink', 'no link')}"
         )
-    except Exception as e:
-        return f"Error uploading file: {str(e)}"
-
-
+    except Exception as exc:
+        return f"Error uploading file: {exc}"
 
 
 def drive_export_handler(

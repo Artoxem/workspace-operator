@@ -14,12 +14,11 @@ from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
 from ..auth import get_creds
 from ..config import Config
 from ..security import validate_email
-from . import engine, store
+from . import engine, move, store
 from . import selector as selector_module
 from .models import (
     DOCS_ACTIONS,
@@ -32,6 +31,7 @@ from .models import (
     Job,
     Plan,
 )
+from .move import move_review as move_review
 
 
 def _json(data: Dict[str, Any]) -> str:
@@ -100,17 +100,7 @@ def _validate_options(
         target = options.get("target_folder_id")
         if not isinstance(target, str) or not target.strip():
             raise BulkError("move needs options.target_folder_id")
-        try:
-            meta = (
-                build("drive", "v3", credentials=get_creds(config), cache_discovery=False)
-                .files()
-                .get(fileId=target.strip(), fields="id,mimeType", supportsAllDrives=False)
-                .execute()
-            )
-        except HttpError as exc:
-            raise BulkError(f"target folder cannot be read: {exc}") from exc
-        if meta.get("mimeType") != "application/vnd.google-apps.folder":
-            raise BulkError("options.target_folder_id must point at a folder")
+        options["target_folder_id"] = target.strip()
     elif action == "rename":
         pattern = options.get("pattern")
         find = options.get("find")
@@ -150,7 +140,7 @@ def plan_bulk(
     sample: int = 5,
 ) -> str:
     selector = selector or {}
-    options = options or {}
+    options = dict(options or {})
     domain = (domain or "drive").strip().lower()
     action = (action or "").strip().lower()
     if domain not in DOMAINS:
@@ -174,7 +164,10 @@ def plan_bulk(
     except BulkError as exc:
         return _json({"ok": False, "error": str(exc)})
 
+    is_move = (domain, action) == ("drive", "move")
     explicit = [str(value) for value in selector.get("ids") or [] if str(value).strip()]
+    if is_move and "ids" in selector and not explicit:
+        return _json({"ok": False, "error": "move requires at least one eligible file ID"})
     if explicit and selector.get("query"):
         return _json(
             {"ok": False, "error": "selector.ids cannot be combined with selector.query"}
@@ -213,10 +206,12 @@ def plan_bulk(
         )
 
     store.cleanup_plans(config)
+    allow_shared = bool(getattr(config, "bulk_allow_shared_drives", False))
     try:
+        creds = get_creds(config)
         if domain == "gmail":
             resolved = selector_module.resolve_gmail(
-                get_creds(config),
+                creds,
                 selector,
                 max_items=cap,
                 logger=logger,
@@ -226,16 +221,19 @@ def plan_bulk(
             if domain in DOMAIN_MIME:
                 drive_selector["mime_types"] = [DOMAIN_MIME[domain]]
             resolved = selector_module.resolve_drive(
-                get_creds(config),
+                creds,
                 drive_selector,
                 max_items=cap,
-                allow_shared_drives=bool(getattr(config, "bulk_allow_shared_drives", False)),
+                allow_shared_drives=allow_shared,
                 protected_ids=getattr(config, "bulk_protected_ids", None),
                 protected_patterns=getattr(config, "bulk_protected_patterns", None),
                 logger=logger,
+                for_move=is_move,
             )
-    except BulkError:
-        raise
+    except BulkError as exc:
+        if not is_move:
+            raise
+        return _json({"ok": False, "error": str(exc)})
     except Exception as exc:  # noqa: BLE001 - surface Google errors compactly
         logger.exception("bulk plan resolution failed")
         return _json({"ok": False, "error": f"cannot resolve selector: {exc}"})
@@ -269,6 +267,20 @@ def plan_bulk(
             }
         )
 
+    if is_move:
+        if not items:
+            return _json({"ok": False, "error": "move requires at least one eligible file", "warnings": warnings})
+        try:
+            files = build("drive", "v3", credentials=creds, cache_discovery=False).files()
+            destination, items = move.snapshot(files, options["target_folder_id"], items, allow_shared)
+        except BulkError as exc:
+            return _json({"ok": False, "error": str(exc), "warnings": warnings})
+        except Exception as exc:  # noqa: BLE001 - surface provider errors compactly
+            logger.exception("bulk move context resolution failed")
+            return _json({"ok": False, "error": f"cannot resolve move context: {exc}"})
+        options["target_folder_id"] = destination["id"]
+        options["move_destination"] = destination
+
     sample_size = max(1, min(int(sample or 5), 20))
     if resolved.get("sample"):
         sample_items = resolved["sample"][:sample_size]
@@ -295,6 +307,11 @@ def plan_bulk(
         items=items,
         warnings=warnings,
     )
+    if is_move:
+        try:
+            review = move_review(plan)
+        except BulkError as exc:
+            return _json({"ok": False, "error": str(exc), "warnings": warnings})
     store.save_plan(config, plan)
     total_bytes = sum(int(item.get("size") or 0) for item in items)
     return _json(
@@ -308,6 +325,7 @@ def plan_bulk(
             "sample": sample_items,
             "warnings": warnings,
             "expires_in_seconds": ttl,
+            **({"destination": review["destination"]} if is_move else {}),
             "next": f"bulk_run(plan_id='{plan.id}', confirm=true)",
         }
     )
@@ -320,6 +338,7 @@ def run_bulk(
     confirm: bool = False,
     on_finish: Optional[Callable[[Job], None]] = None,
     job_id: Optional[str] = None,
+    plan_snapshot: Optional[Plan] = None,
 ) -> str:
     if getattr(config, "dry_run", False):
         return _json(
@@ -334,7 +353,15 @@ def run_bulk(
             }
         )
     try:
-        plan = store.load_plan(config, plan_id)
+        plan = plan_snapshot if plan_snapshot is not None else store.load_plan(config, plan_id)
+        if plan.id != plan_id:
+            raise BulkError("the approved snapshot does not match this plan ID")
+        if (plan.domain, plan.action) == ("drive", "move"):
+            if plan_snapshot is None:
+                raise BulkError("a locally approved move snapshot is required")
+            move_review(plan)
+            if plan.options["move_destination"]["driveId"] and not getattr(config, "bulk_allow_shared_drives", False):
+                raise BulkError("Shared drive moves require bulk_allow_shared_drives to be enabled")
     except BulkError as exc:
         return _json({"ok": False, "error": str(exc)})
 
@@ -377,6 +404,11 @@ def run_bulk(
 
 def _undo_spec(job: Job, records: List[Dict[str, Any]]):
     """Build inverse items from a finished job's result records."""
+    if job.action == "move":
+        raise BulkError(
+            "bulk_undo cannot move files without a new review. Use bulk_result to find "
+            "previous_parents, then create a new bulk_plan(action='move') per destination folder."
+        )
     done = [record for record in records if record.get("status") == "ok"]
     if not done:
         raise BulkError("nothing to undo: the job has no successful items")
@@ -392,25 +424,6 @@ def _undo_spec(job: Job, records: List[Dict[str, Any]]):
             for record in done
         ]
         return "restore", items
-    if job.action == "move":
-        items = []
-        for record in done:
-            parents = record.get("previous_parents")
-            if not parents:
-                raise BulkError(
-                    "this move job has no saved parents; it predates undo support"
-                )
-            items.append(
-                {
-                    "id": record["id"],
-                    "name": record.get("name", ""),
-                    "previous_parents": list(parents),
-                    "size": 0,
-                    "mimeType": "",
-                    "trashed": False,
-                }
-            )
-        return "move_back", items
     if job.action == "rename":
         items = []
         for record in done:

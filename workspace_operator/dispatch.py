@@ -51,7 +51,6 @@ Arg = Union[P, str]  # a string names a callback slot
 #: handler name -> (function name in workspace_operator.server, arguments)
 ROUTES: Dict[str, Tuple[str, Tuple[Arg, ...]]] = {
     'bulk_plan': ('bulk_plan_handler', (P('domain', default='drive'), P('action'), P('selector', fallback={}), P('options', fallback={}), P('allow_large', default=False), P('sample', default=5),)),
-    'bulk_run': ('bulk_run_handler', (P('plan_id'), P('confirm', default=False), '_on_bulk_finish', P('job_id'),)),
     'bulk_status': ('bulk_status_handler', (P('job_id'),)),
     'bulk_cancel': ('bulk_cancel_handler', (P('job_id'),)),
     'bulk_result': ('bulk_result_handler', (P('job_id'), P('offset', default=0), P('limit', default=50),)),
@@ -68,7 +67,6 @@ ROUTES: Dict[str, Tuple[str, Tuple[Arg, ...]]] = {
     'postmaster_list_domains': ('postmaster_list_domains_handler', ()),
     'postmaster_traffic_stats': ('postmaster_traffic_stats_handler', (P('domain'), P('days', default=7),)),
     'workspace_search': ('workspace_search_handler', (P('query'), P('sources'), P('limit', default=10), P('calendar_days_back', default=30), P('calendar_days_ahead', default=180),)),
-    'drive_upload': ('drive_upload_handler', (P('local_path'), P('name'), P('parent_id'), P('mime_type'), P('convert_to'),)),
     'drive_export': ('drive_export_handler', (P('file_id'), P('format'), P('save_to'), P('overwrite', default=False),)),
     'script_run_function': ('script_run_function_handler', (P('script_id'), P('function_name'), P('parameters'), P('dev_mode', default=True),)),
     'read_sheet': ('read_sheet_handler', (P('spreadsheet_id'), P('range_name'),)),
@@ -113,7 +111,6 @@ ROUTES: Dict[str, Tuple[str, Tuple[Arg, ...]]] = {
     'list_events': ('list_events_handler', (P('calendar_id', default='primary'), P('max_results', default=10),)),
     'calendar_create_meeting': ('calendar_create_meeting_handler', (P('summary'), P('start_time'), P('end_time'), P('attendees'), P('description', default=''), P('location', default=''), P('confirm', default=False),)),
     'create_folder': ('create_folder_handler', (P('name'), P('parent_id'),)),
-    'move_file': ('move_file_handler', (P('file_id'), P('folder_id'),)),
     'share_file': ('share_file_handler', (P('file_id'), P('role'), P('type', default='user'), P('email_address'), P('allow_public', default=False),)),
     'drive_search_advanced': ('drive_search_advanced_handler', (P('query'), P('limit', default=50),)),
     'drive_list_permissions': ('drive_list_permissions_handler', (P('file_id'),)),

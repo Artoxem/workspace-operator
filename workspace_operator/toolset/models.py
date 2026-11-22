@@ -39,6 +39,7 @@ class ActionSpec:
     required: Tuple[str, ...] = ()
     params: Tuple[str, ...] = ()
     confirm: bool = False
+    approval: bool = False
 
 
 @dataclass(frozen=True)

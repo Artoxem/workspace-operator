@@ -52,7 +52,7 @@ class LegacySurfaceTests(unittest.TestCase):
         self.surface = build_legacy_surface(self.legacy)
 
     def test_every_retained_legacy_tool_is_preserved(self):
-        self.assertEqual(len(self.surface.tools), 104)
+        self.assertEqual(len(self.surface.tools), 103)
         self.assertEqual(
             {tool.name for tool in self.surface.tools},
             {tool.name for tool in self.legacy},
