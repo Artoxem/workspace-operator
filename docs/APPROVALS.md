@@ -11,7 +11,14 @@ to delete something; it cannot approve its own request.
 1. The agent calls a destructive tool, for example:
 
    ```json
-   {"name": "drive_trash", "arguments": {"file_id": "..."}}
+   {"name": "calendar_delete", "arguments": {"event_id": "..."}}
+   ```
+
+   Files and messages are different: they are deleted through a bulk plan, so
+   the review can list everything at once.
+
+   ```json
+   {"name": "bulk_run", "arguments": {"plan_id": "bp_…", "confirm": true}}
    ```
 
 2. If the client supports MCP elicitation, the server asks the human in the
@@ -40,8 +47,9 @@ client UI: **Approve this action?** Accepting runs it once; declining cancels it
 4. The agent retries the **same** call with the id:
 
    ```json
-   {"name": "drive_trash", "arguments": {
-     "file_id": "...",
+   {"name": "bulk_run", "arguments": {
+     "plan_id": "bp_…",
+     "confirm": true,
      "approval_id": "apr_…"
    }}
    ```
@@ -178,8 +186,8 @@ Deleting a Drive item or an email now shows what is about to go to Trash:
 
 `confirm=true` + human approval applies to:
 
-`drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
-`gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
+`drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete` (draft),
+`calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
 `drive_write` → `upload` also requires human approval; `confirm=true` is not necessary.
 
 Reads, ordinary writes, drafts and `dry_run` previews do not require approval.

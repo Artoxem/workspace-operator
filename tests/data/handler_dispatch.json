@@ -192,13 +192,6 @@
   ],
   "kwargs": []
  },
- "delete_email": {
-  "args": [
-   "<message_id>",
-   true
-  ],
-  "kwargs": []
- },
  "digest": {
   "args": [
    "<sources>",
@@ -246,13 +239,6 @@
    "<file_id>",
    "<name>",
    "<parent_id>"
-  ],
-  "kwargs": []
- },
- "drive_delete_file": {
-  "args": [
-   "<file_id>",
-   true
   ],
   "kwargs": []
  },
@@ -358,13 +344,6 @@
  "get_spreadsheet_meta": {
   "args": [
    "<spreadsheet_id>"
-  ],
-  "kwargs": []
- },
- "gmail_archive": {
-  "args": [
-   "<message_id>",
-   true
   ],
   "kwargs": []
  },

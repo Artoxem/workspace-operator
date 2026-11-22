@@ -13,8 +13,8 @@ from pathlib import Path
 from tests.test_call_tool_branches import _call, _config
 from workspace_operator.approvals import ApprovalStore
 
-TOOL = "drive_trash"
-ARGS = {"file_id": "f1"}
+TOOL = "calendar_delete"
+ARGS = {"event_id": "e1"}
 
 
 def run(coro):

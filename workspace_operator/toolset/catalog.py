@@ -19,7 +19,6 @@ CORE_TOOL_NAMES = frozenset(
         "drive_search",
         "drive_read",
         "drive_write",
-        "drive_trash",
         "read_doc",
         "docs_write",
         "sheets_read",
@@ -235,15 +234,6 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             ),
             _scopes("drive"),
         ),
-        direct(
-            "drive_trash",
-            "drive_delete_file",
-            "drive",
-            Safety.DESTRUCTIVE,
-            "Move a Drive file to Trash (recoverable 30 days; no permanent delete).",
-            _scopes("drive"),
-            confirm=True,
-        ),
         group(
             "drive_permissions",
             "drive",
@@ -414,7 +404,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "gmail_write",
             "gmail",
             Safety.WRITE,
-            "Send, reply, draft and archive Gmail messages.",
+            "Send, reply and draft Gmail messages. Archive with bulk_plan(domain='gmail', action='archive').",
             (
                 action("send", "send_email", "Send or draft a message."),
                 action("reply", "gmail_reply", "Reply in a thread."),
@@ -427,7 +417,6 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
                 action("draft_update", "gmail_update_draft", "Replace a draft."),
                 action("draft_send", "send_draft", "Send a draft."),
                 action("draft_list", "gmail_list_drafts", "List drafts."),
-                action("archive", "gmail_archive", "Archive a message."),
             ),
             _scopes("gmail.modify"),
         ),
@@ -447,9 +436,8 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "gmail_delete",
             "gmail",
             Safety.DESTRUCTIVE,
-            "Move messages or drafts to Trash (recoverable).",
+            "Move drafts to Trash. For messages use bulk_plan(domain='gmail', action='trash').",
             (
-                action("email", "delete_email", "Move an email to Trash.", confirm=True),
                 action(
                     "draft",
                     "gmail_delete_draft",

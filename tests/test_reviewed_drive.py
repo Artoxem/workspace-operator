@@ -141,16 +141,14 @@ def test_reviewed_approval_is_only_consumed_once_across_store_instances(tmp_path
     assert sum(ok for ok, _ in results) == 1
 
 
-def test_trash_review_reaches_the_page_and_runs_once(tmp_path):
+def test_draft_deletion_review_reaches_the_page(tmp_path):
     config = config_for(tmp_path, wait=8)
     queue = ApprovalStore(config)
     review = {
         "operation": "trash",
         "destination": {"id": "trash", "name": "Trash · recoverable 30 days"},
-        "items": [{
-            "id": "F1", "name": "Q3 report.pdf", "mime_type": "application/pdf", "size": 2048,
-            "sources": [{"id": "P1", "name": "Reports"}],
-        }],
+        "items": [{"id": "D1", "name": "Draft: quarterly plan", "mime_type": "message/rfc822",
+                   "sources": [{"id": "drafts", "name": "Drafts"}]}],
     }
     requested = Event()
     original_request = ApprovalStore.request
@@ -163,11 +161,11 @@ def test_trash_review_reaches_the_page_and_runs_once(tmp_path):
     with (make_client(config, queue) as client, ThreadPoolExecutor() as pool,
           mock.patch.object(ApprovalStore, "request", signal_request),
           mock.patch("workspace_operator.tool_router.prepare_review", return_value=(review, None)),
-          mock.patch.object(server, "delete_file_handler", return_value="TRASHED") as handler):
-        waiting = pool.submit(call, client, "drive_trash", {"file_id": "F1", "confirm": True})
+          mock.patch.object(server, "delete_draft_tool", return_value="DELETED") as handler):
+        waiting = pool.submit(call, client, "gmail_delete", {"action": "draft", "draft_id": "D1"})
         assert requested.wait(5)
         handler.assert_not_called()
-        rid = browser_review(client, queue, check=("Q3 report.pdf", "Reports", "Trash", "2 KB"), action="approve")
+        rid = browser_review(client, queue, check=("quarterly plan", "Drafts", "Trash"), action="approve")
         waiting.result(timeout=10)
         assert queue.get(rid)["status"] == "used"
         handler.assert_called_once()

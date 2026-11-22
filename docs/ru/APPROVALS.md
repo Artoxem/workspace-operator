@@ -11,7 +11,14 @@ Workspace Operator оставляет destructive-инструменты аге�
 1. Агент вызывает destructive-инструмент:
 
    ```json
-   {"name": "drive_trash", "arguments": {"file_id": "..."}}
+   {"name": "calendar_delete", "arguments": {"event_id": "..."}}
+   ```
+
+   Файлы и письма удаляются иначе — через план bulk, чтобы предпросмотр
+   покрывал весь список сразу.
+
+   ```json
+   {"name": "bulk_run", "arguments": {"plan_id": "bp_…", "confirm": true}}
    ```
 
 2. Если клиент поддерживает MCP elicitation, сервер спрашивает человека в UI
@@ -41,8 +48,9 @@ Workspace Operator оставляет destructive-инструменты аге�
 4. Агент повторяет **тот же** вызов с `approval_id`:
 
    ```json
-   {"name": "drive_trash", "arguments": {
-     "file_id": "...",
+   {"name": "bulk_run", "arguments": {
+     "plan_id": "bp_…",
+     "confirm": true,
      "approval_id": "apr_…"
    }}
    ```
@@ -183,8 +191,8 @@ POST дополнительно отклоняется, если заголов�
 
 `confirm=true` + approval человека применяются к:
 
-`drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
-`gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
+`drive_permissions`, `docs_edit`, `sheets_delete`, `gmail_delete` (черновик),
+`calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
 `drive_write` → `upload` тоже требует подтверждения человека, но без `confirm=true`.
 
 Чтение, обычная запись, черновики и `dry_run` не требуют approval.

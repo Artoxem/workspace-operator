@@ -24,6 +24,8 @@ REMOVED_STANDALONE = {
     "create_event", "create_draft", "send_draft", "gmail_update_draft",
     "gmail_delete_draft", "gmail_list_drafts", "batch_delete_emails",
     "find_files", "doc_export_pdf",
+    # Retired single-item paths: these now go through bulk_plan/bulk_run.
+    "drive_delete_file", "delete_email", "gmail_archive",
 }
 
 
@@ -43,7 +45,7 @@ class CatalogTests(unittest.TestCase):
         cls.by_name = {tool.name: tool for tool in cls.catalog}
 
     def test_catalog_shape(self):
-        self.assertEqual(len(self.catalog), 39)
+        self.assertEqual(len(self.catalog), 38)
         self.assertTrue(CORE_TOOL_NAMES <= set(self.by_name))
 
     def test_removed_tools_are_absent(self):
@@ -76,6 +78,8 @@ class CatalogTests(unittest.TestCase):
         for tool in self.legacy:
             if tool.name in consolidated:
                 continue
+            if tool.name in UNCOVERED:
+                continue  # retired: routed to bulk with an explicit message
             self.assertIn(tool.name, aliases, tool.name)
             target, _ = aliases[tool.name]
             self.assertIn(target, self.by_name)
@@ -91,14 +95,13 @@ class CatalogTests(unittest.TestCase):
         readonly = build_surface(self.catalog, "read-only")
         self.assertLessEqual(len(core), 20)
         self.assertLessEqual(core.estimated_tokens(), 4000)
-        self.assertLessEqual(len(full), 39)
+        self.assertLessEqual(len(full), 38)
         self.assertLessEqual(full.estimated_tokens(), 9000)
         self.assertLessEqual(len(readonly), 17)
         self.assertLessEqual(readonly.estimated_tokens(), 3200)
 
     def test_destructive_tools_are_annotated(self):
         for name in (
-            "drive_trash",
             "drive_permissions",
             "docs_edit",
             "sheets_delete",
@@ -129,7 +132,8 @@ class LegacyCoverageTests(unittest.TestCase):
             for action in tool.actions:
                 used.add(action.legacy)
         uncovered = {tool.name for tool in legacy} - used
-        self.assertEqual(uncovered, set())
+        # Retired single-item paths, now answered by an explicit bulk_plan hint.
+        self.assertEqual(uncovered, {"drive_delete_file", "delete_email", "gmail_archive"})
 
 
 if __name__ == "__main__":

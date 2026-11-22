@@ -4,7 +4,7 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmai
 license: MIT
 metadata:
   server: workspace-operator
-  version: "2.8.0"
+  version: "2.9.0"
 ---
 
 # Google Workspace automation
@@ -49,8 +49,11 @@ Never guess an ID, sheet name or range.
 - `sheets_write` → `find_replace` returns a preview without `confirm=true`;
   `gmail_settings` → `label_apply` defaults to `dry_run=true`.
 - These actions first return `APPROVAL_REQUIRED`:
-  `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
-  `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
+  `drive_permissions`, `docs_edit`, `sheets_delete`,
+  `gmail_delete` (draft), `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
+  Deleting files or messages is **not** a direct tool: plan it with `bulk_plan`
+  (`domain='drive', action='trash'` or `domain='gmail', action='trash'`) and run
+  `bulk_run`; one review covers the whole list, including a single file.
   A human decides every one of them. You must not approve your own request: never
   run `workspace-operator approvals`, and do not try to open the approval page.
   When the client supports MCP elicitation the human gets an approve dialog in
@@ -59,7 +62,7 @@ Never guess an ID, sheet name or range.
   that `approval_id`. Do not fabricate an id. `confirm=true` alone is not enough.
 - Public sharing is disabled by default; `drive_write` → `share` needs both
   `allow_public_sharing=true` in config and `allow_public=true`.
-- There is no permanent Drive deletion: `drive_trash` only moves to Trash.
+- There is no permanent Drive deletion; bulk trash only moves to Trash.
 
 ## 4. Drive
 
@@ -70,7 +73,7 @@ Never guess an ID, sheet name or range.
 | Create folder, copy, rename, share, restore | `drive_write` → matching action |
 | Upload a local file | `drive_write` → `upload`; wait for human review |
 | Move files, including a single file | `bulk_plan` → `bulk_run`; provide explicit file IDs when known |
-| Move to Trash | `drive_trash` |
+| Move files to Trash | `bulk_plan` (drive, trash) → `bulk_run` |
 | Remove or revoke access | `drive_permissions` → `remove`, `revoke_public` |
 
 `drive_download` and permanent deletion are not exposed in 2.0.
@@ -83,7 +86,7 @@ Never guess an ID, sheet name or range.
   values; `sheets_format`, `sheets_structure`, `sheets_data` for layout;
   `sheets_delete` for destructive row/column/sheet deletion.
 - Gmail: `gmail_read` for profile/list/read/thread/attachment/search/labels;
-  `gmail_write` for send/reply/drafts/archive; `gmail_settings` for labels and
+  `gmail_write` for send/reply/drafts; archive and trash go through `bulk_plan`; `gmail_settings` for labels and
   filters; `gmail_delete` for Trash.
 - Calendar: `calendar_read`, `calendar_write` (meeting/update/move/respond/color),
   `calendar_delete`.

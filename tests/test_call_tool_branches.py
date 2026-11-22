@@ -73,7 +73,8 @@ class _Transient(Exception):
 
 def _save_bulk_plan(config, plan_id):
     store.save_plan(config, Plan(plan_id, "drive", "trash", {}, {},
-                                "2026-01-01T00:00:00+00:00", "2099-01-01T00:00:00+00:00"))
+                                "2026-01-01T00:00:00+00:00", "2099-01-01T00:00:00+00:00",
+                                [{"id": "f1", "name": "file.txt", "mimeType": "text/plain"}]))
 
 
 async def _call(tool, arguments, *, profile="full", config_overrides=None, handler=None,
@@ -170,21 +171,23 @@ SCENARIOS = {
     "outside_profile_read_only": dict(tool="drive_write", arguments={"action": "rename", "file_id": "f", "name": "n"}, profile="read-only"),
     "dry_run_read_runs": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, config_overrides={"dry_run": True}),
     "dry_run_write_is_preview": dict(tool="drive_write", arguments={"action": "rename", "file_id": "f", "name": "n"}, config_overrides={"dry_run": True}),
-    "dry_run_destructive_is_preview": dict(tool="drive_trash", arguments={"file_id": "f"}, config_overrides={"dry_run": True}),
+    "dry_run_destructive_is_preview": dict(tool="calendar_delete", arguments={"event_id": "e"}, config_overrides={"dry_run": True}),
     # A non-destructive write needs no approval; it reaches the handler, which here fails on
     # missing credentials. Pins that the unconfigured-client error is reported as an error.
     "write_reaches_handler_without_credentials": dict(tool="drive_write", arguments={"action": "rename", "file_id": "f", "name": "n"}),
-    "destructive_challenge": dict(tool="drive_trash", arguments={"file_id": "f"}),
-    "destructive_challenge_no_url": dict(tool="drive_trash", arguments={"file_id": "f"}, config_overrides={"approval_url": None}),
+    "destructive_challenge": dict(tool="calendar_delete", arguments={"event_id": "e"}),
+    "destructive_challenge_no_url": dict(tool="calendar_delete", arguments={"event_id": "e"}, config_overrides={"approval_url": None}),
     "destructive_wrong_approval_id": dict(tool="drive_trash", arguments={"file_id": "f", "approval_id": "apr_missing"}),
-    "elicitation_accept": dict(tool="drive_trash", arguments={"file_id": "f"}, elicitation=_accept),
-    "elicitation_decline": dict(tool="drive_trash", arguments={"file_id": "f"}, elicitation=_decline),
-    "elicitation_cancel": dict(tool="drive_trash", arguments={"file_id": "f"}, elicitation=_cancel),
-    "elicitation_accept_unchecked": dict(tool="drive_trash", arguments={"file_id": "f"}, elicitation=_accept_without_flag),
-    "approved_by_id_runs_handler_with_confirm": dict(tool="drive_trash", arguments={"file_id": "f"}, approve_first=True),
+    "elicitation_accept": dict(tool="calendar_delete", arguments={"event_id": "e"}, elicitation=_accept),
+    "elicitation_decline": dict(tool="calendar_delete", arguments={"event_id": "e"}, elicitation=_decline),
+    "elicitation_cancel": dict(tool="calendar_delete", arguments={"event_id": "e"}, elicitation=_cancel),
+    "elicitation_accept_unchecked": dict(tool="calendar_delete", arguments={"event_id": "e"}, elicitation=_accept_without_flag),
+    "approved_by_id_runs_handler_with_confirm": dict(tool="calendar_delete", arguments={"event_id": "e"}, approve_first=True),
     "retries_transient_errors_then_succeeds": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, config_overrides={"retry_attempts": 3}, flaky=2),
     "gives_up_after_configured_attempts": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, config_overrides={"retry_attempts": 2}, flaky=5),
     "bulk_run_challenge": dict(tool="bulk_run", arguments={"plan_id": "bp_x", "confirm": True}),
+    "retired_drive_trash": dict(tool="drive_trash", arguments={"file_id": "f"}),
+    "retired_gmail_delete": dict(tool="gmail_delete", arguments={"action": "email", "message_id": "m"}),
     "calendar_delete_challenge": dict(tool="calendar_delete", arguments={"event_id": "e"}),
     "handler_error_string": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, handler="Error reading file: <HttpError 404 when requesting x returned \"Not Found\">"),
     "handler_error_string_indented": dict(tool="drive_read", arguments={"action": "metadata", "file_id": "F"}, handler="  Error: quota"),

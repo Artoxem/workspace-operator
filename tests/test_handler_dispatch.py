@@ -173,7 +173,7 @@ class HandlerDispatchTests(unittest.TestCase):
             legacy for tool, action, legacy in _calls()
             if legacy in _handler_functions() and catalog[tool].safety.value == "destructive"
         }
-        self.assertEqual(len(destructive), 13)
+        self.assertEqual(len(destructive), 11)
         self.assertEqual(destructive & set(declined), set(), "a destructive handler ran unapproved")
         self.assertEqual(set(declined), set(expected) - destructive, "non-destructive handlers must still run")
 

@@ -5,24 +5,24 @@
    {
     "arguments": [
      "approval_id",
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approval-required",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    },
    {
     "arguments": [
      "approval_id",
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "ok",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
@@ -30,8 +30,10 @@
   ],
   "handler_calls": [
    [
-    "f",
-    true
+    "e",
+    "primary",
+    true,
+    "none"
    ]
   ],
   "is_error": false
@@ -53,7 +55,7 @@
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"bulk_run (plan_id=bp_x)\",\n  \"tool\": \"bulk_run\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"Delete 1 item(s)\",\n  \"tool\": \"bulk_run\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
@@ -85,17 +87,17 @@
    {
     "arguments": [
      "approval_id",
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approval-required",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"calendar_delete (event_id=e)\",\n  \"tool\": \"calendar_delete\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
@@ -106,59 +108,46 @@
    {
     "arguments": [
      "approval_id",
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approval-required",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
-   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
+   "⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"calendar_delete (event_id=e)\",\n  \"tool\": \"calendar_delete\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
   ],
   "handler_calls": [],
   "is_error": false
  },
  "destructive_wrong_approval_id": {
-  "approvals_created": 1,
-  "audit": [
-   {
-    "arguments": [
-     "approval_id",
-     "file_id"
-    ],
-    "client": "stdio",
-    "duration_ms": "int",
-    "error": "Unknown approval id 'apr_missing'.",
-    "profile": "full",
-    "status": "approval-rejected",
-    "tool": "drive_trash"
-   }
-  ],
+  "approvals_created": 0,
+  "audit": [],
   "content": [
-   "Approval could not be used: Unknown approval id 'apr_missing'.\n\n⚠️ APPROVAL REQUIRED — the action has NOT run.\n\n{\n  \"action\": null,\n  \"approval_id\": \"apr_ID\",\n  \"expires_at\": \"TIMESTAMP\",\n  \"status\": \"approval_required\",\n  \"summary\": \"drive_trash (file_id=f)\",\n  \"tool\": \"drive_trash\"\n}\n\nA human operator must review and decide this request. Tell the user that an approval is pending and what it is for. Do not attempt to approve it yourself. When the user confirms it is approved, repeat the same tool call with this `approval_id`; if it was denied or has expired, do not retry."
+   "Direct file deletion was removed. Use bulk_plan(domain='drive', action='trash', selector={'ids': [...]} or {'query': '…'}), then bulk_run: one review covers the whole list. No files were moved to Trash."
   ],
   "handler_calls": [],
-  "is_error": false
+  "is_error": true
  },
  "dry_run_destructive_is_preview": {
   "approvals_created": 0,
   "audit": [
    {
     "arguments": [
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "dry-run",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
-   "DRY RUN: 'drive_trash' was not executed. Arguments: ['file_id']. Unset dry_run / MCP_DRY_RUN to apply changes."
+   "DRY RUN: 'calendar_delete' was not executed. Arguments: ['event_id']. Unset dry_run / MCP_DRY_RUN to apply changes."
   ],
   "handler_calls": [],
   "is_error": false
@@ -215,23 +204,23 @@
   "audit": [
    {
     "arguments": [
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approved-in-chat",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    },
    {
     "arguments": [
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "ok",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
@@ -239,8 +228,10 @@
   ],
   "handler_calls": [
    [
-    "f",
-    true
+    "e",
+    "primary",
+    true,
+    "none"
    ]
   ],
   "is_error": false
@@ -250,13 +241,13 @@
   "audit": [
    {
     "arguments": [
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approval-declined",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
@@ -270,13 +261,13 @@
   "audit": [
    {
     "arguments": [
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approval-cancelled",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
@@ -290,13 +281,13 @@
   "audit": [
    {
     "arguments": [
-     "file_id"
+     "event_id"
     ],
     "client": "stdio",
     "duration_ms": "int",
     "profile": "full",
     "status": "approval-declined",
-    "tool": "drive_trash"
+    "tool": "calendar_delete"
    }
   ],
   "content": [
@@ -767,6 +758,24 @@
   "audit": [],
   "content": [
    "Tool 'slides_create' was removed in Workspace Operator 2.0. See docs/MIGRATION_2.0.md for the replacement."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "retired_drive_trash": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   "Direct file deletion was removed. Use bulk_plan(domain='drive', action='trash', selector={'ids': [...]} or {'query': '…'}), then bulk_run: one review covers the whole list. No files were moved to Trash."
+  ],
+  "handler_calls": [],
+  "is_error": true
+ },
+ "retired_gmail_delete": {
+  "approvals_created": 0,
+  "audit": [],
+  "content": [
+   "Direct Gmail 'email' was removed. Use bulk_plan(domain='gmail', action='trash', selector={'ids': [...]} or {'query': '…'}), then bulk_run: one review covers the whole list. No messages were changed."
   ],
   "handler_calls": [],
   "is_error": true

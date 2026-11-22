@@ -32,7 +32,7 @@ class ApprovalPageTests(unittest.TestCase):
             approval_dir=self.tmp.name,
         )
         self.store = ApprovalStore(config)
-        self.record = self.store.request("drive_trash", None, {"file_id": "f1"})
+        self.record = self.store.request("calendar_delete", None, {"event_id": "e1"})
         app = build_asgi_app(
             Server("test"),
             HttpOptions(tokens={"default": "t"}),
@@ -53,7 +53,7 @@ class ApprovalPageTests(unittest.TestCase):
         rid, k = self.record["id"], self._k()
         page = self.client.get(f"/approvals/{rid}?k={k}")
         self.assertEqual(page.status_code, 200)
-        self.assertIn("drive_trash", page.text)
+        self.assertIn("calendar_delete", page.text)
         self.assertIn("approve", page.text.lower())
         self.assertEqual(page.headers["referrer-policy"], "no-referrer")
 
@@ -143,13 +143,13 @@ class BrowserApprovalFlowTests(unittest.TestCase):
             HttpOptions(tokens={"default": "t"}), "test", approval_store=store,
         )
         headers = {"Authorization": "Bearer t", "Accept": "application/json, text/event-stream"}
-        with mock.patch("workspace_operator.server.delete_file_handler", return_value="TRASHED") as handler, \
+        with mock.patch("workspace_operator.server.calendar_delete_event_handler", return_value="DELETED") as handler, \
                 mock.patch("workspace_operator.tool_router.prepare_review", return_value=(None, None)), \
                 TestClient(app, base_url="http://127.0.0.1:8765") as client, \
                 ThreadPoolExecutor() as pool:
             call = pool.submit(client.post, "/mcp", headers=headers, json={
                 "jsonrpc": "2.0", "id": 1, "method": "tools/call",
-                "params": {"name": "drive_trash", "arguments": {"file_id": "f1"}},
+                "params": {"name": "calendar_delete", "arguments": {"event_id": "e1"}},
             })
             deadline = time.monotonic() + 3
             while not (pending := client_store.list_pending()):

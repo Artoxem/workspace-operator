@@ -67,8 +67,8 @@ class LegacySurfaceTests(unittest.TestCase):
     def test_consolidated_profile_counts(self):
         catalog = build_catalog(self.legacy)
         for name, expected in (
-            ("core", 20),
-            ("full", 39),
+            ("core", 19),
+            ("full", 38),
             ("read-write", 30),
             ("read-only", 17),
         ):

@@ -76,7 +76,7 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         async def check(session):
             tools = (await session.list_tools()).tools
             names = {tool.name for tool in tools}
-            self.assertEqual(len(tools), 20)
+            self.assertEqual(len(tools), 19)
             self.assertIn("workspace_search", names)
             self.assertNotIn("slides_create", names)
             self.assertNotIn("docs_edit", names)
@@ -116,7 +116,7 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         async def check(session):
             tools = (await session.list_tools()).tools
             names = {tool.name for tool in tools}
-            self.assertEqual(len(tools), 39)
+            self.assertEqual(len(tools), 38)
             self.assertNotIn("drive_empty_trash", names)
             self.assertNotIn("drive_transfer_ownership", names)
             self.assertNotIn("drive_list_comments", names)
@@ -136,7 +136,7 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_direct_destructive_returns_approval_challenge(self):
         async def check(session):
-            result = await session.call_tool("drive_trash", {"file_id": "f"})
+            result = await session.call_tool("gmail_delete", {"action": "draft", "draft_id": "d"})
             self.assertFalse(result.is_error)
             self.assertIn("APPROVAL REQUIRED", result.content[0].text)
 
@@ -145,8 +145,8 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def test_legacy_alias_to_destructive_returns_challenge(self):
         async def check(session):
             result = await session.call_tool("drive_delete_file", {"file_id": "f"})
-            self.assertFalse(result.is_error)
-            self.assertIn("APPROVAL REQUIRED", result.content[0].text)
+            self.assertTrue(result.is_error)
+            self.assertIn("bulk_plan", result.content[0].text)
 
         await self._with_server("full", check)
 
@@ -154,27 +154,28 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         cfg = config("core", approval_dir=self.tmp.name)
 
         async def check(session):
-            first = await session.call_tool("drive_trash", {"file_id": "f"})
+            first = await session.call_tool("gmail_delete", {"action": "draft", "draft_id": "d"})
             match = re.search(r"apr_[0-9a-f]+", first.content[0].text)
             self.assertIsNotNone(match)
             approval_id = match.group(0)
             ApprovalStore(cfg).approve(approval_id)
             with mock.patch.object(
-                server_module, "delete_file_handler", return_value="DELETED"
+                server_module, "delete_draft_tool", return_value="DELETED"
             ):
                 executed = await session.call_tool(
-                    "drive_trash", {"file_id": "f", "approval_id": approval_id}
+                    "gmail_delete",
+                    {"action": "draft", "draft_id": "d", "approval_id": approval_id},
                 )
                 self.assertFalse(executed.is_error)
                 self.assertIn("DELETED", executed.content[0].text)
                 reused = await session.call_tool(
-                    "drive_trash", {"file_id": "f", "approval_id": approval_id}
+                    "gmail_delete",
+                    {"action": "draft", "draft_id": "d", "approval_id": approval_id},
                 )
                 self.assertFalse(reused.is_error)
                 self.assertIn("already used", reused.content[0].text.lower())
 
         await self._with_server("core", check)
-
 
     async def test_elicitation_accept_executes(self):
         seen = {}
@@ -185,9 +186,9 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         async def check(session):
             with mock.patch.object(
-                server_module, "delete_file_handler", return_value="DELETED"
+                server_module, "delete_draft_tool", return_value="DELETED"
             ) as handler:
-                result = await session.call_tool("drive_trash", {"file_id": "f"})
+                result = await session.call_tool("gmail_delete", {"action": "draft", "draft_id": "d"})
                 self.assertFalse(result.is_error)
                 self.assertIn("DELETED", result.content[0].text)
                 self.assertTrue(handler.called)
@@ -200,8 +201,8 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
             return types.ElicitResult(action="decline")
 
         async def check(session):
-            with mock.patch.object(server_module, "delete_file_handler") as handler:
-                result = await session.call_tool("drive_trash", {"file_id": "f"})
+            with mock.patch.object(server_module, "delete_draft_tool") as handler:
+                result = await session.call_tool("gmail_delete", {"action": "draft", "draft_id": "d"})
                 self.assertFalse(result.is_error)
                 self.assertIn("did not approve", result.content[0].text)
                 handler.assert_not_called()
@@ -212,13 +213,14 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         cfg = config("core", approval_dir=self.tmp.name)
 
         async def check(session):
-            first = await session.call_tool("drive_trash", {"file_id": "f1"})
+            first = await session.call_tool("gmail_delete", {"action": "draft", "draft_id": "d1"})
             match = re.search(r"apr_[0-9a-f]+", first.content[0].text)
             self.assertIsNotNone(match)
             approval_id = match.group(0)
             ApprovalStore(cfg).approve(approval_id)
             changed = await session.call_tool(
-                "drive_trash", {"file_id": "f2", "approval_id": approval_id}
+                "gmail_delete",
+                {"action": "draft", "draft_id": "d2", "approval_id": approval_id},
             )
             self.assertFalse(changed.is_error)
             self.assertIn("changed", changed.content[0].text.lower())

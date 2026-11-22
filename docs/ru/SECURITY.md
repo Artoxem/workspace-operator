@@ -6,7 +6,7 @@
 - Destructive-вызовы сначала возвращают `APPROVAL_REQUIRED`; решение принимает человек в CLI или на странице в браузере (`workspace-operator approvals …`), агент повторяет вызов с одноразовым `approval_id`.
 - Агенту никогда не сообщается, как подтвердить: в его результате нет ни команд, ни ссылки. Браузерная ссылка содержит секрет конкретного одобрения и попадает в лог сервера для оператора. См. [APPROVALS.md](APPROVALS.md).
 - Approval привязан к хешу tool/action/аргументов, истекает по `approval_ttl` и используется один раз.
-- `drive_trash`, `drive_permissions`, `docs_edit`, `sheets_delete`,
+- `drive_permissions`, `docs_edit`, `sheets_delete`,
   `gmail_delete`, `calendar_delete`, `script_run`, `bulk_run` и `bulk_undo`
   требуют `confirm=true`.
 - Router проверяет это до handler; в handler остаётся вторая проверка.
@@ -17,7 +17,7 @@
 - `gmail_settings` → `label_apply` по умолчанию `dry_run=true`.
 
 ## Без безвозвратного удаления файлов
-- `drive_trash` только перемещает файл в корзину; `drive_empty_trash` и передачи
+- Удаление файлов и писем идёт через `bulk_plan` → `bulk_run`; `drive_empty_trash` и передачи
   владения нет.
 - Удаление Gmail перемещает письма в корзину.
 
@@ -33,8 +33,8 @@
 
 | Профиль | Инструментов | Для чего |
 |---|---:|---|
-| `core` | 20 | ежедневное чтение/запись без форматирования и destructive |
-| `full` | 39 | форматирование, destructive, Forms, Postmaster, Script |
+| `core` | 19 | ежедневное чтение/запись без форматирования и destructive |
+| `full` | 38 | форматирование, destructive, Forms, Postmaster, Script |
 | `read-write` | 30 | автоматизация без destructive |
 | `read-only` | 17 | разведка, демо, общие машины, недоверенные агенты |
 

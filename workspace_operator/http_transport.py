@@ -301,12 +301,25 @@ def _review_html(
     warnings = "".join(f"<li>{_esc(w)}</li>" for w in review.get("warnings", []))
     notices = f"<ul class='warn'>{warnings}</ul>" if warnings else ""
     size = _human_bytes(total_bytes) if total_bytes else ""
-    verb = {"move": "Move", "upload": "Upload", "trash": "Delete"}.get(
-        str(review.get("operation")), "Review"
+    verb = {
+        "move": "Move", "upload": "Upload", "trash": "Delete", "archive": "Archive",
+        "restore": "Restore", "rename": "Rename", "share": "Share",
+        "revoke_public": "Revoke public access", "label": "Label",
+        "mark_read": "Mark read", "mark_unread": "Mark unread",
+        "replace_text": "Replace text", "find_replace": "Replace text",
+    }.get(str(review.get("operation")), "Review")
+    total = int(review.get("total") or len(items))
+    sampled = bool(review.get("sampled"))
+    noun = "message(s)" if sampled else ("item(s)" if review.get("operation") == "trash" else "file(s)")
+    note = f"<p class='dim'>{_esc(review['note'])}</p>" if review.get("note") else ""
+    sample_notice = (
+        f"<p class='warn'>Showing the first {len(items)} of {total} matches. "
+        "Every matching message is affected — narrow the selector for a shorter list.</p>"
+        if sampled and total > len(items)
+        else ""
     )
-    noun = "item(s)" if review.get("operation") == "trash" else "file(s)"
     head = (
-        f"<p class='head'>{verb} <b>{len(items)}</b> {noun}{f' · {size}' if size else ''} → "
+        f"<p class='head'>{verb} <b>{total}</b> {noun}{f' · {size}' if size else ''} → "
         f"<b>{_esc(destination.get('name'))}</b>{dest_id}{drive}</p>"
     )
 
@@ -341,7 +354,7 @@ def _review_html(
         )
     return (
         "<section>"
-        f"{head}{notices}<div class='review'>{body}</div>{nav}"
+        f"{head}{note}{sample_notice}{notices}<div class='review'>{body}</div>{nav}"
         f"<p class='dim'>fingerprint {_review_fingerprint(review)} · "
         f"<a href='/approvals/{quote(approval_id)}/manifest.csv?k={quote(secret, safe='')}'>"
         "download CSV</a></p>"

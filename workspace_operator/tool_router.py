@@ -21,6 +21,7 @@ from typing import Any, Dict, Mapping, Optional, Tuple
 import mcp.types as types
 
 from .approvals import ApprovalError, ApprovalStore, challenge_text, summarize
+from .bulk import review as bulk_review
 from .bulk import service as bulk_service
 from .bulk import store as bulk_store
 from .bulk.models import BulkError, Plan
@@ -419,6 +420,24 @@ class ToolRouter:
                 "selector={'ids': [...]}, options={'target_folder_id': '…'}), then bulk_run. "
                 "No files were moved."
             )
+        retired_gmail = {
+            ("gmail_delete", "email"): "trash",
+            ("gmail_write", "archive"): "archive",
+        }
+        action_name = arguments.get("action")
+        if name in ("drive_trash", "drive_delete_file"):
+            return _error(
+                "Direct file deletion was removed. Use bulk_plan(domain='drive', action='trash', "
+                "selector={'ids': [...]} or {'query': '…'}), then bulk_run: one review covers the "
+                "whole list. No files were moved to Trash."
+            )
+        if isinstance(action_name, str) and (name, action_name) in retired_gmail:
+            bulk_action = retired_gmail[(name, action_name)]
+            return _error(
+                f"Direct Gmail '{action_name}' was removed. Use bulk_plan(domain='gmail', "
+                f"action='{bulk_action}', selector={{'ids': [...]}} or {{'query': '…'}}), then "
+                "bulk_run: one review covers the whole list. No messages were changed."
+            )
 
         spec, arguments, early = self._find_spec(name, arguments)
         if early is not None:
@@ -474,6 +493,8 @@ class ToolRouter:
                 digest = bulk_store.plan_digest(snapshot)
                 if snapshot.domain == "drive" and snapshot.action == "move":
                     review = bulk_service.move_review(snapshot)
+                else:
+                    review = bulk_review.review_for(snapshot)
             else:
                 review, _ = await asyncio.to_thread(
                     prepare_review, self.config, plan.legacy_name, plan.arguments, self.logger

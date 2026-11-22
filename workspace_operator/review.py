@@ -93,6 +93,29 @@ def gmail_trash_review(config: Config, message_id: str) -> Dict[str, Any]:
     return {"operation": "trash", "destination": TRASH_DESTINATION, "items": [item]}
 
 
+def gmail_draft_review(config: Config, draft_id: str) -> Dict[str, Any]:
+    """Describe the draft that will be removed."""
+    service = api_client(config, "gmail", "v1")
+    draft = (
+        service.users()
+        .drafts()
+        .get(userId="me", id=draft_id, format="metadata")
+        .execute()
+    )
+    message = draft.get("message") or {}
+    headers = {
+        header.get("name", "").lower(): header.get("value", "")
+        for header in (message.get("payload") or {}).get("headers") or []
+    }
+    item = {
+        "id": draft.get("id", draft_id),
+        "name": headers.get("subject") or "(no subject)",
+        "sources": [{"id": "drafts", "name": "Drafts"}],
+        "mime_type": "message/rfc822",
+    }
+    return {"operation": "trash", "destination": TRASH_DESTINATION, "items": [item]}
+
+
 def prepare_review(config: Config, legacy_name: str, arguments: Dict[str, Any], logger: logging.Logger):
     """Return ``(review, digest)`` for a deletion route, or ``(None, None)``.
 
@@ -102,4 +125,6 @@ def prepare_review(config: Config, legacy_name: str, arguments: Dict[str, Any], 
         return drive_trash_review(config, str(arguments["file_id"])), None
     if legacy_name == "delete_email" and arguments.get("message_id"):
         return gmail_trash_review(config, str(arguments["message_id"])), None
+    if legacy_name == "gmail_delete_draft" and arguments.get("draft_id"):
+        return gmail_draft_review(config, str(arguments["draft_id"])), None
     return None, None

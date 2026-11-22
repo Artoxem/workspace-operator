@@ -6,8 +6,8 @@ Workspace Operator 2.0 exposes 39 consolidated tools. Call a tool with an `actio
 
 | Profile | Tools | Use it for |
 |---|---:|---|
-| `core` | 20 | default everyday surface |
-| `full` | 39 | everything |
+| `core` | 19 | default everyday surface |
+| `full` | 38 | everything |
 | `read-write` | 30 | no destructive actions |
 | `read-only` | 17 | reads only |
 
@@ -21,7 +21,6 @@ Workspace Operator 2.0 exposes 39 consolidated tools. Call a tool with an `actio
 | `compare_tables` | read | — | Diff two sheet ranges by a key column. |
 | `drive_read` | read | `metadata`, `export`, `list_permissions` | Read Drive metadata, permissions and exported files. |
 | `drive_write` | write | `create_folder`, `copy`, `rename`, `upload`, `share`, `restore` | Create, copy, rename, upload, share and restore Drive files. Upload needs human approval. Move with `bulk_plan` and `bulk_run`. |
-| `drive_trash` | destructive | — | Move a Drive file to Trash (recoverable 30 days; no permanent delete). |
 | `drive_permissions` | destructive | `remove`, `revoke_public` | Remove access from a Drive file. |
 | `read_doc` | read | — | Read the contents of a Google Doc. |
 | `docs_write` | write | `create`, `append`, `insert_image` | Create and extend Google Docs. |
@@ -33,9 +32,9 @@ Workspace Operator 2.0 exposes 39 consolidated tools. Call a tool with an `actio
 | `sheets_delete` | destructive | `delete_rows`, `delete_columns`, `delete_sheet` | Delete rows, columns or a sheet (requires confirm). |
 | `sheets_data` | write | `chart`, `pivot` | Charts and pivot tables. |
 | `gmail_read` | read | `profile`, `list`, `read`, `thread`, `attachment`, `search`, `labels`, `filters` | Read Gmail messages, threads, attachments, labels and filters. |
-| `gmail_write` | write | `send`, `reply`, `send_with_attachments`, `draft_create`, `draft_update`, `draft_send`, `draft_list`, `archive` | Send, reply, draft and archive Gmail messages. |
+| `gmail_write` | write | `send`, `reply`, `send_with_attachments`, `draft_create`, `draft_update`, `draft_send`, `draft_list` | Send, reply and draft Gmail messages. Archive through `bulk_plan`. |
 | `gmail_settings` | write | `label_create`, `label_apply`, `filter_create` | Manage Gmail labels and filters. |
-| `gmail_delete` | destructive | `email`, `draft` | Move messages or drafts to Trash (recoverable). |
+| `gmail_delete` | destructive | `draft` | Delete a draft. Messages go through `bulk_plan` → `bulk_run`. |
 | `calendar_read` | read | `events`, `calendars` | Read events and calendars. |
 | `calendar_write` | write | `meeting`, `update`, `move`, `respond`, `color` | Create, update, move, answer and colour events. |
 | `calendar_delete` | destructive | — | Delete an event (requires confirm). |
