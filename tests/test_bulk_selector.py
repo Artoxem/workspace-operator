@@ -500,6 +500,11 @@ class SnippetTests(unittest.TestCase):
         self.assertEqual(clean_snippet(raw), "Your invoice is ready to download")
         self.assertEqual(len(clean_snippet("x" * 500)), 200)
 
+    def test_html_entities_are_decoded(self):
+        from workspace_operator.bulk.selector import clean_snippet
+
+        self.assertEqual(clean_snippet("NVIDIA&#39;s chip &amp; more"), "NVIDIA's chip & more")
+
 
 if __name__ == "__main__":
     unittest.main()

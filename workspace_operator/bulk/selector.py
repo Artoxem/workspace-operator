@@ -7,6 +7,7 @@ concurrent upload or delete cannot change what the user reviewed.
 from __future__ import annotations
 
 import fnmatch
+import html
 import logging
 import unicodedata
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
@@ -297,7 +298,7 @@ def clean_snippet(text: str, limit: int = 200) -> str:
         for char in (text or "")
         if unicodedata.category(char) != "Cf" and not 0xFE00 <= ord(char) <= 0xFE0F
     )
-    return " ".join(kept.split())[:limit].rstrip()
+    return " ".join(html.unescape(kept).split())[:limit].rstrip()
 
 
 def resolve_gmail_labels(creds, names: Iterable[str], logger: logging.Logger) -> List[str]:

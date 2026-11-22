@@ -4,7 +4,7 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.2**.
+Current release: **2.9.3**.
 
 ## 2.x — compact surface
 
@@ -59,7 +59,8 @@ Key 2.0 properties:
 ## 1.14–1.18 — full Google Workspace surface
 
 | Version | What changed |
-|---|---|
+|---|---|---|
+| **2.9.3** | Gmail snippets arrive HTML-escaped (`NVIDIA&#39;s`); the review now decodes entities before display, so the page and the CSV show normal text. 532 tests. |
 | **1.18.x** | Validation, filter views, shapes; doctor scope checks; HTTP session fix. |
 | **1.17.0** | Pivot tables, styling and more integrations. |
 | **1.16.0** | Column operations, media, integrations. |
