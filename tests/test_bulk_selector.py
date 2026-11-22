@@ -504,6 +504,7 @@ class SnippetTests(unittest.TestCase):
         from workspace_operator.bulk.selector import clean_snippet
 
         self.assertEqual(clean_snippet("NVIDIA&#39;s chip &amp; more"), "NVIDIA's chip & more")
+        self.assertEqual(clean_snippet("ready\u034f \u034f now"), "ready now")
 
 
 if __name__ == "__main__":

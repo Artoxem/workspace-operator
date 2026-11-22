@@ -291,13 +291,23 @@ GMAIL_SYSTEM_LABELS = {
 }
 
 
-def clean_snippet(text: str, limit: int = 200) -> str:
-    """Gmail snippets carry zero-width and variation marks; keep the words."""
-    kept = "".join(
-        char
-        for char in (text or "")
-        if unicodedata.category(char) != "Cf" and not 0xFE00 <= ord(char) <= 0xFE0F
+# Gmail pads snippets with invisible marks: zero-width spaces, bidi controls,
+# variation selectors and the combining grapheme joiner (U+034F).
+_INVISIBLE = frozenset({0x00AD, 0x034F, 0x061C, 0x115F, 0x1160, 0x17B4, 0x17B5, 0x3164, 0xFFA0})
+
+
+def _is_invisible(char: str) -> bool:
+    code = ord(char)
+    return (
+        unicodedata.category(char) == "Cf"
+        or 0xFE00 <= code <= 0xFE0F
+        or code in _INVISIBLE
     )
+
+
+def clean_snippet(text: str, limit: int = 200) -> str:
+    """Gmail snippets carry invisible padding; keep the words a human reads."""
+    kept = "".join(char for char in (text or "") if not _is_invisible(char))
     return " ".join(html.unescape(kept).split())[:limit].rstrip()
 
 

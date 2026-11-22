@@ -4,7 +4,7 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.3**.
+Current release: **2.9.4**.
 
 ## 2.x — compact surface
 
@@ -70,7 +70,8 @@ Key 2.0 properties:
 ## 1.0–1.13 — foundations
 
 | Version | What changed |
-|---|---|
+|---|---|---|
+| **2.9.4** | Gmail pads snippets with a combining grapheme joiner (U+034F) besides zero-width marks, and it survived the cleaner. The invisible set now covers it and the other common padding characters, so the page and the CSV keep only readable text. 533 tests. |
 | **1.13.x** | Docker image on GHCR; container port fix. |
 | **1.12.x** | Scenario prompts; metadata fix. |
 | **1.10–1.11** | Native tables in Docs; table-to-presentation; universality guard. |
