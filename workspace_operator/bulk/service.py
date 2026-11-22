@@ -306,6 +306,7 @@ def plan_bulk(
         expires_at=(created + timedelta(seconds=ttl)).isoformat(timespec="seconds"),
         items=items,
         warnings=warnings,
+        sample=sample_items,
     )
     if is_move:
         try:

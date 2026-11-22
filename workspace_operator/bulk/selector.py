@@ -417,10 +417,11 @@ def resolve_gmail(
                     "subject": headers.get("Subject", ""),
                     "from": headers.get("From", ""),
                     "date": headers.get("Date", ""),
+                    "snippet": message.get("snippet", ""),
                 }
             )
         except HttpError:
-            sample.append({"id": message_id, "subject": "", "from": "", "date": ""})
+            sample.append({"id": message_id, "subject": "", "from": "", "date": "", "snippet": ""})
 
     items = [{"id": message_id, "name": "", "size": 0, "mimeType": "message/rfc822"} for message_id in ids]
     return {

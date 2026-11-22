@@ -261,6 +261,9 @@ def _review_rows(items: list, *, upload: bool, with_source: bool) -> str:
             names = ", ".join(_esc(child) for child in (item.get("children_sample") or [])[:5])
             detail = " · ".join(part for part in (inside, names, detail) if part)
         suffix = f" <span class='dim'>{detail}</span>" if detail else ""
+        snippet = item.get("snippet")
+        if snippet:
+            suffix += f"<br><span class='dim'>{_esc(snippet)}</span>"
         source = (
             f"<td class='src'>{', '.join(_esc(s.get('name')) for s in _sources_of(item))}</td>"
             if with_source
@@ -311,6 +314,7 @@ def _review_html(
     total = int(review.get("total") or len(items))
     sampled = bool(review.get("sampled"))
     noun = "message(s)" if sampled else ("item(s)" if review.get("operation") == "trash" else "file(s)")
+    plural = noun.replace("(s)", "s")
     note = f"<p class='dim'>{_esc(review['note'])}</p>" if review.get("note") else ""
     sample_notice = (
         f"<p class='warn'>Showing the first {len(items)} of {total} matches. "
@@ -330,6 +334,15 @@ def _review_html(
         slice_ = items[start:start + _REVIEW_PAGE_SIZE]
         body = _review_table(_review_rows(slice_, upload=upload, with_source=True), with_source=True)
         nav = _page_links(approval_id, secret, page, pages)
+    elif sampled:
+        # A Gmail sample is already short: show every entry with its sender.
+        body = _review_table(_review_rows(items, upload=upload, with_source=True), with_source=True)
+        nav = (
+            f"<nav><a href='/approvals/{quote(approval_id)}?k={quote(secret, safe='')}&all=1'>"
+            f"show all {total} {plural}</a> · "
+            f"<a href='/approvals/{quote(approval_id)}/manifest.csv?k={quote(secret, safe='')}'>"
+            "download CSV</a></nav>"
+        )
     else:
         groups = _source_groups(review)
         auto_open = len(items) <= _REVIEW_AUTO_EXPAND
@@ -350,7 +363,7 @@ def _review_html(
         body = "".join(blocks)
         nav = (
             f"<nav><a href='/approvals/{quote(approval_id)}?k={quote(secret, safe='')}&all=1'>"
-            f"show all {len(items)} files</a></nav>"
+            f"show all {total} {plural}</a></nav>"
         )
     return (
         "<section>"
@@ -369,7 +382,7 @@ def _review_csv(review: Dict[str, Any]) -> bytes:
     writer.writerow(
         [
             "operation", "fingerprint", "destination", "destination_id",
-            "name", "id", "source_folders", "source_ids", "size_bytes", "type",
+            "name", "id", "source_folders", "source_ids", "size_bytes", "type", "snippet",
         ]
     )
     for item in review["items"]:
@@ -386,6 +399,7 @@ def _review_csv(review: Dict[str, Any]) -> bytes:
                 " | ".join(str(source.get("id") or "") for source in sources),
                 _item_size(item) or "",
                 item.get("conversion_mime_type") or item.get("mime_type") or "",
+                item.get("snippet") or "",
             ]
         )
     return buffer.getvalue().encode("utf-8-sig")

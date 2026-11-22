@@ -53,6 +53,9 @@ class Plan:
     expires_at: str
     items: List[Dict[str, Any]] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    # Subjects, senders and snippets for Gmail plans: the approval page needs
+    # something human to show, and the ids alone are not enough.
+    sample: List[Dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -65,6 +68,7 @@ class Plan:
             "expires_at": self.expires_at,
             "items": self.items,
             "warnings": self.warnings,
+            "sample": self.sample,
         }
 
     @classmethod
@@ -79,6 +83,7 @@ class Plan:
             expires_at=data["expires_at"],
             items=data.get("items") or [],
             warnings=data.get("warnings") or [],
+            sample=data.get("sample") or [],
         )
 
 

@@ -107,6 +107,40 @@ def test_csv_manifest_has_every_row_and_needs_the_secret(page):
     assert client.get(f"/approvals/{record['id']}/manifest.csv?k=wrong").status_code == 404
 
 
+def test_gmail_plan_page_lists_senders_subjects_and_snippets(tmp_path):
+    from workspace_operator.bulk.models import Plan
+    from workspace_operator.bulk.review import review_for
+    from workspace_operator.bulk.store import load_plan, save_plan
+    from workspace_operator.http_transport import _review_page
+
+    config = make_config(str(tmp_path))
+    plan = Plan(
+        "bp_gmail", "gmail", "trash", {}, {"ids": ["a", "b", "c"]},
+        "2026-01-01T00:00:00+00:00", "2099-01-01T00:00:00+00:00",
+        items=[{"id": key, "name": "", "size": 0, "mimeType": "message/rfc822"} for key in "abc"],
+        sample=[
+            {"id": "a", "subject": "Invoice 42", "from": "Acme <billing@acme.test>",
+             "snippet": "Your invoice is ready to download"},
+            {"id": "b", "subject": "9 new vacancies", "from": "LinkedIn <noreply@linkedin.com>",
+             "snippet": "Director of engineering and 8 more"},
+        ],
+    )
+    save_plan(config, plan)
+    loaded = load_plan(config, plan.id)
+    assert loaded.sample == plan.sample, "the sample must survive save/load"
+    review = review_for(loaded)
+    page = _review_page(
+        {"id": "apr_x", "status": "pending", "expires_at": "2099-01-01T00:00:00+00:00",
+         "tool": "bulk_run", "summary": "Delete 3 item(s)", "review": review},
+        "apr_x", "secret", False, 1,
+    )
+    assert "Delete <b>3</b> message(s)" in page
+    assert "Invoice 42" in page and "Acme &lt;billing@acme.test&gt;" in page
+    assert "Your invoice is ready" in page
+    assert "Showing the first 2 of 3" in page
+    assert "show all 3 messages" in page
+
+
 def test_upload_review_shows_size_and_type_without_ids(page):
     client, queue, _ = page
     review = {

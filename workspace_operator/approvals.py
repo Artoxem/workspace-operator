@@ -289,7 +289,7 @@ class ApprovalStore:
                     str(review.get("operation")), "Review"
                 )
                 noun = "item(s)" if review.get("operation") == "trash" else "file(s)"
-                record["summary"] = f"{verb} {len(review['items'])} {noun}"
+                record["summary"] = f"{verb} {review.get('total') or len(review['items'])} {noun}"
             self._write(record)
             return record
 

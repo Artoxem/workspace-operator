@@ -70,6 +70,7 @@ def _gmail_review(plan: Plan) -> Dict[str, Any]:
         {
             "id": entry.get("id", ""),
             "name": entry.get("subject") or "(no subject)",
+            "snippet": (entry.get("snippet") or "")[:140],
             "sources": [{"id": "gmail", "name": entry.get("from") or "unknown sender"}],
             "mime_type": "message/rfc822",
         }

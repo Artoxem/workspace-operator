@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.0**.
+Current release: **2.9.1**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
-|---|---|
+|---|---|---|
+| **2.9.1** | The Gmail approval page showed zero items. `bulk_plan` built a subject/sender sample but never stored it, so the page had only ids: "Delete 0 item(s)", an empty table, and no sender or subject. The sample is now part of the plan (saved and loaded with it), the page lists sender, subject and the first words of each message, the total comes from the plan rather than the sample, and the CSV gained a snippet column. 530 tests. |
 | **2.9.0** | Deleting and other mailbox changes go through bulk. **Breaking:** `drive_trash` is removed and `gmail_delete` keeps only `draft`; the `gmail_write.archive` action is gone, and the retired calls answer with the exact `bulk_plan` recipe instead of acting. One review now covers the whole list for Drive trash, Gmail trash, archive, restore, mark read/unread and label changes: the page shows the destination, the total count and the first messages with their senders, and states that every match is affected. A plan is loaded once and the approved snapshot is what executes. 529 tests; 38 tools. |
 | **2.8.0** | Deletion approvals show what will be deleted. `drive_trash` now prepares a review before asking: the item name, type, size and the folder it sits in, and for a folder the number of items inside with a few names — everything in it goes to Trash with it. `gmail_delete` shows the subject and sender. A target already in Trash, or one that cannot be read, is refused before an approval exists. The review renders on the same compact page as moves and uploads, with the same signed record. 529 tests. |
 | **2.7.0** | The approval page scales to large batches. It is now a compact terminal-style card: a summary line, then one collapsible `<details>` per source folder with a count and total size, previewing ten names each; **show all N files** opens the paginated full list (100 per page). File IDs are no longer shown, the font is a smaller monospace with tighter rows, and **download CSV** exports the complete manifest (name, id, source folders, destination, size, type) behind the same secret. A short fingerprint of the review appears on the page and in the CSV, so the list you checked is provably the one that runs. A 500-file review stays under 20 KB of HTML. 523 tests. |
