@@ -54,7 +54,7 @@ class ApprovalPageTests(unittest.TestCase):
         page = self.client.get(f"/approvals/{rid}?k={k}")
         self.assertEqual(page.status_code, 200)
         self.assertIn("drive_trash", page.text)
-        self.assertIn("Approve", page.text)
+        self.assertIn("approve", page.text.lower())
         self.assertEqual(page.headers["referrer-policy"], "no-referrer")
 
         response = self.client.post(
@@ -159,8 +159,8 @@ class BrowserApprovalFlowTests(unittest.TestCase):
             url = urlsplit(client_store.browser_link(record, "http://127.0.0.1:8765"))
             page = client.get(f"{url.path}?{url.query}")
             self.assertEqual(page.status_code, 200)
-            self.assertIn("Approve", page.text)
-            self.assertIn("Deny", page.text)
+            self.assertIn("approve", page.text.lower())
+            self.assertIn("deny", page.text.lower())
             handler.assert_not_called()  # Opening the page isn't consent.
             response = client.post(f"{url.path}/{decision}", data={"k": parse_qs(url.query)["k"][0]},
                                    headers={"Origin": "http://127.0.0.1:8765"}, follow_redirects=False)

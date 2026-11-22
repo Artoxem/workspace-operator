@@ -14,8 +14,12 @@ requests, which matches the 2026-07-28 direction of the MCP spec and keeps the
 process simple.
 """
 
+import csv
+import hashlib
 import hmac
 import html
+import io
+import json
 import logging
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
@@ -28,7 +32,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.datastructures import Headers
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
+from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 
 from .runtime import current_client
@@ -198,34 +202,218 @@ def _manager_for(server, options: HttpOptions) -> StreamableHTTPSessionManager:
     )
 
 
-def _review_html(review: Dict[str, Any]) -> str:
-    """The complete, server-built review; never interpret names as HTML or URLs."""
-    def escaped(value: Any) -> str:
-        return html.escape(str(value or ""))
+_REVIEW_PAGE_SIZE = 100
+_REVIEW_AUTO_EXPAND = 20
+_GROUP_PREVIEW = 10
 
-    def identity(item: Dict[str, Any]) -> str:
-        return f"<bdi>{escaped(item.get('name'))}</bdi> <code><bdi>{escaped(item.get('id'))}</bdi></code>"
 
-    destination = review["destination"]
-    drive_id = destination.get("driveId") or destination.get("drive_id")
-    drive = f"<p>Shared drive ID: <code>{escaped(drive_id)}</code></p>" if drive_id else ""
-    rows = []
+def _esc(value: Any) -> str:
+    return html.escape(str(value if value is not None else ""))
+
+
+def _review_fingerprint(review: Dict[str, Any]) -> str:
+    canonical = json.dumps(review, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+
+
+def _human_bytes(value: Any) -> str:
+    try:
+        size = float(value)
+    except (TypeError, ValueError):
+        return ""
+    if size < 1024:
+        return f"{int(size)} B"
+    for unit in ("KB", "MB", "GB", "TB"):
+        size /= 1024
+        if size < 1024:
+            return f"{size:.1f} {unit}".replace(".0 ", " ")
+    return f"{size:.0f} TB"
+
+
+def _item_size(item: Dict[str, Any]) -> Any:
+    return item.get("size_bytes", item.get("size"))
+
+
+def _sources_of(item: Dict[str, Any]) -> list:
+    return list(item.get("sources") or [{"name": "(no parent)", "id": ""}])
+
+
+def _source_groups(review: Dict[str, Any]) -> list:
+    groups: Dict[tuple, list] = {}
     for item in review["items"]:
-        sources = "<br>".join(identity(source) for source in item.get("sources", [])) or "(no parent)"
-        details = ""
-        if review["operation"] == "upload":
-            mime = item.get("conversion_mime_type") or item.get("mime_type")
-            details = f"<br>{escaped(item.get('size_bytes', 0)) or '0'} bytes; output type: {escaped(mime)}"
-        item_label = identity(item) if review["operation"] != "upload" else f"<bdi>{escaped(item.get('name'))}</bdi>"
-        rows.append(f"<tr><td>{item_label}{details}</td><td>{sources}</td></tr>")
-    warnings = "".join(f"<li>{escaped(warning)}</li>" for warning in review.get("warnings", []))
-    notices = f"<ul>{warnings}</ul>" if warnings else ""
-    return (
-        f"<section><h2>Review {len(rows)} file(s)</h2>"
-        f"<p><strong>Destination for all files:</strong> {identity(destination)}</p>{drive}{notices}"
-        "<div class='review-table'><table><thead><tr><th>File</th><th>From</th></tr></thead>"
-        f"<tbody>{''.join(rows)}</tbody></table></div></section>"
+        for source in _sources_of(item):
+            key = (str(source.get("name") or ""), str(source.get("id") or ""))
+            groups.setdefault(key, []).append(item)
+    return sorted(groups.items(), key=lambda entry: (-len(entry[1]), entry[0][0]))
+
+
+def _review_rows(items: list, *, upload: bool, with_source: bool) -> str:
+    rows = []
+    for item in items:
+        name = _esc(item.get("name"))
+        detail = _human_bytes(_item_size(item))
+        if upload:
+            kind = item.get("conversion_mime_type") or item.get("mime_type")
+            detail = " · ".join(part for part in (detail, _esc(kind)) if part)
+        suffix = f" <span class='dim'>{detail}</span>" if detail else ""
+        source = (
+            f"<td class='src'>{', '.join(_esc(s.get('name')) for s in _sources_of(item))}</td>"
+            if with_source
+            else ""
+        )
+        rows.append(f"<tr><td class='name'>{name}{suffix}</td>{source}</tr>")
+    return "".join(rows)
+
+
+def _review_table(rows: str, *, with_source: bool) -> str:
+    head = "<th>file</th><th>from</th>" if with_source else "<th>file</th>"
+    return f"<table><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table>"
+
+
+def _page_links(approval_id: str, secret: str, page: int, pages: int) -> str:
+    base = f"/approvals/{quote(approval_id)}?k={quote(secret, safe='')}&all=1"
+    links = []
+    if page > 1:
+        links.append(f"<a href='{base}&page={page - 1}'>← prev</a>")
+    links.append(f"<span class='dim'>page {page} / {pages}</span>")
+    if page < pages:
+        links.append(f"<a href='{base}&page={page + 1}'>next →</a>")
+    links.append(f"<a href='/approvals/{quote(approval_id)}?k={quote(secret, safe='')}'>compact view</a>")
+    return "<nav>" + " · ".join(links) + "</nav>"
+
+
+def _review_html(
+    review: Dict[str, Any], *, approval_id: str, secret: str, show_all: bool, page: int
+) -> str:
+    """Compact summary by default; the complete list stays one click away."""
+    items = list(review["items"])
+    upload = review.get("operation") == "upload"
+    destination = review.get("destination") or {}
+    total_bytes = sum(int(_item_size(item) or 0) for item in items)
+    drive_id = destination.get("driveId") or destination.get("drive_id")
+    drive = f" <span class='dim'>shared drive {_esc(drive_id)}</span>" if drive_id else ""
+    dest_id = f" <span class='dim'>{_esc(destination.get('id'))}</span>" if destination.get("id") else ""
+    warnings = "".join(f"<li>{_esc(w)}</li>" for w in review.get("warnings", []))
+    notices = f"<ul class='warn'>{warnings}</ul>" if warnings else ""
+    size = _human_bytes(total_bytes) if total_bytes else ""
+    head = (
+        f"<p class='head'>{_esc(str(review.get('operation', 'review')).title())} "
+        f"<b>{len(items)}</b> file(s){f' · {size}' if size else ''} → "
+        f"<b>{_esc(destination.get('name'))}</b>{dest_id}{drive}</p>"
     )
+
+    if show_all:
+        pages = max(1, (len(items) + _REVIEW_PAGE_SIZE - 1) // _REVIEW_PAGE_SIZE)
+        page = max(1, min(page, pages))
+        start = (page - 1) * _REVIEW_PAGE_SIZE
+        slice_ = items[start:start + _REVIEW_PAGE_SIZE]
+        body = _review_table(_review_rows(slice_, upload=upload, with_source=True), with_source=True)
+        nav = _page_links(approval_id, secret, page, pages)
+    else:
+        groups = _source_groups(review)
+        auto_open = len(items) <= _REVIEW_AUTO_EXPAND
+        blocks = []
+        for (source_name, _source_id), group in groups:
+            group_bytes = sum(int(_item_size(item) or 0) for item in group)
+            amount = _human_bytes(group_bytes) if group_bytes else ""
+            preview = group[:_GROUP_PREVIEW]
+            hidden = len(group) - len(preview)
+            rows = _review_rows(preview, upload=upload, with_source=False)
+            if hidden:
+                rows += f"<tr><td class='dim'>… and {hidden} more</td></tr>"
+            blocks.append(
+                f"<details{' open' if auto_open else ''}><summary>{len(group)} file(s) from "
+                f"<bdi>{_esc(source_name)}</bdi> <span class='dim'>{amount}</span></summary>"
+                f"{_review_table(rows, with_source=False)}</details>"
+            )
+        body = "".join(blocks)
+        nav = (
+            f"<nav><a href='/approvals/{quote(approval_id)}?k={quote(secret, safe='')}&all=1'>"
+            f"show all {len(items)} files</a></nav>"
+        )
+    return (
+        "<section>"
+        f"{head}{notices}<div class='review'>{body}</div>{nav}"
+        f"<p class='dim'>fingerprint {_review_fingerprint(review)} · "
+        f"<a href='/approvals/{quote(approval_id)}/manifest.csv?k={quote(secret, safe='')}'>"
+        "download CSV</a></p>"
+        "</section>"
+    )
+
+
+def _review_csv(review: Dict[str, Any]) -> bytes:
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    destination = review.get("destination") or {}
+    writer.writerow(
+        [
+            "operation", "fingerprint", "destination", "destination_id",
+            "name", "id", "source_folders", "source_ids", "size_bytes", "type",
+        ]
+    )
+    for item in review["items"]:
+        sources = _sources_of(item)
+        writer.writerow(
+            [
+                review.get("operation", ""),
+                _review_fingerprint(review),
+                destination.get("name", ""),
+                destination.get("id", ""),
+                item.get("name", ""),
+                item.get("id", ""),
+                " | ".join(str(source.get("name") or "") for source in sources),
+                " | ".join(str(source.get("id") or "") for source in sources),
+                _item_size(item) or "",
+                item.get("conversion_mime_type") or item.get("mime_type") or "",
+            ]
+        )
+    return buffer.getvalue().encode("utf-8-sig")
+
+
+def _review_page(record: Dict[str, Any], approval_id: str, secret: str, show_all: bool, page: int) -> str:
+    status = record.get("status", "?")
+    action_forms = ""
+    if status == "pending":
+        action_forms = f"""
+        <form method="post" action="/approvals/{_esc(approval_id)}/approve">
+          <input type="hidden" name="k" value="{_esc(secret)}">
+          <button class="approve" type="submit">APPROVE</button>
+        </form>
+        <form method="post" action="/approvals/{_esc(approval_id)}/deny">
+          <input type="hidden" name="k" value="{_esc(secret)}">
+          <button class="deny" type="submit">DENY</button>
+        </form>"""
+    review = (
+        _review_html(record["review"], approval_id=approval_id, secret=secret, show_all=show_all, page=page)
+        if "review" in record
+        else ""
+    )
+    return f"""<!doctype html><meta charset="utf-8"><title>Workspace Operator approval</title>
+<style>body{{background:#080b09;color:#93e3a0;font:12.5px/1.35 ui-monospace,"Cascadia Mono","Cascadia Code",Consolas,"Courier New",monospace;max-width:960px;margin:24px auto;padding:0 16px}}
+h1{{font-size:14px;color:#d6ffde;letter-spacing:.1em;text-transform:uppercase;margin:0 0 12px}}
+b{{color:#eaff9c;font-weight:600}} a{{color:#7fd7ff;text-decoration:none}} a:hover{{text-decoration:underline}}
+.card{{border:1px solid #1d3a24;background:#0c120d;padding:12px 14px}}
+p{{margin:4px 0}} .dim{{color:#5c8a64}} .warn{{color:#e6c07b;margin:6px 0 0;padding-left:18px}}
+table{{width:100%;border-collapse:collapse;font-size:11.5px;margin:4px 0 8px}}
+th{{text-align:left;color:#5c8a64;font-weight:400;padding:1px 8px;border-bottom:1px solid #1d3a24;text-transform:uppercase;letter-spacing:.06em}}
+td{{padding:1px 8px;border-bottom:1px solid #14251a;overflow-wrap:anywhere}}
+td.name{{color:#c8f5cf}} td.src{{color:#7fbf8a;white-space:nowrap}}
+details{{margin:3px 0}} summary{{cursor:pointer;color:#eaff9c;padding:2px 0}}
+.review{{max-height:60vh;overflow:auto;margin:8px 0}}
+nav{{margin:8px 0;color:#5c8a64}} nav a{{margin-right:6px}}
+form{{display:inline-block;margin:8px 8px 0 0}} button{{font:inherit;cursor:pointer;padding:4px 14px;border-radius:2px}}
+.approve{{background:#0f2b16;color:#9ef0a8;border:1px solid #2f6b3a}} .deny{{background:#2b1010;color:#f0a8a8;border:1px solid #6b2f2f}}
+.head{{font-size:12.5px}} code{{color:#7fbf8a}}
+</style>
+<h1>Workspace Operator · approval</h1>
+<div class="card">
+<p><span class="dim">action</span> {_esc(record.get("summary", ""))}</p>
+<p><span class="dim">status</span> {_esc(status)} · <span class="dim">expires</span> {_esc(record.get("expires_at", ""))}</p>
+{review}
+{action_forms}
+<p class="dim">Approve allows exactly what is listed above. If the chat still waits, it resumes by itself; otherwise tell the agent your decision.</p>
+<p class="dim">request {_esc(approval_id)}</p>
+</div>"""
 
 
 def build_asgi_app(
@@ -269,40 +457,34 @@ def build_asgi_app(
                 headers=_PAGE_HEADERS,
             )
         record = approval_store.get(approval_id)
-        status = record.get("status", "?")
-        summary = html.escape(str(record.get("summary", "")))
-        expires = html.escape(str(record.get("expires_at", "")))
-        review = _review_html(record["review"]) if "review" in record else ""
-        action_forms = ""
-        if status == "pending":
-            action_forms = f"""
-            <form method="post" action="/approvals/{html.escape(approval_id)}/approve">
-              <input type="hidden" name="k" value="{html.escape(secret)}">
-              <button type="submit" style="background:#2f6fdc;color:white;border:0;border-radius:8px;padding:10px 18px;font:inherit;cursor:pointer">Approve</button>
-            </form>
-            <form method="post" action="/approvals/{html.escape(approval_id)}/deny" style="margin-top:8px">
-              <input type="hidden" name="k" value="{html.escape(secret)}">
-              <button type="submit" style="background:#3a1d1d;color:#f1b0b0;border:1px solid #5a2a2a;border-radius:8px;padding:9px 18px;font:inherit;cursor:pointer">Deny</button>
-            </form>"""
+        show_all = request.query_params.get("all") == "1"
+        try:
+            page = int(request.query_params.get("page", "1"))
+        except ValueError:
+            page = 1
         return HTMLResponse(
-            f"""<!doctype html><meta charset="utf-8"><title>Approve action</title>
-            <style>body{{background:#101014;color:#e8e8ee;font:15px/1.5 system-ui;max-width:640px;margin:48px auto;padding:0 20px}}
-            code{{background:#17171d;border:1px solid #26262f;border-radius:6px;padding:2px 6px}}
-            .card{{background:#17171d;border:1px solid #26262f;border-radius:12px;padding:20px;margin-top:18px}}
-            .status{{color:#f0c674}} .review-table{{overflow:auto;max-height:55vh;margin:12px 0}}
-            table{{width:100%;border-collapse:collapse}} th,td{{text-align:left;padding:8px;border-bottom:1px solid #404048;overflow-wrap:anywhere}}</style>
-            <h1>Workspace Operator approval</h1>
-            <div class="card">
-              <p><strong>Action:</strong> {summary}</p>
-              <p><strong>Status:</strong> {html.escape(status)}</p>
-              <p><strong>Expires:</strong> {expires}</p>
-              <p><code>{html.escape(approval_id)}</code></p>
-              {review}
-               {action_forms}
-              <p style="color:#9a9aa8;margin-top:18px">Only Approve allows the exact call shown here. If the chat is still waiting, it will resume automatically. Otherwise tell the agent about your decision.</p>
-            </div>""",
+            _review_page(record, approval_id, secret, show_all, page),
             headers=_PAGE_HEADERS,
         )
+
+    async def approval_manifest(request: Request):
+        if approval_store is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        approval_id = request.path_params.get("approval_id", "")
+        secret = request.query_params.get("k", "")
+        if not approval_store.verify_secret(approval_id, secret):
+            return JSONResponse({"error": "not found"}, status_code=404)
+        record = approval_store.get(approval_id)
+        if "review" not in record:
+            return JSONResponse({"error": "no review for this request"}, status_code=404)
+        headers = dict(_PAGE_HEADERS)
+        headers.update(
+            {
+                "Content-Type": "text/csv; charset=utf-8",
+                "Content-Disposition": f'attachment; filename="approval-{approval_id}.csv"',
+            }
+        )
+        return Response(_review_csv(record["review"]), headers=headers)
 
     async def approval_action(request: Request):
         if approval_store is None:
@@ -380,6 +562,7 @@ def build_asgi_app(
         routes=[
             Route("/healthz", healthz, methods=["GET"]),
             Route("/approvals/{approval_id}", approval_page, methods=["GET"]),
+            Route("/approvals/{approval_id}/manifest.csv", approval_manifest, methods=["GET"]),
             Route("/approvals/{approval_id}/{action}", approval_action, methods=["POST"]),
             Mount("/", app=McpEndpoint()),
         ],

@@ -128,6 +128,12 @@ The automatic browser link is not sent to the MCP client or written to the serve
   full review: the agent sees only a compact summary. Review these operations
   outside the MCP elicitation dialog. If the server stopped waiting, retry only
   after the operator decides. Changed data may require a fresh approval.
+- The page is a compact terminal-style card: a summary line, then one collapsible
+  group per source folder with a count and total size. Each group previews ten
+  names; **show all N files** opens the paginated full list (100 per page). File
+  IDs are not shown on the page — **download CSV** writes the complete manifest
+  (name, id, source folders, destination, size, type). The short fingerprint on
+  the page and in the CSV identify the exact review that will run.
 - Shared drive access is opt-in with `MCP_BULK_ALLOW_SHARED_DRIVES=1`. Moves stay
   within My Drive or within a single shared drive and require the applicable
   permissions. Cross-drive and folder-tree moves are not supported. To reverse a

@@ -54,7 +54,7 @@ def browser_review(client, queue, *, check, action):
     url = urlsplit(queue.browser_link(record, BASE))
     page = client.get(f"{url.path}?{url.query}")
     assert page.status_code == 200
-    for text in (*check, "Approve", "Deny"):
+    for text in (*check, "APPROVE", "DENY"):
         assert text in page.text
     if action:
         posted = client.post(f"{url.path}/{action}", data={"k": parse_qs(url.query)["k"][0]},
@@ -82,8 +82,8 @@ def test_reviewed_drive_call_waits_for_browser(tmp_path, operation, decision):
               "items": [{"id": "local-id", "name": "local.txt", "sources": [{"name": "source", "id": "local.txt"}],
                          "size_bytes": 4, "mime_type": "text/plain"}]}
     name, args, check = (
-        ("bulk_run", {"plan_id": snapshot.id}, ("Archive", "Incoming", "&lt;Report&gt; 24")) if operation == "move"
-        else ("drive_write", {"action": "upload", "local_path": "local.txt"}, ("Archive", "local.txt", "4 bytes"))
+        ("bulk_run", {"plan_id": snapshot.id}, ("Archive", "Incoming", "and 15 more")) if operation == "move"
+        else ("drive_write", {"action": "upload", "local_path": "local.txt"}, ("Archive", "local.txt", "4 B"))
     )
     with (make_client(config, queue) as client, ThreadPoolExecutor() as pool,
           mock.patch.object(ApprovalStore, "request", signal_request),

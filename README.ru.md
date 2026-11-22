@@ -577,7 +577,7 @@ wheel уйдёт без них.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 518 unit и in-memory MCP тестов (покрытие через --cov)
+python -m pytest                       # 523 unit и in-memory MCP тестов (покрытие через --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```
