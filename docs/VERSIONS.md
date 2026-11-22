@@ -4,7 +4,7 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.1**.
+Current release: **2.9.2**.
 
 ## 2.x — compact surface
 
@@ -49,7 +49,8 @@ Key 2.0 properties:
 ## 1.19–1.22 — bulk operations and more APIs
 
 | Version | What changed |
-|---|---|
+|---|---|---|
+| **2.9.2** | Gmail snippets in the review are cleaned: Gmail pads them with zero-width and variation marks, which leaked into the page and the CSV. The visible words are kept, whitespace is collapsed and the text is capped at 200 characters. 531 tests. |
 | **1.22.0–1.22.5** | Tasks, Forms and Postmaster; 132 tools; Gmail delete fixed to Trash; onboarding rewrite; demo GIF and banner; documentation and cleanup releases. |
 | **1.21.0** | `bulk_undo` for move, rename and trash; text replacement across Docs, Slides and Sheets. |
 | **1.20.0** | Bulk Gmail actions and Drive sharing. |

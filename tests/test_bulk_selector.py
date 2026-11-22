@@ -492,5 +492,14 @@ class FacadeTests(unittest.TestCase):
         self.assertEqual((kwargs["protected_ids"], kwargs["protected_patterns"]), (["keep"], ["*.pdf"]))
 
 
+class SnippetTests(unittest.TestCase):
+    def test_invisible_padding_is_removed(self):
+        from workspace_operator.bulk.selector import clean_snippet
+
+        raw = "Your invoice is ready\u200f \u200f \u200f  to download\u2060\ufe0f"
+        self.assertEqual(clean_snippet(raw), "Your invoice is ready to download")
+        self.assertEqual(len(clean_snippet("x" * 500)), 200)
+
+
 if __name__ == "__main__":
     unittest.main()

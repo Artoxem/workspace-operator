@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import fnmatch
 import logging
+import unicodedata
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 from googleapiclient.discovery import build
@@ -289,6 +290,16 @@ GMAIL_SYSTEM_LABELS = {
 }
 
 
+def clean_snippet(text: str, limit: int = 200) -> str:
+    """Gmail snippets carry zero-width and variation marks; keep the words."""
+    kept = "".join(
+        char
+        for char in (text or "")
+        if unicodedata.category(char) != "Cf" and not 0xFE00 <= ord(char) <= 0xFE0F
+    )
+    return " ".join(kept.split())[:limit].rstrip()
+
+
 def resolve_gmail_labels(creds, names: Iterable[str], logger: logging.Logger) -> List[str]:
     """Map label names (or ids) to Gmail label ids."""
     wanted = [str(name).strip() for name in names if str(name).strip()]
@@ -417,7 +428,7 @@ def resolve_gmail(
                     "subject": headers.get("Subject", ""),
                     "from": headers.get("From", ""),
                     "date": headers.get("Date", ""),
-                    "snippet": message.get("snippet", ""),
+                    "snippet": clean_snippet(message.get("snippet", "")),
                 }
             )
         except HttpError:
