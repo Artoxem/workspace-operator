@@ -93,6 +93,8 @@ def _snapshot(approve: bool = True, minimal: bool = False):
 
     handler_names = {legacy for _, _, legacy in calls}
     patches = [mock.patch.object(server_module, table[name], make_recorder(name)) for name in handler_names]
+    # Fake ids have no Drive metadata; deletion reviews have their own tests.
+    patches.append(mock.patch("workspace_operator.tool_router.prepare_review", return_value=(None, None)))
 
     async def run():
         for patch in patches:

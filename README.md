@@ -581,7 +581,7 @@ ships without them.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                       # 523 unit and in-memory MCP tests (coverage via --cov)
+python -m pytest                       # 529 unit and in-memory MCP tests (coverage via --cov)
 python -m ruff check workspace_operator tests
 python -m mypy
 ```

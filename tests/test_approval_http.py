@@ -144,6 +144,7 @@ class BrowserApprovalFlowTests(unittest.TestCase):
         )
         headers = {"Authorization": "Bearer t", "Accept": "application/json, text/event-stream"}
         with mock.patch("workspace_operator.server.delete_file_handler", return_value="TRASHED") as handler, \
+                mock.patch("workspace_operator.tool_router.prepare_review", return_value=(None, None)), \
                 TestClient(app, base_url="http://127.0.0.1:8765") as client, \
                 ThreadPoolExecutor() as pool:
             call = pool.submit(client.post, "/mcp", headers=headers, json={

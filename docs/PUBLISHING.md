@@ -92,7 +92,7 @@ next patch version. Never reuse a version number.
 
 - [ ] versions match in `pyproject.toml`, `__init__.py` and `server.json`
 - [ ] CI green (pytest, ruff, mypy, bandit, pip-audit); the publish workflows run it first
-- [ ] 523 tests green locally; optional live read/write smoke on a synthetic doc
+- [ ] 529 tests green locally; optional live read/write smoke on a synthetic doc
 - [ ] `python -m build` produces both artifacts
 - [ ] tag pushed
 - [ ] pending publisher / token ready

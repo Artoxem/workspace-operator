@@ -285,8 +285,11 @@ class ApprovalStore:
             if review is not None:
                 record["review"] = review
                 # Agent-facing status stays compact; the full list is operator-only.
-                verb = {"move": "Move", "upload": "Upload"}.get(str(review.get("operation")), "Review")
-                record["summary"] = f"{verb} {len(review['items'])} file(s)"
+                verb = {"move": "Move", "upload": "Upload", "trash": "Delete"}.get(
+                    str(review.get("operation")), "Review"
+                )
+                noun = "item(s)" if review.get("operation") == "trash" else "file(s)"
+                record["summary"] = f"{verb} {len(review['items'])} {noun}"
             self._write(record)
             return record
 

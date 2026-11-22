@@ -101,6 +101,8 @@ async def _call(tool, arguments, *, profile="full", config_overrides=None, handl
         "delete_file_handler", "get_metadata_handler", "drive_search_advanced_handler",
         "calendar_delete_event_handler", "list_emails_handler",
     )]
+    # Fake ids have no Drive metadata; deletion reviews have their own tests.
+    patches.append(mock.patch("workspace_operator.tool_router.prepare_review", return_value=(None, None)))
     for patch in patches:
         patch.start()
     try:

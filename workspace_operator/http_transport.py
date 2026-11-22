@@ -255,6 +255,11 @@ def _review_rows(items: list, *, upload: bool, with_source: bool) -> str:
         if upload:
             kind = item.get("conversion_mime_type") or item.get("mime_type")
             detail = " · ".join(part for part in (detail, _esc(kind)) if part)
+        if isinstance(item.get("children"), int):
+            exact = item.get("children_at_least")
+            inside = f"folder · {item['children']}{'+' if exact else ''} item(s) inside"
+            names = ", ".join(_esc(child) for child in (item.get("children_sample") or [])[:5])
+            detail = " · ".join(part for part in (inside, names, detail) if part)
         suffix = f" <span class='dim'>{detail}</span>" if detail else ""
         source = (
             f"<td class='src'>{', '.join(_esc(s.get('name')) for s in _sources_of(item))}</td>"
@@ -296,9 +301,12 @@ def _review_html(
     warnings = "".join(f"<li>{_esc(w)}</li>" for w in review.get("warnings", []))
     notices = f"<ul class='warn'>{warnings}</ul>" if warnings else ""
     size = _human_bytes(total_bytes) if total_bytes else ""
+    verb = {"move": "Move", "upload": "Upload", "trash": "Delete"}.get(
+        str(review.get("operation")), "Review"
+    )
+    noun = "item(s)" if review.get("operation") == "trash" else "file(s)"
     head = (
-        f"<p class='head'>{_esc(str(review.get('operation', 'review')).title())} "
-        f"<b>{len(items)}</b> file(s){f' · {size}' if size else ''} → "
+        f"<p class='head'>{verb} <b>{len(items)}</b> {noun}{f' · {size}' if size else ''} → "
         f"<b>{_esc(destination.get('name'))}</b>{dest_id}{drive}</p>"
     )
 

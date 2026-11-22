@@ -47,27 +47,30 @@ class SurfaceIntegrationTests(unittest.IsolatedAsyncioTestCase):
         scope_routing: bool = False,
         elicitation_callback=None,
     ):
-        server = create_server(
-            config(profile, token_file, scope_routing, self.tmp.name), LOGGER
-        )
-        async with create_client_server_memory_streams() as (client, srv):
-            task = asyncio.create_task(
-                server.run(
-                    srv[0],
-                    srv[1],
-                    server.create_initialization_options(),
-                    raise_exceptions=False,
-                )
+        # These surface tests use fake ids; the deletion review needs real Drive
+        # metadata and is covered in tests/test_reviewed_drive.py.
+        with mock.patch("workspace_operator.tool_router.prepare_review", return_value=(None, None)):
+            server = create_server(
+                config(profile, token_file, scope_routing, self.tmp.name), LOGGER
             )
-            try:
-                async with ClientSession(
-                    client[0], client[1], elicitation_callback=elicitation_callback
-                ) as session:
-                    await session.initialize()
-                    await assertions(session)
-            finally:
-                task.cancel()
-                await asyncio.gather(task, return_exceptions=True)
+            async with create_client_server_memory_streams() as (client, srv):
+                task = asyncio.create_task(
+                    server.run(
+                        srv[0],
+                        srv[1],
+                        server.create_initialization_options(),
+                        raise_exceptions=False,
+                    )
+                )
+                try:
+                    async with ClientSession(
+                        client[0], client[1], elicitation_callback=elicitation_callback
+                    ) as session:
+                        await session.initialize()
+                        await assertions(session)
+                finally:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
 
     async def test_core_lists_compact_surface(self):
         async def check(session):

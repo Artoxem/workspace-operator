@@ -29,6 +29,7 @@ from .dispatch import build_handlers
 from .handlers import files as drive_files
 from .operations import BinaryResult
 from .results import ToolError, ToolResult, is_error_text
+from .review import prepare_review
 from .runtime import AuditLog, call_with_retry
 from .security import require_token_configured
 from .text import humanize_http_error
@@ -473,6 +474,10 @@ class ToolRouter:
                 digest = bulk_store.plan_digest(snapshot)
                 if snapshot.domain == "drive" and snapshot.action == "move":
                     review = bulk_service.move_review(snapshot)
+            else:
+                review, _ = await asyncio.to_thread(
+                    prepare_review, self.config, plan.legacy_name, plan.arguments, self.logger
+                )
         except Exception as exc:  # metadata reads and local validation precede all approval/execution
             reason = humanize_http_error(exc)
             self.audit.record(name, self.profile_name, "preview-error", 0, argument_names, error=reason)

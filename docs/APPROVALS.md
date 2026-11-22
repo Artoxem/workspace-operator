@@ -162,6 +162,18 @@ Without the secret, an agent that knows the `approval_id` and the server URL
 cannot approve its own request over HTTP. Do not expose the HTTP server to an
 untrusted network without a TLS proxy: the secret travels in the URL.
 
+## Reviewing deletions
+
+Deleting a Drive item or an email now shows what is about to go to Trash:
+
+- **Drive**: the item name, its type and size, and the folder it sits in. For a
+  folder it also lists how many items are inside and previews a few names, so
+  trashing a folder is not a blind action: everything inside goes with it.
+- **Gmail**: the subject and the sender of the message.
+- A file that is already in Trash, or cannot be read, is refused before an
+  approval is created — the request fails closed instead of asking you to approve
+  something it cannot describe.
+
 ## What is gated
 
 `confirm=true` + human approval applies to:
