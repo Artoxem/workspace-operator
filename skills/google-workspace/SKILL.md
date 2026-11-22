@@ -4,7 +4,7 @@ description: Use the Workspace Operator MCP server for Drive, Docs, Sheets, Gmai
 license: MIT
 metadata:
   server: workspace-operator
-  version: "2.9.5"
+  version: "2.9.6"
 ---
 
 # Google Workspace automation
@@ -53,7 +53,9 @@ Never guess an ID, sheet name or range.
   `gmail_delete` (draft), `calendar_delete`, `script_run`, `bulk_run`, `bulk_undo`.
   Deleting files or messages is **not** a direct tool: plan it with `bulk_plan`
   (`domain='drive', action='trash'` or `domain='gmail', action='trash'`) and run
-  `bulk_run`; one review covers the whole list, including a single file.
+  `bulk_run`; one review covers the whole list. This applies to **one item too** —
+  pass `selector={'ids': ['<the id>']}` and treat it as a list of one. Moving files
+  follows the same rule.
   A human decides every one of them. You must not approve your own request: never
   run `workspace-operator approvals`, and do not try to open the approval page.
   When the client supports MCP elicitation the human gets an approve dialog in

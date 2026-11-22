@@ -4,12 +4,13 @@ A compact summary of the project. Full historical release notes remain available
 on [GitHub Releases](https://github.com/Artoxem/workspace-operator/releases); the
 repository keeps this single document instead of one file per patch release.
 
-Current release: **2.9.5**.
+Current release: **2.9.6**.
 
 ## 2.x — compact surface
 
 | Version | What changed |
 |---|---|---|
+| **2.9.6** | The server tells agents where to go before they call the wrong tool. The initialize instructions now state that files and messages are never moved or deleted by a direct tool, that `bulk_plan` → `bulk_run` is the only path, and that one item is a list of one id. The descriptions of `bulk_plan`, `bulk_run`, `drive_write` and `gmail_delete` say the same, and the skill repeats it. Three tests pin the wording so it cannot drift. 535 tests. |
 | **2.9.5** | Documentation audit, no code change. README (EN/RU) opens with a jump menu, states the real surface (38 tools, 19 in core) and describes the reviewed bulk path for moves, uploads and deletions, the review page (groups, show all, CSV, plan fingerprint) and shared-drive opt-in. Two broken in-page anchors and the Russian tools badge are fixed, stale counts (39 tools, 529 tests) corrected across README, DISTRIBUTION, LAUNCH_PACKAGE and PUBLISHING, `drive_trash` removed from the profile tables, and both migration guides carry a 2.6/2.9 caveat. All 28 Markdown files pass an anchor check. |
 | **2.9.4** | Gmail pads snippets with a combining grapheme joiner (U+034F) besides zero-width marks, and it survived the cleaner. The invisible set now covers it and the other common padding characters, so the page and the CSV keep only readable text. 533 tests. |
 | **2.9.3** | Gmail snippets arrive HTML-escaped (`NVIDIA&#39;s`); the review now decodes entities before display, so the page and the CSV show normal text. 532 tests. |

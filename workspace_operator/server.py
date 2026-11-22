@@ -176,13 +176,18 @@ def create_server(config: Config, logger) -> Server:
         instructions=(
             "Workspace Operator exposes Google Workspace through a compact, "
             "action-based tool surface. Start with workspace_search for unknown "
-            "ids; read before writing; use the bulk_plan/bulk_run flow for more "
-            "than a handful of items. Destructive actions first return "
-            "APPROVAL_REQUIRED, or ask the human through the client's elicitation "
-            "dialog. The agent cannot approve its own request: tell the user it is "
-            "pending, and retry with approval_id only after they confirm it was "
-            "approved. Tools outside the active profile or "
-            "without their OAuth scope are hidden by design."
+            "ids; read before writing. Files and messages are never moved or "
+            "deleted by a direct tool: plan it with bulk_plan(domain='drive' or "
+            "'gmail', action='move'/'trash'/'archive', selector={'ids': [...]} or "
+            "{'query': '…'}), then call bulk_run. One item is a list of one id. "
+            "Other batch actions (rename, share, restore, label, mark read) work "
+            "the same way. Local uploads use drive_write action='upload' and also "
+            "need review. Destructive actions first return APPROVAL_REQUIRED, or "
+            "ask the human through the client's elicitation dialog. The agent "
+            "cannot approve its own request: tell the user it is pending, and "
+            "retry with approval_id only after they confirm it was approved. "
+            "Tools outside the active profile or without their OAuth scope are "
+            "hidden by design."
         ),
     )
     exposed_tools = surface.mcp_tools()

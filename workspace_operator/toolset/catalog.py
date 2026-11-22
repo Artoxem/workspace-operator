@@ -223,7 +223,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "drive_write",
             "drive",
             Safety.WRITE,
-            "Create, copy, rename, upload, share and restore Drive files. Upload requires human approval. Use bulk_plan then bulk_run to move files.",
+            "Create, copy, rename, upload, share and restore Drive files. Upload requires human approval. Moving and deleting are not actions here: use bulk_plan(domain='drive', action='move' or 'trash') then bulk_run.",
             (
                 action("create_folder", "create_folder", "Create a folder."),
                 action("copy", "drive_copy_file", "Copy a file."),
@@ -436,7 +436,7 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "gmail_delete",
             "gmail",
             Safety.DESTRUCTIVE,
-            "Move drafts to Trash. For messages use bulk_plan(domain='gmail', action='trash').",
+            "Move drafts to Trash. Messages are deleted with bulk_plan(domain='gmail', action='trash', selector={'ids': [...]}) — direct message deletion does not exist.",
             (
                 action(
                     "draft",
@@ -581,14 +581,14 @@ def build_catalog(tools: Sequence[types.Tool]) -> Tuple[ToolSpec, ...]:
             "bulk_plan",
             "bulk",
             Safety.READ,
-            "Resolve a selector into a dry-run bulk plan.",
+            "Resolve a selector into a dry-run bulk plan. This is the only way to move or delete Drive files and Gmail messages: pass {'ids': [...]} even for one item, or {'query': '…'} for a batch. Actions: drive move/trash/restore/rename/share/revoke_public, gmail trash/archive/restore/label/mark_read/mark_unread.",
         ),
         direct(
             "bulk_run",
             "bulk_run",
             "bulk",
             Safety.DESTRUCTIVE,
-            "Execute a reviewed bulk plan as a background job.",
+            "Execute a reviewed bulk plan as a background job. The browser review lists the whole batch; one approval covers it.",
             confirm=True,
         ),
         direct(

@@ -1,6 +1,7 @@
 """Integrity and budget tests for the consolidated 2.0 catalog."""
 
 import unittest
+from pathlib import Path
 
 from workspace_operator.server import _tools
 from workspace_operator.toolset.catalog import (
@@ -134,6 +135,26 @@ class LegacyCoverageTests(unittest.TestCase):
         uncovered = {tool.name for tool in legacy} - used
         # Retired single-item paths, now answered by an explicit bulk_plan hint.
         self.assertEqual(uncovered, {"drive_delete_file", "delete_email", "gmail_archive"})
+
+
+class RoutingHintTests(unittest.TestCase):
+    """An agent must learn the bulk-first rule from the tools, not from an error."""
+
+    def test_bulk_plan_is_advertised_as_the_only_move_and_delete_path(self):
+        catalog = {spec.name: spec for spec in build_catalog(_tools())}
+        text = catalog["bulk_plan"].description.lower()
+        self.assertIn("only way to move or delete", text)
+        self.assertIn("even for one item", text)
+
+    def test_delete_tools_point_to_bulk(self):
+        catalog = {spec.name: spec for spec in build_catalog(_tools())}
+        self.assertIn("bulk_plan", catalog["drive_write"].description)
+        self.assertIn("bulk_plan", catalog["gmail_delete"].description)
+
+    def test_server_instructions_state_the_one_item_rule(self):
+        instructions = Path("workspace_operator/server.py").read_text(encoding="utf-8")
+        self.assertIn("One item is a list of one id", instructions)
+        self.assertIn("bulk_plan", instructions)
 
 
 if __name__ == "__main__":
